@@ -1,4 +1,16 @@
-# f1x #
+                  __                       
+             ...-'  |`.                    
+             |      |  |                   
+         _.._....   |  |                   
+       .' .._| -|   |  |                   
+       | '      |   |  | ____     _____    
+     __| |__ ...'   `--'`.   \  .'    /    
+    |__   __||         |`.`.  `'    .'     
+       | |   ` --------\ |  '.    .'       
+       | |    `---------'   .'     `.      
+       | |                .'  .'`.   `.    
+       | |              .'   /    `.   `.  
+       |_|             '----'       '----' 
 
 f1x is an efficient patch generation tool. It traverses a search space of side-effect free expression modifications and statement deletions. f1x achieves high throughput (number of candidate patches per a unit of time) by using dynamic semantic search space partitioning and symbolic representation of search space. It also ranks generated patches based on two criteria: syntactical similarity with the original program and anti-patterns (repairs that are likely incorrect).
 
