@@ -14,16 +14,17 @@ f1x can be run with the following options:
 
     f1x path/to/project --files src/lib_a.c src/lib_b.c
                             --tests n1 n2 p1 p2
-                            --google-test src/test
-                            --generic-runner /full/path/to/test.sh
+                            --google-test-driver src/test
+                            --generic-driver /full/path/to/test.sh
+                            --stdstreams-driver /path/to/io/files
                             --make 'make -e'
-                            --max-exprs 100000
                             --test-timeout 5
-                            --defect-classes CLASSES
                             --first-found
                             --verbose
                             --version
                             --help
+                            
+f1x supports three test drivers: Generic, Google Test, and Stdstreams.
                             
 Defect classes:
 
