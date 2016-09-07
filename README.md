@@ -20,7 +20,7 @@ Install dependencies:
     
 To compile, create `build` directory and execute:
 
-    cmake -DLLVM_DIR=/home/sergey/lsym/build/share/llvm/cmake/  -G Ninja ..
+    cmake -DLLVM_DIR=/home/sergey/lsym/install/share/llvm/cmake/ -DClang_DIR=/home/sergey/lsym/install/share/clang/cmake/ -G Ninja ..
 
 f1x can be run with the following options:
 
@@ -40,13 +40,13 @@ f1x supports three test drivers: Generic, Google Test, and Stdstreams.
                             
 Defect classes:
 
-    - side effect free conditions (solver-based grouping engine)
-    - side effect free assignments (enumeration-based grouping engine)
-    - conditions with side effects (generate-and-validate for common bugs)
-    - assignments with side effects (generate and validate for common bugs)
-    - guards (with small side-effect free conditions)
-    - pointers (type-based enumeration)
-    - new assignments before variable use
+- side effect free conditions (solver-based grouping engine)
+- side effect free assignments (enumeration-based grouping engine)
+- conditions with side effects (generate-and-validate for common bugs)
+- assignments with side effects (generate and validate for common bugs)
+- guards (with small side-effect free conditions)
+- pointers (type-based enumeration)
+- new assignments before variable use
                             
 Note that f1x performs source transformation and can corrupt your source code. For this reason, it is recommended to run it on a separate copy of the source tree.
 
@@ -63,10 +63,3 @@ Logs are stored in `f1x-out-N/log.txt` file. Execution statistics is available i
     locations: 60
     runs: 1000
     patches: 300
-
-Search space:
-    
-1. Modifying side-effect free conditions and adding conjuncts and disjuncts to non-side-effect free conditions
-2. Modifying side-effect free integer expressions
-3. Replacing pointers with pointers to a different object of the same type
-4. Deleting program statements

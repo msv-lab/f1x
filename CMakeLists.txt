@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.4.3)
 project(f1x)
 
-
 # LLVM
 find_package(LLVM REQUIRED CONFIG)
 
@@ -16,12 +15,19 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
+# Clang
+find_package(Clang REQUIRED CONFIG)
 
 # Boost
 FIND_PACKAGE( Boost 1.40 COMPONENTS program_options log REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
+
+# Compiler
+set(CMAKE_CXX_STANDARD 11) # C++11...
+set(CMAKE_CXX_STANDARD_REQUIRED ON) #...is required...
+set(CMAKE_CXX_EXTENSIONS OFF) #...without compiler extensions like gnu++11
 
 # The version number.
 set (F1X_VERSION_MAJOR 1)
