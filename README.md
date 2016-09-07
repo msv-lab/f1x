@@ -12,7 +12,9 @@
        | |              .'   /    `.   `.  
        |_|             '----'       '----' 
 
-f1x is an efficient patch generation tool. It traverses a search space of side-effect free expression modifications and statement deletions. f1x achieves high throughput (number of candidate patches per a unit of time) by using dynamic semantic search space partitioning and symbolic representation of search space. It also ranks generated patches based on two criteria: syntactical similarity with the original program and anti-patterns (repairs that are likely incorrect).
+f1x is an efficient automated progam repair tool. It fixes bugs manifested by failing tests by traversing a search space of candidate patches. f1x achieves high throughput (number of candidate patches per a unit of time) by representing the search space symbolically, and dynamically grouping semantically equivalent patches. It also ranks generated patches based on two criteria: (1) syntactical distance from the original program and (2) matching pre-defined set of anti-patterns.
+
+## Installation ##
 
 Install dependencies:
 
@@ -22,7 +24,7 @@ To compile, create `build` directory and execute:
 
     cmake -DLLVM_DIR=/home/sergey/lsym/install/share/llvm/cmake/ -DClang_DIR=/home/sergey/lsym/install/share/clang/cmake/ -G Ninja ..
 
-f1x can be run with the following options:
+f1x can be executed with the following options:
 
     f1x path/to/project --files src/lib_a.c src/lib_b.c
                             --tests n1 n2 p1 p2
