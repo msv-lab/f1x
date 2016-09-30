@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
-$CC $@
+if [ -z "$F1X_RUNTIME_H" ]; then
+    $CC -include "$F1X_RUNTIME_H" $@ "-LF1X_RUNTIME_LIB$" "-lf1xrt"
+else
+    $CC $@
+fi
