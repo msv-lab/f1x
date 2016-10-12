@@ -36,19 +36,22 @@ Before using f1x:
 
 f1x can be executed with the following options:
 
-    f1x path/to/project --files src/lib_a.c src/lib_b.c
-                        --tests n1 n2 p1 p2
-                        --generic-driver /full/path/to/test.sh
-                        --test-timeout 5
-                        --make 'make -e'
-                        --term-on-first-found
-                        --verbose
-                        --version
-                        --help
+    Usage: f1x PATH OPTIONS
+    
+    -f | --files FILE...       buggy source files
+    -t | --tests TEST...       tests
+    -T | --test-timeout MS     timeout for single test execution (default: none)
+    -d | --driver DRIVER       test driver
+    -D | --driver-type TYPE    driver type (default: generic)
+    -b | --build               build command (default: make -e)
+    -o | --output DIR          output directory (default: $PWD/f1x-out-N)
+    -v | --verbose LEVEL       verbosity level (default: none)
+    -h | --help                help
+    --first-found              terminate search on first found patch
 
 Example:
 
-    $ f1x grep-1.4.5/src/ --generic-driver tests/run.sh --tests 1 2 3
+    $ f1x grep-1.4.5/src/ -d tests/run.sh -t 1 2 3
     run time:     0:12:54
     total execs:  1401
     exec speed:   5.4/sec
@@ -56,7 +59,7 @@ Example:
     patches:      34
     uniq patches: 3
     
-By default, the repair process will continue until you press Ctrl-C or the search space is exhausted. You can use `--term-on-first-found` if you are interested in a single patch. However, it is not recommended for general usage. f1x prioretizes patches based on several criteria such as syntactical distance, and the more patches are found, the higher the expected quality of the best found patch.
+By default, the repair process will continue until you press Ctrl-C or the search space is exhausted. You can use the `--first-found` option if you are interested in a single patch, however it is not recommended, since f1x can select best found patch based on a number of huristics such as syntactical distance. Therefore the more patches are found, the higher the expected quality of the best found patch.
                             
 Defect classes:
 
@@ -70,9 +73,11 @@ Defect classes:
                             
 f1x creates `f1x-out-N` directory containing generated patches and logs. Patches have names
 
-    X_Y_Z.patch
+    1.patch
+    2.patch
+    ...
     
-where `X` is the corresponding defect class, `Y` indicates the order in which the search space is explored, `Z` is higher for syntactically more complex modifications.
+f1x also creates `N.meta` files with additional information about generated patches. You can then use `f1x-prioritize f1x-out-1 | head -3` to select there best patches.
 
 TODO: Tutorial for small programs, tutorial for large programs, manual, troubleshooting
 
