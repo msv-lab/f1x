@@ -12,21 +12,19 @@ int main (int argc, char *argv[])
   po::positional_options_description positional;
   positional.add("source", 1);
   
-  // Declare the supported options.
-  po::options_description general("Usage: f1x SOURCE OPTIONS\n\nAllowed options");
+  // Declare supported options.
+  po::options_description general("Usage: f1x PATH OPTIONS\n\nSupported options");
   general.add_options()
-    ("files", po::value<string>()->multitoken(), "list of source files to repair")
-    ("tests", po::value<string>()->multitoken(), "list of test IDs")
-    ("generic-runner", po::value<string>(), "generic test runner")
-    ("google-test", po::value<string>(), "google test runner")
-    ("make", po::value<string>()->default_value("make -e"), "make command")    
-    ("max-exprs", po::value<int>()->default_value(10000), "maximum mutations per expression")
-    ("test-timeout", po::value<int>()->default_value(5), "test execution timeout (SEC)")
-    ("defect-classes", po::value<string>()->multitoken(), "list of defect classes to explore")
-    ("first-found", "search until first patch found")
-    ("verbose", "extended output")
-    ("version", "print version")
-    ("help", "produce help message")
+    ("files,f", po::value<string>()->multitoken()->value_name("FILE..."), "list of source files to repair")
+    ("tests,t", po::value<string>()->multitoken()->value_name("TEST..."), "list of test IDs")
+    ("test-timeout,T", po::value<string>()->value_name("MS"), "test execution timeout (default: none)")
+    ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
+    ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
+    ("output,o", po::value<string>()->value_name("PATH"), "output directory (default: $PWD/f1x-out-N)")
+    ("verbose,v", po::value<int>()->value_name("LEVEL")->implicit_value(1), "extended output")
+    ("help,h", "produce help message and exit")
+    ("version", "print version and exit")
+    ("first-found", "terminate search on first found patch")
     ;
 
   po::options_description hidden("Hidden options");
@@ -47,7 +45,9 @@ int main (int argc, char *argv[])
   }
 
   if (vm.count("version")) {
-    cout << argv[0] << " " << F1X_VERSION_MAJOR << "." << F1X_VERSION_MINOR << "\n";
+    cout << argv[0] << " " << F1X_VERSION_MAJOR <<
+                       "." << F1X_VERSION_MINOR <<
+                       "." << F1X_VERSION_PATCH << "\n";
     return 1;
   }
 

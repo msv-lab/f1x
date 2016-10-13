@@ -1,6 +1,7 @@
 // the configured options and settings for Minifix
 #define F1X_VERSION_MAJOR @F1X_VERSION_MAJOR@
 #define F1X_VERSION_MINOR @F1X_VERSION_MINOR@
+#define F1X_VERSION_PATCH @F1X_VERSION_PATCH@
 
 #define ENABLE_CALL_ARGUMENTS 0
 #define ENABLE_IMPURE_CONDITIONS 1
