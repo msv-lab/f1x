@@ -30,8 +30,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON) #...is required...
 set(CMAKE_CXX_EXTENSIONS OFF) #...without compiler extensions like gnu++11
 
 # The version number.
-set (F1X_VERSION_MAJOR 1)
-set (F1X_VERSION_MINOR 0)
+set (F1X_VERSION_MAJOR 0)
+set (F1X_VERSION_MINOR 1)
+set (F1X_VERSION_PATCH 0)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
