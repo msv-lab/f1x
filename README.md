@@ -1,32 +1,25 @@
-                  __                       
-             ...-'  |`.                    
-             |      |  |                   
-         _.._....   |  |                   
-       .' .._| -|   |  |                   
-       | '      |   |  | ____     _____    
-     __| |__ ...'   `--'`.   \  .'    /    
-    |__   __||         |`.`.  `'    .'     
-       | |   ` --------\ |  '.    .'       
-       | |    `---------'   .'     `.      
-       | |                .'  .'`.   `.    
-       | |              .'   /    `.   `.  
-       |_|             '----'       '----' 
+![workflow](doc/logo.png)
 
-f1x is an efficient automated progam repair tool. It fixes bugs manifested by failing tests by traversing a search space of candidate patches. f1x achieves high throughput (number of candidate patches per a unit of time) by representing the search space symbolically, and dynamically grouping semantically equivalent patches. It also ranks generated patches based on two criteria: (1) syntactical distance from the original program and (2) matching pre-defined set of anti-patterns.
-
-TODO: tell a bit more about test-driven automated program repair, difference from human patches.
+f1x is an efficient automated progam repair tool. It fixes bugs manifested by failing tests by traversing a search space of candidate patches. f1x achieves high throughput (number of candidate patches per a unit of time) by dynamically grouping patches that have equivalent semantic impact. It also ranks generated patches based on two criteria: (1) syntactical distance from the original program and (2) matching pre-defined set of anti-patterns.
 
 ## Installation ##
 
-f1x currently supports only Linux-based systems. It was tested on Ubuntu 14.04, Ubuntu 16.04 and Fedora 24.
+f1x currently supports only Linux-based systems. It was tested on Ubuntu 14.04.
 
 Install dependencies (Ubuntu):
 
-    sudo apt-get install build-essential cmake libboost-all-dev libclang-3.8-dev bear
+    sudo apt-get install build-essential cmake libboost-all-dev bear
+    
+Install LLVM and Clang 3.8. You can use a provided installation script to download and build it automatically:
+
+    cd $MY_LLVM_DIR
+    /path/to/f1x/scripts/download-and-build-llvm38.sh
     
 To compile, create and change to `build` directory and execute:
 
-    cmake -DLLVM_DIR=/home/sergey/lsym/install/share/llvm/cmake/ -DClang_DIR=/home/sergey/lsym/install/share/clang/cmake/ -G Ninja ..
+    cmake -DLLVM_DIR=$MY_LLVM_DIR/install/share/llvm/cmake/ -DClang_DIR=$MY_LLVM_DIR/install/share/clang/cmake/ ..
+    
+## Usage ##
     
 Before using f1x:
 
@@ -60,16 +53,8 @@ Example:
     uniq patches: 3
     
 By default, the repair process will continue until you press Ctrl-C or the search space is exhausted. You can use the `--first-found` option if you are interested in a single patch, however it is not recommended, since f1x can select best found patch based on a number of huristics such as syntactical distance. Therefore the more patches are found, the higher the expected quality of the best found patch.
-                            
-Defect classes:
 
-- side effect free conditions (solver-based grouping engine)
-- side effect free assignments (enumeration-based grouping engine)
-- conditions with side effects (generate-and-validate for common bugs)
-- assignments with side effects (generate and validate for common bugs)
-- guards (with small side-effect free conditions)
-- pointers (type-based enumeration)
-- new assignments before variable use
+## Interpreting output ##
                             
 f1x creates `f1x-out-N` directory containing generated patches and logs. Patches have names
 
