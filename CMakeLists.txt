@@ -15,13 +15,16 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
+# Threads
+FIND_PACKAGE (Threads)
+
 # Clang
 find_package(Clang REQUIRED CONFIG)
 
 # Boost
+set(Boost_USE_MULTITHREADED OFF)
 FIND_PACKAGE( Boost 1.40 COMPONENTS program_options log REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
-
 ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
 
 # Compiler
