@@ -22,7 +22,7 @@ f1x currently supports only Linux-based systems. It was tested on Ubuntu 14.04, 
 
 Install dependencies (Ubuntu):
 
-    sudo apt-get install build-essential cmake libboost-all-dev libclang-3.8-dev bear
+    sudo apt-get install build-essential cmake libboost-program-options-dev libboost-log-dev libboost-filesystem-dev libgtest-dev rapidjson-dev libclang-3.8-dev bear
     
 To compile, create and change to `build` directory and execute:
 
@@ -71,13 +71,36 @@ Defect classes:
 - pointers (type-based enumeration)
 - new assignments before variable use
                             
-f1x creates `f1x-out-N` directory containing generated patches and logs. Patches have names
+f1x creates `/tmp/f1x-DATE-TIME` directory containing generated patches and logs. Patches have names
 
-    1.patch
-    2.patch
+    1-source_name-30-12-30-15.patch
+    2-source_name-30-12-30-15.patch
     ...
     
-f1x also creates `N.meta` files with additional information about generated patches. You can then use `f1x-prioritize f1x-out-1 | head -3` to select there best patches.
+f1x also creates `1-30-12-30-15.meta` files with additional information about generated patches. You can then use `f1x-prioritize /tmp/f1x-DATE-TIME | head -3` to select there best patches.
+
+## Algorithm ##
+
+Initialization:
+
+1. Build, construct compilation database with bear
+2. Get specified tests/run failing test and gcov to identify suspicious tests
+3. Generate and compile search space for suspicious files, instrument suspicious files
+4. Execute all tests, collect coverage and initial patritions
+5. Prioritize locations
+
+Validation (for single location):
+
+1. Three sets of patches: grey, green and red. green is empty, red has only original program, grey contains the rest. each grey patch corresponds to a set of tests is passes.
+2. Pick grey patch according to heuristic
+3. If the patch passes all tests, add it to the green set, remove from grey
+4. Pick not evaluated test according to heuristic
+5. Evaluate the patch on the test
+6. If the patch passes, add the corresponding partition to the test
+7. If the patch fails, remove partition from grey, add to red
+8. Goto 2
+
+## Documentation ##
 
 TODO: Tutorial for small programs, tutorial for large programs, manual, troubleshooting
 
