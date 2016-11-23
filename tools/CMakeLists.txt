@@ -15,6 +15,7 @@ target_link_libraries(f1x-instrument
   clangDriver
   clangFrontend
   clangTooling
+  f1xInstrument
   )
 
 set_target_properties(f1x-instrument PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exceptions" ) # this is to be compatible with llvm libraries

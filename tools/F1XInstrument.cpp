@@ -10,7 +10,7 @@ using namespace llvm;
 
 // Apply a custom category to all command-line options so that they are the
 // only ones displayed.
-static llvm::cl::OptionCategory MinifixToolCategory("minifix-instrument options");
+static llvm::cl::OptionCategory F1XToolCategory("f1x-instrument options");
 
 // CommonOptionsParser declares HelpMessage with a description of the common
 // command-line options related to the compilation database and input files.
@@ -21,7 +21,7 @@ static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 static cl::extrahelp MoreHelp("\nMore help text...");
 
 int main(int argc, const char **argv) {
-  CommonOptionsParser OptionsParser(argc, argv, MinifixToolCategory);
+  CommonOptionsParser OptionsParser(argc, argv, F1XToolCategory);
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
   return Tool.run(newFrontendActionFactory<clang::SyntaxOnlyAction>().get());
