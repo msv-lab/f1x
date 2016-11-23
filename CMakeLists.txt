@@ -45,7 +45,7 @@ configure_file (
   )
 
 # add the binary tree to the search path for include files
-# so that we will find MinifixConfig.h
+# so that we will find F1XConfig.h
 include_directories("${PROJECT_BINARY_DIR}")
 
 
