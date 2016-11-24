@@ -1,6 +1,7 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 #include <boost/log/trivial.hpp>
+#include "F1XCommon.h"
 #include "F1XConfig.h"
 
 namespace po = boost::program_options;

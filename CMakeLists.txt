@@ -48,6 +48,7 @@ configure_file (
 # so that we will find F1XConfig.h
 include_directories("${PROJECT_BINARY_DIR}")
 
+include_directories(lib)
 
-#add_subdirectory(lib)
+add_subdirectory(lib)
 add_subdirectory(tools)

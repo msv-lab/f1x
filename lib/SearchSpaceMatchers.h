@@ -2,6 +2,9 @@
 
 #include "clang/ASTMatchers/ASTMatchers.h"
 
+using namespace clang;
+using namespace ast_matchers;
+
 /*
 
   The goal of these matchers is to define repair search space.

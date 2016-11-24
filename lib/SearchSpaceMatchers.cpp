@@ -74,7 +74,7 @@ auto hasSplittableCondition =
 
 
 auto hasNonTrivialSplittableCondition =
-  anyOf(hasCondition(ignoringParenImpCasts(NonTrivialRepairableExpression))
+  anyOf(hasCondition(ignoringParenImpCasts(NonTrivialRepairableExpression)),
         eachOf(hasCondition(NonTrivialSplittable),
                hasCondition(forEachDescendant(NonTrivialSplittable))));
 

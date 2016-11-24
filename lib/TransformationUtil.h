@@ -11,7 +11,7 @@ using std::string;
 using std::pair;
 
 
-#define INPLACE_MODIFICATION 1
+const bool INPLACE_MODIFICATION = true;
 
 
 unsigned getDeclExpandedLine(const Decl* decl, SourceManager &srcMgr);
