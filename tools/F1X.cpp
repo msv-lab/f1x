@@ -21,11 +21,10 @@ int main (int argc, char *argv[])
     ("test-timeout,T", po::value<string>()->value_name("MS"), "test execution timeout (default: none)")
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
-    ("output,o", po::value<string>()->value_name("PATH"), "output directory (default: $PWD/f1x-DATE-TIME)")
+    ("output,o", po::value<string>()->value_name("PATH"), "output patch file (default: $PWD/SRCDIR-DATE-TIME.patch)")
     ("verbose,v", po::value<int>()->value_name("LEVEL")->implicit_value(1), "extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
-    ("first-found", "terminate search on first found patch")
     ;
 
   po::options_description hidden("Hidden options");

@@ -1,18 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifndef ANGELIX_OUTPUT
-#define ANGELIX_OUTPUT(type, expr, id) expr
-#endif
-
 int main(int argc, char *argv[]) {
   int a, b;
   a = atoi(argv[1]);
   b = atoi(argv[2]);
   if (a > b) { // >=
-    printf("%d\n", ANGELIX_OUTPUT(int, 0, "stdout"));
+    printf("%d\n", 0);
   } else {
-    printf("%d\n", ANGELIX_OUTPUT(int, 1, "stdout"));
+    printf("%d\n", 1);
   }
   return 0;
 }
