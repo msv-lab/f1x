@@ -1,8 +1,8 @@
 ![workflow](doc/logo.png)
 
-f1x is an open-source automated program repair tool for C/C++ program. f1x was designed for the purpose of large scale experimentation, which is critical for the future of automated program repair research. Specifically, f1x aims to be efficient, reliable and easy to use.
+f1x is a test-driven automated program repair tool for C/C++ program. It can automatically find and fix bugs in program expressions based on given passing and failing tests. f1x was designed for the purpose of large scale experimentation, which is critical for the future of automated program repair research. Specifically, f1x aims to be efficient, reliable and easy-to-use.
 
-f1x implements an efficient search space exploration algorithm that performs semantic search space partitioning during test execution. Essentially, it combines ideas from existing syntax-based and semantics-based techniques in a mutually reinforcing fashion. First, this enables f1x to archive X times efficiency boost when repairing large programs (such as PHP, Libtiff, etc) compared to previous algorithms. Second, f1x is the first system that guarantees that the generated patch is always the most reliable patch according to the given static prioretization strategy. Specifically, in the current implementation f1x guarantees to find the syntactically minimal patch in the search space. More details about advantages of f1x algorithm can be found in our publication.
+f1x implements an efficient search space exploration algorithm that performs semantic search space partitioning during test execution. Essentially, it combines ideas from existing syntax-based and semantics-based techniques in a mutually reinforcing fashion. First, this enables f1x to achieve X times efficiency boost when repairing large programs (such as PHP, Libtiff, etc) compared to previous algorithms. Second, f1x is the first system that guarantees that the generated patch is always the most reliable in the search space according to a given static prioretization strategy. Specifically, in the current implementation f1x guarantees to find a modification that is syntactically minimal in the entire search space. More details about f1x algorithm can be found in the publication.
 
 ## Installation ##
 
@@ -17,18 +17,18 @@ Install LLVM and Clang 3.8.1. You can use the provided installation script to do
     cd <my-llvm-dir>
     /path/to/f1x/scripts/download-and-build-llvm38.sh
     
-To compile, create `build` directory and execute:
+To compile f1x, create `build` directory and execute:
     
     mkdir build
     cd build
     cmake -DLLVM_DIR=<my-llvm-dir>/install/share/llvm/cmake/ -DClang_DIR=<my-llvm-dir>/install/share/clang/cmake/ ..
     make
     
-To install, just add the `tools` directory into your `PATH`:
+To install f1x, add the `tools` directory into your `PATH`:
 
     export PATH=$PWD/tools:$PATH
     
-To test, execute `./tests/runall.sh`.
+To test f1x, execute `./tests/runall.sh`.
     
 ## Usage ##
     
