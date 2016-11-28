@@ -29,7 +29,7 @@ bool overwriteMainChangedFile(Rewriter &TheRewriter);
   - compound statment
   - if/while/for statement
   - label statement (inside switch)
-  it should not be the, for example, the increment of for loop
+  it should not be, for example, the increment of for loop
  */
-bool isTopLevelStatement(const Stmt* stmt, SourceManager &srcMgr);
+bool isTopLevelStatement(const Stmt* stmt, ASTContext* context);
 

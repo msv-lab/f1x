@@ -2,6 +2,9 @@
 
 #include "clang/ASTMatchers/ASTMatchers.h"
 
+#define BOUND "repairable"
+
+
 using namespace clang;
 using namespace ast_matchers;
 

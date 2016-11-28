@@ -1,9 +1,9 @@
-// Declares clang::SyntaxOnlyAction.
-#include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 // Declares llvm::cl::extrahelp.
 #include "llvm/Support/CommandLine.h"
+
+#include "Transformer.h"
 
 using namespace clang::tooling;
 using namespace llvm;
@@ -24,5 +24,5 @@ int main(int argc, const char **argv) {
   CommonOptionsParser OptionsParser(argc, argv, F1XToolCategory);
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
-  return Tool.run(newFrontendActionFactory<clang::SyntaxOnlyAction>().get());
+  return Tool.run(newFrontendActionFactory<InstrumentRepairableAction>().get());
 }

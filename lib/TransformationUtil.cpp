@@ -53,7 +53,7 @@ SourceRange getExpandedLoc(const Stmt* expr, SourceManager &srcMgr) {
 }
 
 
-string toString(const Stmt* stmt) {
+string toString(const Stmt *stmt) {
   /* Special case for break and continue statement
      Reason: There were semicolon ; and newline found
      after break/continue statement was converted to string
@@ -86,3 +86,34 @@ bool overwriteMainChangedFile(Rewriter &TheRewriter) {
   out.close();
   return !AllWritten;
 }
+
+
+bool isTopLevelStatement(const Stmt *stmt, ASTContext *context) {
+  auto it = context->getParents(*stmt).begin();
+
+  if(it == context->getParents(*stmt).end())
+    return true;
+
+  const CompoundStmt* cs;
+  if ((cs = it->get<CompoundStmt>()) != NULL) {
+    return true;
+  }
+
+  const IfStmt* is;
+  if ((is = it->get<IfStmt>()) != NULL) {
+    return stmt != is->getCond();
+  }
+
+  const ForStmt* fs;
+  if ((fs = it->get<ForStmt>()) != NULL) {
+    return stmt != fs->getCond() && stmt != fs->getInc() && stmt != fs->getInit();
+  }
+
+  const WhileStmt* ws;
+  if ((ws = it->get<WhileStmt>()) != NULL) {
+    return stmt != ws->getCond();
+  }
+    
+  return false;
+}
+

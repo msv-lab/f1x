@@ -1,7 +1,5 @@
 #include "SearchSpaceMatchers.h"
 
-#define ID "repairable"
-
 
 StatementMatcher RepairableOperator = 
   anyOf(binaryOperator(anyOf(hasOperatorName("=="),
@@ -11,36 +9,36 @@ StatementMatcher RepairableOperator =
                              hasOperatorName(">"),
                              hasOperatorName("<"),
                              hasOperatorName("||"),
-                             hasOperatorName("&&"))).bind(ID),
+                             hasOperatorName("&&"))).bind(BOUND),
         binaryOperator(anyOf(hasOperatorName("+"),
                              hasOperatorName("-"),
                              hasOperatorName("*"),
                              hasOperatorName("%"),
-                             hasOperatorName("/"))).bind(ID),
-        unaryOperator(hasOperatorName("!")).bind(ID),
+                             hasOperatorName("/"))).bind(BOUND),
+        unaryOperator(hasOperatorName("!")).bind(BOUND),
         binaryOperator(anyOf(hasOperatorName("&"),
                              hasOperatorName("|"),
                              hasOperatorName("~"),
                              hasOperatorName("<<"),
-                             hasOperatorName(">>"))).bind(ID),
-        unaryOperator(hasOperatorName("~")).bind(ID));
+                             hasOperatorName(">>"))).bind(BOUND),
+        unaryOperator(hasOperatorName("~")).bind(BOUND));
 
 // FIXME: currently support only integer arrays:
 StatementMatcher RepairableArraySubscript =
   arraySubscriptExpr(hasIndex(ignoringImpCasts(anyOf(integerLiteral(),
                                                      declRefExpr(),
                                                      memberExpr()))),
-                     hasBase(implicitCastExpr(hasSourceExpression(declRefExpr(hasType(arrayType(hasElementType(isInteger())))))))).bind(ID);
+                     hasBase(implicitCastExpr(hasSourceExpression(declRefExpr(hasType(arrayType(hasElementType(isInteger())))))))).bind(BOUND);
 
 StatementMatcher RepairableAtom =
   anyOf(declRefExpr(to(varDecl(anyOf(hasType(isInteger()),
-                                     hasType(pointerType()))))).bind(ID),
-        declRefExpr(to(enumConstantDecl())).bind(ID),
+                                     hasType(pointerType()))))).bind(BOUND),
+        declRefExpr(to(enumConstantDecl())).bind(BOUND),
         declRefExpr(to(namedDecl())), // NOTE: no binding because it is only for member expression
-        integerLiteral().bind(ID),
-        characterLiteral().bind(ID),
-        memberExpr().bind(ID), // TODO: I need to make sure that base is a variable here
-        castExpr(hasType(asString("void *")), hasDescendant(integerLiteral(equals(0)))).bind(ID)); // NULL
+        integerLiteral().bind(BOUND),
+        characterLiteral().bind(BOUND),
+        memberExpr().bind(BOUND), // TODO: I need to make sure that base is a variable here
+        castExpr(hasType(asString("void *")), hasDescendant(integerLiteral(equals(0)))).bind(BOUND)); // NULL
                
 StatementMatcher RepairableNode =
   anyOf(RepairableOperator,
@@ -98,6 +96,6 @@ StatementMatcher RepairableExpression =
         RepairableAssignment);
 
 StatementMatcher RepairableStatement =
-  anyOf(callExpr().bind(ID),
-        breakStmt().bind(ID),
-        continueStmt().bind(ID));
+  anyOf(callExpr().bind(BOUND),
+        breakStmt().bind(BOUND),
+        continueStmt().bind(BOUND));
