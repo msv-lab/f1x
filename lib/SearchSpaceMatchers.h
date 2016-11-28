@@ -6,14 +6,33 @@ using namespace clang;
 using namespace ast_matchers;
 
 /*
-
-  The goal of these matchers is to define repair search space.
-
-  Particularly:
-  1. boolean/integer/pointer expressions in conditions, assignments, function call arguments, return
-  1.1 expression with no side effects
-  1.2 expression with side effects and eager evaluation
-  2. if guards for certain types of statements (break, continue, function calls, assignments)
-  Note that there can be intersection with 1.
-
+  Matches 
+  - integer and pointer variables
+  - literals
+  - arrays subscripts
+  - memeber expressions
+  - supported binary and pointer operators
  */
+extern StatementMatcher BaseRepairableExpression;
+
+/*
+  Matches condition (if, while, for) a part of which is BaseRepairableExpression
+ */
+extern StatementMatcher RepairableCondition;
+
+/*
+  Matches RHS of assignments and compound assignments if it is BaseRepairableExpression
+  Note: need to manually check if is it top level statement
+ */
+extern StatementMatcher RepairableAssignment;
+
+/*
+  BaseRepairableExpression in relevant context
+ */
+extern StatementMatcher RepairableExpression;
+
+/*
+  Matches call, break and continue statements
+  Note: need to manually check if is it top level statement
+ */
+extern StatementMatcher RepairableStatement;

@@ -70,5 +70,6 @@ Validation (for single location):
 ## Documentation ##
 
 TODO: Tutorial for small programs, tutorial for large programs, manual, troubleshooting
-
 TODO: acknowledgement
+
+TODO: support expression inside case

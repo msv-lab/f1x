@@ -1,7 +1,8 @@
 #pragma once
 
-using std::string;
+#include <boost/filesystem.hpp>
 
+namespace fs = boost::filesystem;
 
 enum class LocalizationFormula {
   OCHIAI,
@@ -32,9 +33,16 @@ enum class DefectClass {
 };
 
 
-struct ProjectFile {
-  // need to have ID, make backups and restore
+class ProjectFile {
+public:
+  ProjectFile(std::string _p);
+  fs::path getPath() const;
+  unsigned getId() const;
+
+private:
+  static unsigned next_id;
   unsigned id;
+  fs::path path;
 };
 
 
@@ -45,20 +53,13 @@ public:
                  unsigned _bl,
                  unsigned _bc,
                  unsigned _el,
-                 unsigned _ec):
-    defectClass(_dc),
-    file(_f),
-    beginLine(_bl),
-    beginColumn(_bc),
-    endLine(_el),
-    endColumn(_ec) {}
-
-  DefectClass getDefectClass() const { return defectClass; }
-  ProjectFile getProjectFile() const { return file; }
-  unsigned getBeginLine() const { return beginLine; }
-  unsigned getBeginColumn() const { return beginColumn; }
-  unsigned getEndLine() const { return endLine; }
-  unsigned getEndColumn() const { return endColumn; }
+                 unsigned _ec);
+  DefectClass getDefectClass() const;
+  ProjectFile getProjectFile() const;
+  unsigned getBeginLine() const;
+  unsigned getBeginColumn() const;
+  unsigned getEndLine() const;
+  unsigned getEndColumn() const;
 
 private:
   DefectClass defectClass;

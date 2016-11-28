@@ -1,4 +1,5 @@
 add_library (f1xInstrument
+  F1XCommon.cpp
   TransformationUtil.cpp
   SearchSpaceMatchers.cpp
   Transformer.cpp
@@ -9,6 +10,7 @@ add_library (f1xInstrument
 target_include_directories (f1xInstrument PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library (f1xRepair
+  F1XCommon.cpp
   Expression.cpp
   MetaProgram.cpp
   SearchEngine.cpp
