@@ -14,9 +14,10 @@ fi
 
 for test in $TESTS; do
     test=${test%%/} # removing slash in the end
+    echo -n "* testing $test... "
     case "$test" in
         if-condition)
-            args="--files program.c --tests 1 2 3"
+            args="--files program.c --tests 1 2 3 --test-timeout 1000"
             ;;
     esac
 
@@ -26,11 +27,13 @@ for test in $TESTS; do
         cd $dir
         f1x "$test" $args --output output.patch &> log.txt
         status=$?
-        if [[ ($status != 0) || (! -f output.patch) ]]; then
-            echo ""
+        if [[ ($status != 0) || (! -f output.patch) || (! -s output.patch) ]]; then
+            echo 'FAIL'
+            echo "----------------------------------------"
             echo "failed test: $test"
             echo "directory: $dir"
             echo "command: f1x $test $args --output output.patch"
+            echo "----------------------------------------"
             exit 1
         fi
     )
@@ -39,8 +42,9 @@ for test in $TESTS; do
         exit 1
     fi
     rm -rf "$dir"
-    echo -n '.'
+    echo 'PASS'
 done
 
-echo ""
+echo "----------------------------------------"
 echo "f1x passed the tests"
+echo "----------------------------------------"

@@ -6,7 +6,8 @@
 
 namespace po = boost::program_options;
 
-using namespace std;
+using std::vector;
+using std::string;
 
 int main (int argc, char *argv[])
 {
@@ -16,8 +17,8 @@ int main (int argc, char *argv[])
   // Declare supported options.
   po::options_description general("Usage: f1x PATH OPTIONS\n\nSupported options");
   general.add_options()
-    ("files,f", po::value<string>()->multitoken()->value_name("RELPATH..."), "list of source files to repair")
-    ("tests,t", po::value<string>()->multitoken()->value_name("ID..."), "list of test IDs")
+    ("files,f", po::value<vector<string>>()->multitoken()->value_name("RELPATH..."), "list of source files to repair")
+    ("tests,t", po::value<vector<string>>()->multitoken()->value_name("ID..."), "list of test IDs")
     ("test-timeout,T", po::value<int>()->value_name("MS"), "test execution timeout (default: none)")
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
@@ -41,12 +42,12 @@ int main (int argc, char *argv[])
   po::notify(vm);
 
   if (vm.count("help")) {
-    cout << general << "\n";
+    std::cout << general << "\n";
     return 1;
   }
 
   if (vm.count("version")) {
-    cout << "f1x " << F1X_VERSION_MAJOR <<
+    std::cout << "f1x " << F1X_VERSION_MAJOR <<
                "." << F1X_VERSION_MINOR <<
                "." << F1X_VERSION_PATCH << "\n";
     return 1;
