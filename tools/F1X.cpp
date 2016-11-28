@@ -60,6 +60,7 @@ int main (int argc, char *argv[])
 
   BOOST_LOG_TRIVIAL(info) << "test-timeout was set to " << vm["test-timeout"].as<int>();
   BOOST_LOG_TRIVIAL(info) << "source was set to " << vm["source"].as<string>();
+  BOOST_LOG_TRIVIAL(info) << "clang include dir " << F1X_CLANG_INCLUDE;
   
   return 0;
 }

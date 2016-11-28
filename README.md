@@ -21,7 +21,7 @@ To compile f1x, create `build` directory and execute:
     
     mkdir build
     cd build
-    cmake -DLLVM_DIR=<my-llvm-dir>/install/share/llvm/cmake/ -DClang_DIR=<my-llvm-dir>/install/share/clang/cmake/ ..
+    cmake -DF1X_LLVM=<my-llvm-dir>/install/ ..
     make
     
 To install f1x, add the `tools` directory into your `PATH`:

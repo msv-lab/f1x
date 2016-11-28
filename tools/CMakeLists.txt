@@ -11,10 +11,6 @@ add_executable(f1x-instrument F1XInstrument.cpp)
 target_link_libraries(f1x-instrument
   f1xInstrument
   ${llvm_libs}
-  clangAST
-  clangBasic
-  clangDriver
-  clangFrontend
   clangTooling
   )
 

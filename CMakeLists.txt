@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.4.3)
 project(f1x)
 
+set(LLVM_DIR "${F1X_LLVM}/share/llvm/cmake/")
+set(Clang_DIR "${F1X_LLVM}/share/clang/cmake/")
+set(F1X_CLANG_INCLUDE "${F1X_LLVM}/lib/clang/3.8.1/include/")
+
 # LLVM
 find_package(LLVM REQUIRED CONFIG)
 

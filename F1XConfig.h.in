@@ -6,6 +6,8 @@ const int F1X_VERSION_MAJOR = @F1X_VERSION_MAJOR@;
 const int F1X_VERSION_MINOR = @F1X_VERSION_MINOR@;
 const int F1X_VERSION_PATCH = @F1X_VERSION_PATCH@;
 
+const std::string F1X_CLANG_INCLUDE = "@F1X_CLANG_INCLUDE@";
+
 const bool USE_GLOBAL_VARIABLES = false;
 
 // 0 means disabled:
