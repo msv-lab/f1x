@@ -15,8 +15,11 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 add_executable(f1x F1X.cpp)
-# Link against LLVM libraries
-target_link_libraries(f1x ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+
+target_link_libraries(f1x
+  f1xRepair
+  ${Boost_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT})
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

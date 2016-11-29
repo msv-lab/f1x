@@ -21,6 +21,7 @@
 #include <boost/log/trivial.hpp>
 #include "F1XCommon.h"
 #include "F1XConfig.h"
+#include "RepairUtil.h"
 
 namespace po = boost::program_options;
 
@@ -75,6 +76,9 @@ int main (int argc, char *argv[])
     BOOST_LOG_TRIVIAL(error) << "source directory is not specified (use --help)\n";
     return 1;
   }
+
+  fs::path root(vm["source"].as<string>());
+  addClangHeadersToCompileDB(root);
 
   BOOST_LOG_TRIVIAL(info) << "test-timeout was set to " << vm["test-timeout"].as<int>();
   BOOST_LOG_TRIVIAL(info) << "source was set to " << vm["source"].as<string>();

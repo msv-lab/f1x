@@ -29,6 +29,7 @@ set_target_properties(f1xInstrument PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exc
 add_library (f1xRepair
   F1XCommon.cpp
   Expression.cpp
+  RepairUtil.cpp
   MetaProgram.cpp
   SearchEngine.cpp
   )
