@@ -32,6 +32,7 @@ add_library (f1xRepair
   RepairUtil.cpp
   MetaProgram.cpp
   SearchEngine.cpp
+  Repair.cpp
   )
 
 target_include_directories (f1xRepair PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

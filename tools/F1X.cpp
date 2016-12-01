@@ -17,13 +17,17 @@
 */
 
 #include <iostream>
+
 #include <boost/program_options.hpp>
+#include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
-#include "F1XCommon.h"
+#include <boost/log/expressions.hpp>
+
 #include "F1XConfig.h"
-#include "RepairUtil.h"
+#include "Repair.h"
 
 namespace po = boost::program_options;
+namespace logging = boost::log;
 
 using std::vector;
 using std::string;
@@ -38,11 +42,11 @@ int main (int argc, char *argv[])
   general.add_options()
     ("files,f", po::value<vector<string>>()->multitoken()->value_name("RELPATH..."), "list of source files to repair")
     ("tests,t", po::value<vector<string>>()->multitoken()->value_name("ID..."), "list of test IDs")
-    ("test-timeout,T", po::value<int>()->value_name("MS"), "test execution timeout (default: none)")
+    ("test-timeout,T", po::value<unsigned>()->value_name("MS"), "test execution timeout (default: none)")
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
     ("output,o", po::value<string>()->value_name("PATH"), "output patch file (default: SRC-TIME.patch)")
-    ("verbose,v", po::value<int>()->value_name("LEVEL")->implicit_value(1), "produce extended output")
+    ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
     ;
@@ -61,28 +65,72 @@ int main (int argc, char *argv[])
   po::notify(vm);
 
   if (vm.count("help")) {
-    std::cout << general << "\n";
+    std::cout << general << std::endl;
     return 1;
   }
 
   if (vm.count("version")) {
     std::cout << "f1x " << F1X_VERSION_MAJOR <<
                "." << F1X_VERSION_MINOR <<
-               "." << F1X_VERSION_PATCH << "\n";
+      "." << F1X_VERSION_PATCH << std::endl;
     return 1;
+  }
+
+  if (vm.count("verbose")) {
+    logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::debug);    
+  } else {
+    logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::info);
   }
 
   if (!vm.count("source")) {
     BOOST_LOG_TRIVIAL(error) << "source directory is not specified (use --help)\n";
     return 1;
   }
-
   fs::path root(vm["source"].as<string>());
-  addClangHeadersToCompileDB(root);
 
-  BOOST_LOG_TRIVIAL(info) << "test-timeout was set to " << vm["test-timeout"].as<int>();
-  BOOST_LOG_TRIVIAL(info) << "source was set to " << vm["source"].as<string>();
-  BOOST_LOG_TRIVIAL(info) << "clang include dir " << F1X_CLANG_INCLUDE;
-  
-  return 0;
+  unsigned testTimeout = 0;
+  if (vm.count("test-timeout")) {
+    testTimeout = vm["test-timeout"].as<unsigned>();
+  }
+
+  vector<fs::path> files;
+  if (!vm.count("files")) {
+    BOOST_LOG_TRIVIAL(error) << "files are not specified (use --help)\n";
+    return 1;
+  }
+  vector<string> fileNames = vm["files"].as<vector<string>>();
+  for(string &name : fileNames) {
+    fs::path file;
+    // FIXME: check if file exists
+    files.push_back(file);
+  }
+
+  if (!vm.count("tests")) {
+    BOOST_LOG_TRIVIAL(error) << "tests are not specified (use --help)\n";
+    return 1;
+  }
+  vector<string> tests = vm["tests"].as<vector<string>>();
+
+  if (!vm.count("driver")) {
+    BOOST_LOG_TRIVIAL(error) << "test driver is not specified (use --help)\n";
+    return 1;
+  }
+  // FIXME: check if driver exists and executable
+  fs::path driver(vm["driver"].as<string>());
+
+  string buildCmd = "make -e";
+  if (vm.count("build")) {
+    buildCmd = vm["build"].as<string>();
+  }
+
+  string patch;
+  bool found = repair(root, files, tests, testTimeout, driver, buildCmd, patch);
+
+  if (found) {
+    std::cout << "SUCCESS" << std::endl;
+    return 0;
+  } else {
+    std::cout << "FAIL" << std::endl;
+    return 1;
+  }
 }

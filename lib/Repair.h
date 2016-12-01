@@ -17,3 +17,21 @@
 */
 
 #pragma once
+
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
+using std::string;
+using std::vector;
+
+
+/*
+  Initializes the repair process, performs search, returns patch of found.
+ */
+bool repair(fs::path root,
+            vector<fs::path> files,
+            vector<string> tests,
+            unsigned testTimeout,
+            fs::path driver,
+            string buildCmd,
+            string& patch);

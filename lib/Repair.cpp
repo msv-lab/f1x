@@ -17,3 +17,21 @@
 */
 
 #pragma once
+
+#include "Repair.h"
+#include <boost/log/trivial.hpp>
+
+bool repair(fs::path root,
+            vector<fs::path> files,
+            vector<string> tests,
+            unsigned testTimeout,
+            fs::path driver,
+            string buildCmd,
+            string& patch) {
+  BOOST_LOG_TRIVIAL(info) << "repairing project " << root;
+  BOOST_LOG_TRIVIAL(debug) << "with timeout " << testTimeout;
+  
+  //addClangHeadersToCompileDB(root);
+
+  return false;
+}
