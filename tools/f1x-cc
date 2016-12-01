@@ -17,7 +17,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if [[ ! -z "$F1X_RUNTIME_H" ]]; then
-    $CC -include "$F1X_RUNTIME_H" $@ "-L$F1X_RUNTIME_LIB" "-lf1xrt"
+    gcc -include "$F1X_RUNTIME_H" $@ "-L$F1X_RUNTIME_LIB" "-lf1xrt"
 else
-    $CC $@
+    gcc $@
 fi
