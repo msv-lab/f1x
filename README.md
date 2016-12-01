@@ -46,30 +46,10 @@ Example:
     exec speed:   5.4/sec
     evaluated:    120042
     
-## Algorithm ##
-
-Initialization:
-
-1. Build, construct compilation database with bear
-2. Get specified tests/run failing test and gcov to identify suspicious tests
-3. Generate and compile search space for suspicious files, instrument suspicious files
-4. Execute all tests, collect coverage and initial patritions
-5. Prioritize locations
-
-Validation (for single location):
-
-1. Three sets of patches: grey, green and red. green is empty, red has only original program, grey contains the rest. each grey patch corresponds to a set of tests is passes.
-2. Pick grey patch according to heuristic
-3. If the patch passes all tests, add it to the green set, remove from grey
-4. Pick not evaluated test according to heuristic
-5. Evaluate the patch on the test
-6. If the patch passes, add the corresponding partition to the test
-7. If the patch fails, remove partition from grey, add to red
-8. Goto 2
-
 ## Documentation ##
 
-TODO: Tutorial for small programs, tutorial for large programs, manual, troubleshooting
-TODO: acknowledgement
+* Tutorial
+* Manual
+* Troubleshooting]
+* [Developer documentation](doc/Development.md)
 
-TODO: support expression inside case
