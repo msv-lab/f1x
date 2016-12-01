@@ -66,9 +66,3 @@ mkdir -p "install"
     make
     make install
 )
-
-
-
-
-
-

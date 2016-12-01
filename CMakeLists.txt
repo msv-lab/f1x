@@ -64,11 +64,12 @@ configure_file (
   "${PROJECT_BINARY_DIR}/F1XConfig.h"
   )
 
-include_directories(thirdparty)
-
 # add the binary tree to the search path for include files
 # so that we will find F1XConfig.h
 include_directories("${PROJECT_BINARY_DIR}")
+
+# JSON library
+include_directories(thirdparty)
 
 include_directories(lib)
 

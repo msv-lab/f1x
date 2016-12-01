@@ -14,12 +14,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+## f1x target:
+
 add_executable(f1x F1X.cpp)
 
 target_link_libraries(f1x
   f1xRepair
   ${Boost_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT})
+
+
+## f1x-instrument target:
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
@@ -34,3 +40,6 @@ target_link_libraries(f1x-instrument
   )
 
 set_target_properties(f1x-instrument PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exceptions" ) # this is to be compatible with llvm libraries
+
+## f1x-cc target
+configure_file(f1x-cc f1x-cc COPYONLY)

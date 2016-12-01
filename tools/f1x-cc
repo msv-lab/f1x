@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if [ -z "$F1X_RUNTIME_H" ]; then
+if [[ ! -z "$F1X_RUNTIME_H" ]]; then
     $CC -include "$F1X_RUNTIME_H" $@ "-LF1X_RUNTIME_LIB$" "-lf1xrt"
 else
     $CC $@
