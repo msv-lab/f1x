@@ -60,12 +60,12 @@ set (F1X_VERSION_PATCH 0)
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
-  "${PROJECT_SOURCE_DIR}/F1XConfig.h.in"
-  "${PROJECT_BINARY_DIR}/F1XConfig.h"
+  "${PROJECT_SOURCE_DIR}/Config.h.in"
+  "${PROJECT_BINARY_DIR}/Config.h"
   )
 
 # add the binary tree to the search path for include files
-# so that we will find F1XConfig.h
+# so that we will find Config.h
 include_directories("${PROJECT_BINARY_DIR}")
 
 # JSON library

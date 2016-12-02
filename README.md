@@ -15,7 +15,7 @@ Install dependencies (Ubuntu):
 Install LLVM and Clang 3.8.1. You can use the provided installation script to download, build and install it locally:
 
     cd <my-llvm-dir>
-    /path/to/f1x/scripts/download-and-build-llvm38.sh
+    /path/to/f1x/scripts/download-and-build-llvm381.sh
     
 To compile f1x, create `build` directory and execute:
     

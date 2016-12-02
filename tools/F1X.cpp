@@ -23,7 +23,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 
-#include "F1XConfig.h"
+#include "Config.h"
 #include "Repair.h"
 
 namespace po = boost::program_options;

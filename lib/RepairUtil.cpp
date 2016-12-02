@@ -25,7 +25,7 @@
 #include <rapidjson/writer.h>
 
 #include "RepairUtil.h"
-#include "F1XConfig.h"
+#include "Config.h"
 
 using namespace rapidjson;
 using std::string;

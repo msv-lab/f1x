@@ -16,7 +16,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "F1XCommon.h"
+#include "Common.h"
 
 
 ProjectFile::ProjectFile(std::string _p): 

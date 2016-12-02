@@ -27,7 +27,7 @@ target_include_directories (f1xInstrument PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(f1xInstrument PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exceptions" ) # this is to be compatible with llvm libraries
 
 add_library (f1xRepair
-  F1XCommon.cpp
+  Common.cpp
   Expression.cpp
   RepairUtil.cpp
   MetaProgram.cpp
