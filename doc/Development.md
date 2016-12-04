@@ -3,10 +3,10 @@
 The system consists of three main parts:
 
 1. Repair module (f1x) 
-2. Instrumentation module (f1x-instrument)
+2. Code transformation module (f1x-transform)
 3. Meta-program runtime (libf1xrt.so)
 
-The repair module is responsible for running tests, maintaining search space and partitioning, and synthesizing meta-program. f1x-instrument is responsible for instrumenting buggy code, extracting suspicious expressions and applying patches. The mata-program runtime library is responsible for computing semantic partitions.
+The repair module is responsible for running tests, maintaining search space and partitioning, and synthesizing meta-program. f1x-transform is responsible for instrumenting buggy code, extracting suspicious expressions and applying patches. The mata-program runtime library is responsible for computing semantic partitions.
 
 ## Search space representation ##
 
@@ -27,11 +27,11 @@ After partitioning, it writes a new line in the end of file starting from the ev
 
 This protocol ensures correct partitioning when the candidate is executed multiple times or in multiple runtimes.
 
-## Repair/Instrumentation interaction ##
+## Transformation ##
 
-f1x and f1x-instrument communicate using JSON format.
+f1x and f1x-transform communicate using JSON format.
 
-f1x-instrument represents the extracted expressions in the following way:
+f1x-transform represents the extracted expressions in the following way:
 
     [
         {

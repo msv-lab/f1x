@@ -25,21 +25,21 @@ target_link_libraries(f1x
   ${CMAKE_THREAD_LIBS_INIT})
 
 
-## f1x-instrument target:
+## f1x-transform target:
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
 llvm_map_components_to_libnames(llvm_libs option support)
 
-add_executable(f1x-instrument F1XInstrument.cpp)
+add_executable(f1x-transform F1XTransform.cpp)
 
-target_link_libraries(f1x-instrument
-  f1xInstrument
+target_link_libraries(f1x-transform
+  f1xTransform
   ${llvm_libs}
   clangTooling
   )
 
-set_target_properties(f1x-instrument PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exceptions" ) # this is to be compatible with llvm libraries
+set_target_properties(f1x-transform PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exceptions" ) # this is to be compatible with llvm libraries
 
 ## f1x-cc target
 configure_file(f1x-cc f1x-cc COPYONLY)

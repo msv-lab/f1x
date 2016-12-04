@@ -21,7 +21,9 @@
 // Declares llvm::cl::extrahelp.
 #include "llvm/Support/CommandLine.h"
 
-#include "Transformer.h"
+#include "TransformationUtil.h"
+#include "InstrumentTransformer.h"
+#include "ApplyTransformer.h"
 
 using namespace clang::tooling;
 using namespace llvm;
@@ -32,19 +34,16 @@ using namespace llvm;
 static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 
 // A help message for this specific tool can be added afterwards.
-static cl::extrahelp MoreHelp("\nf1x-instrument is a tool used internally by f1x");
+static cl::extrahelp MoreHelp("\nf1x-transform is a tool used internally by f1x");
 
 // Apply a custom category to all command-line options so that they are the
 // only ones displayed.
-static llvm::cl::OptionCategory F1XCategory("f1x-instrument options");
+static llvm::cl::OptionCategory F1XCategory("f1x-transform options");
 
 // Search space instrumentation options:
 
 static cl::opt<bool>
 Instrument("instrument", cl::desc("instrument search space"), cl::cat(F1XCategory));
-
-static cl::opt<bool>
-UseGlobal("use-global", cl::desc("use global variables"), cl::cat(F1XCategory));
 
 static cl::opt<unsigned>
 FileId("file-id", cl::desc("file id"), cl::cat(F1XCategory));
@@ -86,6 +85,16 @@ int main(int argc, const char **argv) {
                  OptionsParser.getSourcePathList());
 
   std::unique_ptr<FrontendActionFactory> FrontendFactory;
+
+  globalFileId = FileId;
+  globalFromLine = FromLine;
+  globalToLine = ToLine;
+  globalOutputFile = Output;
+  globalBeginLine = BeginLine;
+  globalBeginColumn = BeginColumn;
+  globalEndLine = EndLine;
+  globalEndColumn = EndColumn;
+  globalPatch = Patch;
 
   if (Instrument)
     FrontendFactory = newFrontendActionFactory<InstrumentRepairableAction>();

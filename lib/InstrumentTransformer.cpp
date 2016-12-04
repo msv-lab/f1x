@@ -17,9 +17,9 @@
 */
 
 #include <sstream>
-#include "Transformer.h"
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
+#include "InstrumentTransformer.h"
 
 using namespace clang;
 using namespace ast_matchers;
@@ -42,39 +42,12 @@ std::unique_ptr<ASTConsumer> InstrumentRepairableAction::CreateASTConsumer(Compi
 }
 
 
-void ApplyPatchAction::EndSourceFileAction() {
-  FileID ID = TheRewriter.getSourceMgr().getMainFileID();
-  if (INPLACE_MODIFICATION) {
-    overwriteMainChangedFile(TheRewriter);
-    // I am not sure what the difference is, but this case requires explicit check:
-    //TheRewriter.overwriteChangedFiles();
-  } else {
-      TheRewriter.getEditBuffer(ID).write(llvm::outs());
-  }
-}
-
-std::unique_ptr<ASTConsumer> ApplyPatchAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
-    TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-    return llvm::make_unique<ApplicationASTConsumer>(TheRewriter);
-}
-
-
 InstrumentationASTConsumer::InstrumentationASTConsumer(Rewriter &R) : ExpressionHandler(R), StatementHandler(R) {
   Matcher.addMatcher(RepairableExpression, &ExpressionHandler);    
   Matcher.addMatcher(RepairableStatement, &StatementHandler);
 }
 
 void InstrumentationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
-  Matcher.matchAST(Context);
-}
-
-
-ApplicationASTConsumer::ApplicationASTConsumer(Rewriter &R) : ExpressionHandler(R), StatementHandler(R) {
-  Matcher.addMatcher(RepairableExpression, &ExpressionHandler);    
-  Matcher.addMatcher(RepairableStatement, &StatementHandler);
-}
-
-void ApplicationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
   Matcher.matchAST(Context);
 }
 
@@ -157,20 +130,3 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     Rewrite.ReplaceText(expandedLoc, replacement);
   }
 }
-
-
-ApplicationStatementHandler::ApplicationStatementHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
-
-void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
-  if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {
-  }
-}
-
-
-ApplicationExpressionHandler::ApplicationExpressionHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
-
-void ApplicationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
-  if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>("repairable")) {
-  }
-}
-

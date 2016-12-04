@@ -30,41 +30,6 @@ using namespace clang;
 using namespace ast_matchers;
 
 
-class InstrumentationStatementHandler : public MatchFinder::MatchCallback {
-public:
-  InstrumentationStatementHandler(Rewriter &Rewrite);
-
-  virtual void run(const MatchFinder::MatchResult &Result);
-
-private:
-  Rewriter &Rewrite;
-};
-
-
-class InstrumentationExpressionHandler : public MatchFinder::MatchCallback {
-public:
-  InstrumentationExpressionHandler(Rewriter &Rewrite);
-
-  virtual void run(const MatchFinder::MatchResult &Result);
-
-private:
-  Rewriter &Rewrite;
-};
-
-
-class InstrumentationASTConsumer : public ASTConsumer {
-public:
-  InstrumentationASTConsumer(Rewriter &R);
-
-  void HandleTranslationUnit(ASTContext &Context) override;
-
-private:
-  InstrumentationExpressionHandler ExpressionHandler;
-  InstrumentationStatementHandler StatementHandler;
-  MatchFinder Matcher;
-};
-
-
 class ApplicationStatementHandler : public MatchFinder::MatchCallback {
 public:
   ApplicationStatementHandler(Rewriter &Rewrite);
@@ -97,19 +62,6 @@ private:
   ApplicationExpressionHandler ExpressionHandler;
   ApplicationStatementHandler StatementHandler;
   MatchFinder Matcher;
-};
-
-
-class InstrumentRepairableAction : public ASTFrontendAction {
-public:
-  InstrumentRepairableAction() {}
-
-  void EndSourceFileAction() override;
-
-  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override;
-
-private:
-  Rewriter TheRewriter;
 };
 
 

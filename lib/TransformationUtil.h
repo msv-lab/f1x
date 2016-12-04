@@ -24,6 +24,17 @@
 
 const bool INPLACE_MODIFICATION = true;
 
+// FIXME: better to pass these variable to constructors, but it requires a lot of boilerplate
+extern unsigned globalFileId;
+extern unsigned globalFromLine;
+extern unsigned globalToLine;
+extern std::string globalOutputFile;
+extern unsigned globalBeginLine;
+extern unsigned globalBeginColumn;
+extern unsigned globalEndLine;
+extern unsigned globalEndColumn;
+extern std::string globalPatch;
+
 
 unsigned getDeclExpandedLine(const clang::Decl *decl, clang::SourceManager &srcMgr);
 

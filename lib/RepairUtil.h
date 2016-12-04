@@ -22,3 +22,48 @@
 
 
 void addClangHeadersToCompileDB(boost::filesystem::path projectRoot);
+
+
+enum class DefectClass {
+  CONDITION,  // existing program conditions (e.g. if, for, while, ...)
+  EXPRESSION, // right side of assignments, call arguments
+  GUARD       // adding guard for existing statement
+};
+
+
+class ProjectFile {
+public:
+  ProjectFile(std::string _p);
+  boost::filesystem::path getPath() const;
+  unsigned getId() const;
+
+private:
+  static unsigned next_id;
+  unsigned id;
+  boost::filesystem::path path;
+};
+
+
+class RepairLocation {
+public:
+  RepairLocation(DefectClass _dc,
+                 ProjectFile _f,
+                 unsigned _bl,
+                 unsigned _bc,
+                 unsigned _el,
+                 unsigned _ec);
+  DefectClass getDefectClass() const;
+  ProjectFile getProjectFile() const;
+  unsigned getBeginLine() const;
+  unsigned getBeginColumn() const;
+  unsigned getEndLine() const;
+  unsigned getEndColumn() const;
+
+private:
+  DefectClass defectClass;
+  ProjectFile file;
+  unsigned beginLine;
+  unsigned beginColumn;
+  unsigned endLine;
+  unsigned endColumn;
+};
