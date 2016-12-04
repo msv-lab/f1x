@@ -26,21 +26,75 @@
 using namespace clang::tooling;
 using namespace llvm;
 
-// Apply a custom category to all command-line options so that they are the
-// only ones displayed.
-static llvm::cl::OptionCategory F1XToolCategory("f1x-instrument options");
-
 // CommonOptionsParser declares HelpMessage with a description of the common
 // command-line options related to the compilation database and input files.
 // It's nice to have this help message in all tools.
 static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 
 // A help message for this specific tool can be added afterwards.
-static cl::extrahelp MoreHelp("\nMore help text...");
+static cl::extrahelp MoreHelp("\nf1x-instrument is a tool used internally by f1x");
+
+// Apply a custom category to all command-line options so that they are the
+// only ones displayed.
+static llvm::cl::OptionCategory F1XCategory("f1x-instrument options");
+
+// Search space instrumentation options:
+
+static cl::opt<bool>
+Instrument("instrument", cl::desc("instrument search space"), cl::cat(F1XCategory));
+
+static cl::opt<bool>
+UseGlobal("use-global", cl::desc("use global variables"), cl::cat(F1XCategory));
+
+static cl::opt<unsigned>
+FileId("file-id", cl::desc("file id"), cl::cat(F1XCategory));
+
+static cl::opt<unsigned>
+FromLine("from-line", cl::desc("from line"), cl::cat(F1XCategory));
+
+static cl::opt<unsigned>
+ToLine("to-line", cl::desc("to line"), cl::cat(F1XCategory));
+
+static cl::opt<std::string>
+Output("output", cl::desc("output file"), cl::cat(F1XCategory));
+
+
+// Patch application options:
+
+static cl::opt<bool>
+Apply("apply", cl::desc("apply patch"), cl::cat(F1XCategory));
+
+static cl::opt<unsigned>
+BeginLine("bl", cl::desc("begin line"), cl::cat(F1XCategory));
+
+static cl::opt<unsigned>
+BeginColumn("bc", cl::desc("begin column"), cl::cat(F1XCategory));
+
+static cl::opt<unsigned>
+EndLine("el", cl::desc("end line"), cl::cat(F1XCategory));
+
+static cl::opt<unsigned>
+EndColumn("ec", cl::desc("end column"), cl::cat(F1XCategory));
+
+static cl::opt<std::string>
+Patch("patch", cl::desc("replacement"), cl::cat(F1XCategory));
+
 
 int main(int argc, const char **argv) {
-  CommonOptionsParser OptionsParser(argc, argv, F1XToolCategory);
+  CommonOptionsParser OptionsParser(argc, argv, F1XCategory);
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
-  return Tool.run(newFrontendActionFactory<InstrumentRepairableAction>().get());
+
+  std::unique_ptr<FrontendActionFactory> FrontendFactory;
+
+  if (Instrument)
+    FrontendFactory = newFrontendActionFactory<InstrumentRepairableAction>();
+  else if (Apply)
+    FrontendFactory = newFrontendActionFactory<ApplyPatchAction>();
+  else {
+    errs() << "error: specify -instrument or -apply options\n";
+    return 1;
+  }
+  
+  return Tool.run(FrontendFactory.get());
 }

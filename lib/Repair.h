@@ -20,18 +20,14 @@
 
 #include <boost/filesystem.hpp>
 
-namespace fs = boost::filesystem;
-using std::string;
-using std::vector;
-
 
 /*
   Initializes the repair process, performs search, returns patch of found.
  */
-bool repair(fs::path root,
-            vector<fs::path> files,
-            vector<string> tests,
+bool repair(boost::filesystem::path root,
+            std::vector<boost::filesystem::path> files,
+            std::vector<std::string> tests,
             unsigned testTimeout,
-            fs::path driver,
-            string buildCmd,
-            string& patch);
+            boost::filesystem::path driver,
+            std::string buildCmd,
+            std::string& patch);

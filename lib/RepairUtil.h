@@ -20,7 +20,5 @@
 
 #include <boost/filesystem.hpp>
 
-namespace fs = boost::filesystem;
 
-
-void addClangHeadersToCompileDB(fs::path projectRoot);
+void addClangHeadersToCompileDB(boost::filesystem::path projectRoot);

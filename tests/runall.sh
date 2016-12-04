@@ -17,7 +17,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require () {
-    hash "$1" 2>/dev/null || { echo >&2 "command $1 is not found"; exit 1; }
+    hash "$1" 2>/dev/null || { echo "command $1 is not found"; exit 1; }
 }
 
 require f1x
@@ -34,6 +34,19 @@ for test in $TESTS; do
     case "$test" in
         if-condition)
             args="--files program.c --tests 1 2 3 --test-timeout 1000"
+            ;;
+        assign-in-condition)
+            args="--files program.c --tests 1 2 3 --test-timeout 1000"
+            ;;
+        guarded-condition)
+            args="--files program.c --tests 1 2 3 --test-timeout 1000"
+            ;;
+        int-assignment)
+            args="--files program.c --tests 1 2 3 --test-timeout 1000"
+            ;;
+        *)
+            echo "command for test $test is not defined"
+            exit 1
             ;;
     esac
 

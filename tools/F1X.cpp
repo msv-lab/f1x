@@ -27,10 +27,12 @@
 #include "Repair.h"
 
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 namespace logging = boost::log;
 
 using std::vector;
 using std::string;
+
 
 int main (int argc, char *argv[])
 {

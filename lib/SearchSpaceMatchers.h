@@ -23,9 +23,6 @@
 #define BOUND "repairable"
 
 
-using namespace clang;
-using namespace ast_matchers;
-
 /*
   Matches 
   - integer and pointer variables
@@ -34,26 +31,26 @@ using namespace ast_matchers;
   - memeber expressions
   - supported binary and pointer operators
  */
-extern StatementMatcher BaseRepairableExpression;
+extern clang::ast_matchers::StatementMatcher BaseRepairableExpression;
 
 /*
   Matches condition (if, while, for) a part of which is BaseRepairableExpression
  */
-extern StatementMatcher RepairableCondition;
+extern clang::ast_matchers::StatementMatcher RepairableCondition;
 
 /*
   Matches RHS of assignments and compound assignments if it is BaseRepairableExpression
   Note: need to manually check if is it top level statement
  */
-extern StatementMatcher RepairableAssignment;
+extern clang::ast_matchers::StatementMatcher RepairableAssignment;
 
 /*
   BaseRepairableExpression in relevant context
  */
-extern StatementMatcher RepairableExpression;
+extern clang::ast_matchers::StatementMatcher RepairableExpression;
 
 /*
   Matches call, break and continue statements
   Note: need to manually check if is it top level statement
  */
-extern StatementMatcher RepairableStatement;
+extern clang::ast_matchers::StatementMatcher RepairableStatement;

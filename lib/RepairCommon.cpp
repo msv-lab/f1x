@@ -18,6 +18,8 @@
 
 #include "RepairCommon.h"
 
+namespace fs = boost::filesystem;
+
 
 ProjectFile::ProjectFile(std::string _p): 
   path(_p) {

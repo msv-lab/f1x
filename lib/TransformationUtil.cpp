@@ -22,6 +22,11 @@
 
 #include "Config.h"
 
+using namespace clang;
+using namespace llvm;
+using std::string;
+using std::pair;
+
 
 unsigned getDeclExpandedLine(const Decl* decl, SourceManager &srcMgr) {
   SourceLocation startLoc = decl->getLocStart();

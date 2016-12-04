@@ -18,6 +18,7 @@
 
 #pragma once
 
+
 enum class LocalizationFormula {
   OCHIAI,
   JACCARD,
@@ -40,18 +41,19 @@ enum class TestSelection {
 };
 
 
-const int F1X_VERSION_MAJOR = @F1X_VERSION_MAJOR@;
-const int F1X_VERSION_MINOR = @F1X_VERSION_MINOR@;
-const int F1X_VERSION_PATCH = @F1X_VERSION_PATCH@;
+const unsigned F1X_VERSION_MAJOR = @F1X_VERSION_MAJOR@;
+const unsigned F1X_VERSION_MINOR = @F1X_VERSION_MINOR@;
+const unsigned F1X_VERSION_PATCH = @F1X_VERSION_PATCH@;
 
 const std::string F1X_CLANG_INCLUDE = "@F1X_CLANG_INCLUDE@";
 
 const bool USE_GLOBAL_VARIABLES = false;
 
 // 0 means disabled:
-const int MAX_LOCATIONS = 0; 
-const int MAX_EXECUTIONS_PER_LOCATION = 0;
-const int MAX_CANDIDATES_PER_LOCATION = 0;
+const unsigned MAX_LOCALIZED_FILES = 0;
+const unsigned MAX_LOCATIONS = 0; 
+const unsigned MAX_EXECUTIONS_PER_LOCATION = 0;
+const unsigned MAX_CANDIDATES_PER_LOCATION = 0;
 
 const LocalizationFormula LOCALIZATION = LocalizationFormula::JACCARD;
 

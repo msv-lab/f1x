@@ -16,11 +16,13 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <iostream>
 #include <sstream>
 #include "Transformer.h"
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
+
+using namespace clang;
+using namespace ast_matchers;
 
 
 void InstrumentRepairableAction::EndSourceFileAction() {
@@ -40,21 +42,21 @@ std::unique_ptr<ASTConsumer> InstrumentRepairableAction::CreateASTConsumer(Compi
 }
 
 
-// void ApplyPatchAction::EndSourceFileAction() {
-//   FileID ID = TheRewriter.getSourceMgr().getMainFileID();
-//   if (INPLACE_MODIFICATION) {
-//     overwriteMainChangedFile(TheRewriter);
-//     // I am not sure what the difference is, but this case requires explicit check:
-//     //TheRewriter.overwriteChangedFiles();
-//   } else {
-//       TheRewriter.getEditBuffer(ID).write(llvm::outs());
-//   }
-// }
+void ApplyPatchAction::EndSourceFileAction() {
+  FileID ID = TheRewriter.getSourceMgr().getMainFileID();
+  if (INPLACE_MODIFICATION) {
+    overwriteMainChangedFile(TheRewriter);
+    // I am not sure what the difference is, but this case requires explicit check:
+    //TheRewriter.overwriteChangedFiles();
+  } else {
+      TheRewriter.getEditBuffer(ID).write(llvm::outs());
+  }
+}
 
-// std::unique_ptr<ASTConsumer> ApplyPatchAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
-//     TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-//     return llvm::make_unique<ApplicationASTConsumer>(TheRewriter);
-// }
+std::unique_ptr<ASTConsumer> ApplyPatchAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
+    TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
+    return llvm::make_unique<ApplicationASTConsumer>(TheRewriter);
+}
 
 
 InstrumentationASTConsumer::InstrumentationASTConsumer(Rewriter &R) : ExpressionHandler(R), StatementHandler(R) {
@@ -67,14 +69,14 @@ void InstrumentationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
 }
 
 
-// ApplicationASTConsumer::ApplicationASTConsumer(Rewriter &R) : ExpressionHandler(R), StatementHandler(R) {
-//   Matcher.addMatcher(RepairableExpression, &ExpressionHandler);    
-//   Matcher.addMatcher(RepairableStatement, &StatementHandler);
-// }
+ApplicationASTConsumer::ApplicationASTConsumer(Rewriter &R) : ExpressionHandler(R), StatementHandler(R) {
+  Matcher.addMatcher(RepairableExpression, &ExpressionHandler);    
+  Matcher.addMatcher(RepairableStatement, &StatementHandler);
+}
 
-// void ApplicationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
-//   Matcher.matchAST(Context);
-// }
+void ApplicationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
+  Matcher.matchAST(Context);
+}
 
 
 InstrumentationStatementHandler::InstrumentationStatementHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
@@ -97,11 +99,11 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-    std::cout << beginLine << " "
-              << beginColumn << " "
-              << endLine << " "
-              << endColumn << "\n"
-              << toString(stmt) << "\n";
+    llvm::errs() << beginLine << " "
+                 << beginColumn << " "
+                 << endLine << " "
+                 << endColumn << "\n"
+                 << toString(stmt);
 
     // FIXME: this instrumentation is incorrect for cases
     // if (condition)
@@ -111,13 +113,9 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
 
     std::ostringstream stringStream;
     stringStream << "if ("
-                 << "f1x("
-                 << 1 << ", "
-                 << beginLine << ", "
-                 << beginColumn << ", "
-                 << endLine << ", "
-                 << endColumn
-                 << ")"
+                 << "__f1x_"
+                 << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
+                 << "(" << ")"
                  << ") "
                  << toString(stmt);
     std::string replacement = stringStream.str();
@@ -144,22 +142,35 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-    std::cout << beginLine << " "
-              << beginColumn << " "
-              << endLine << " "
-              << endColumn << "\n"
-              << toString(expr) << "\n";
+    llvm::errs() << beginLine << " "
+                 << beginColumn << " "
+                 << endLine << " "
+                 << endColumn << "\n"
+                 << toString(expr);
 
     std::ostringstream stringStream;
-    stringStream << "f1x("
-                 << toString(expr) << ", "
-                 << beginLine << ", "
-                 << beginColumn << ", "
-                 << endLine << ", "
-                 << endColumn
-                 << ")";
+    stringStream << "__f1x_"
+                 << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
+                 << "(" << ")";
     std::string replacement = stringStream.str();
 
     Rewrite.ReplaceText(expandedLoc, replacement);
   }
 }
+
+
+ApplicationStatementHandler::ApplicationStatementHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
+
+void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
+  if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {
+  }
+}
+
+
+ApplicationExpressionHandler::ApplicationExpressionHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
+
+void ApplicationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
+  if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>("repairable")) {
+  }
+}
+

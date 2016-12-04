@@ -71,3 +71,4 @@ Where each expression is represented as follows:
 - support expressions inside case
 - support expressions with side-effects (with eager evaluation)
 - support project-scale localization with gcov
+- what to do if evaluation causes segmentation fault?

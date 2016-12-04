@@ -19,6 +19,11 @@
 #include "Repair.h"
 #include <boost/log/trivial.hpp>
 
+namespace fs = boost::filesystem;
+using std::vector;
+using std::string;
+
+
 bool repair(fs::path root,
             vector<fs::path> files,
             vector<string> tests,

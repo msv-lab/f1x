@@ -18,6 +18,9 @@
 
 #include "SearchSpaceMatchers.h"
 
+using namespace clang;
+using namespace ast_matchers;
+
 
 StatementMatcher RepairableOperator = 
   anyOf(binaryOperator(anyOf(hasOperatorName("=="),

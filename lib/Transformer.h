@@ -26,7 +26,6 @@
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 
-
 using namespace clang;
 using namespace ast_matchers;
 
@@ -66,17 +65,39 @@ private:
 };
 
 
-// class ApplicationASTConsumer : public ASTConsumer {
-// public:
-//   ApplicationASTConsumer(Rewriter &R);
+class ApplicationStatementHandler : public MatchFinder::MatchCallback {
+public:
+  ApplicationStatementHandler(Rewriter &Rewrite);
 
-//   void HandleTranslationUnit(ASTContext &Context) override;
+  virtual void run(const MatchFinder::MatchResult &Result);
 
-// private:
-//   ApplicationExpressionHandler ExpressionHandler;
-//   ApplicationStatementHandler StatementHandler;
-//   MatchFinder Matcher;
-// };
+private:
+  Rewriter &Rewrite;
+};
+
+
+class ApplicationExpressionHandler : public MatchFinder::MatchCallback {
+public:
+  ApplicationExpressionHandler(Rewriter &Rewrite);
+
+  virtual void run(const MatchFinder::MatchResult &Result);
+
+private:
+  Rewriter &Rewrite;
+};
+
+
+class ApplicationASTConsumer : public ASTConsumer {
+public:
+  ApplicationASTConsumer(Rewriter &R);
+
+  void HandleTranslationUnit(ASTContext &Context) override;
+
+private:
+  ApplicationExpressionHandler ExpressionHandler;
+  ApplicationStatementHandler StatementHandler;
+  MatchFinder Matcher;
+};
 
 
 class InstrumentRepairableAction : public ASTFrontendAction {
@@ -92,14 +113,14 @@ private:
 };
 
 
-// class ApplyPatchAction : public ASTFrontendAction {
-// public:
-//   ApplyPatchAction() {}
+class ApplyPatchAction : public ASTFrontendAction {
+public:
+  ApplyPatchAction() {}
 
-//   void EndSourceFileAction() override;
+  void EndSourceFileAction() override;
 
-//   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override;
+  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override;
 
-// private:
-//   Rewriter TheRewriter;
-// };
+private:
+  Rewriter TheRewriter;
+};

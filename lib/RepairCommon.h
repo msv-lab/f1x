@@ -20,8 +20,6 @@
 
 #include <boost/filesystem.hpp>
 
-namespace fs = boost::filesystem;
-
 
 enum class DefectClass {
   CONDITION,  // existing program conditions (e.g. if, for, while, ...)
@@ -29,16 +27,17 @@ enum class DefectClass {
   GUARD       // adding guard for existing statement
 };
 
+
 class ProjectFile {
 public:
   ProjectFile(std::string _p);
-  fs::path getPath() const;
+  boost::filesystem::path getPath() const;
   unsigned getId() const;
 
 private:
   static unsigned next_id;
   unsigned id;
-  fs::path path;
+  boost::filesystem::path path;
 };
 
 

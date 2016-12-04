@@ -27,8 +27,11 @@
 #include "RepairUtil.h"
 #include "Config.h"
 
+namespace fs = boost::filesystem;
+
 using namespace rapidjson;
 using std::string;
+
 
 void addClangHeadersToCompileDB(fs::path projectRoot) {
   fs::path compileDB("compile_commands.json");
