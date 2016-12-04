@@ -1,6 +1,6 @@
 /*
   This file is part of f1x.
-  Copyright (C) 2016  Sergey Mechtaev, Shin Hwei Tan, Abhik Roychoudhury
+  Copyright (C) 2016  Sergey Mechtaev, Abhik Roychoudhury
 
   f1x is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,34 +22,12 @@
 
 namespace fs = boost::filesystem;
 
-enum class LocalizationFormula {
-  OCHIAI,
-  JACCARD,
-  TARANTULA  
-};
-
-
-enum class CandidateSelection {
-  FIXED_ORDER,         // order defined by search space ordering
-  PREDICATE_SWITCHING, // predicate switching for failing test
-  MAX_PASSING,         // prioritize candidates that pass maximim number of tests
-  LEAST_COVERED        // prioritize candidates that are evaluated with least number of tests
-};
-
-
-enum class TestSelection {
-  FIXED_ORDER,      // failing, then passing
-  MAX_FAILING,      // prioritize tests that failed maximum number of times
-  LARGEST_PARTITION // prioritize tests with largest average partition size
-};
-
 
 enum class DefectClass {
   CONDITION,  // existing program conditions (e.g. if, for, while, ...)
   EXPRESSION, // right side of assignments, call arguments
   GUARD       // adding guard for existing statement
 };
-
 
 class ProjectFile {
 public:

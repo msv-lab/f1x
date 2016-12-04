@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #  This file is part of f1x.
-#  Copyright (C) 2016  Sergey Mechtaev, Shin Hwei Tan, Abhik Roychoudhury
+#  Copyright (C) 2016  Sergey Mechtaev, Abhik Roychoudhury
 #
 #  f1x is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by

@@ -1,6 +1,6 @@
 /*
   This file is part of f1x.
-  Copyright (C) 2016  Sergey Mechtaev, Shin Hwei Tan, Abhik Roychoudhury
+  Copyright (C) 2016  Sergey Mechtaev, Abhik Roychoudhury
 
   f1x is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 #include "TransformationUtil.h"
 #include "clang/Lex/Preprocessor.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include "Config.h"
 
 
 unsigned getDeclExpandedLine(const Decl* decl, SourceManager &srcMgr) {
@@ -134,4 +136,3 @@ bool isTopLevelStatement(const Stmt *stmt, ASTContext *context) {
     
   return false;
 }
-

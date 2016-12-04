@@ -1,5 +1,5 @@
 #  This file is part of f1x.
-#  Copyright (C) 2016  Sergey Mechtaev, Shin Hwei Tan, Abhik Roychoudhury
+#  Copyright (C) 2016  Sergey Mechtaev, Abhik Roychoudhury
 #
 #  f1x is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ target_include_directories (f1xInstrument PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(f1xInstrument PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exceptions" ) # this is to be compatible with llvm libraries
 
 add_library (f1xRepair
-  Common.cpp
+  RepairCommon.cpp
   Expression.cpp
   RepairUtil.cpp
   MetaProgram.cpp
