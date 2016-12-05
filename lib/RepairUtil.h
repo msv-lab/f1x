@@ -34,7 +34,7 @@ enum class DefectClass {
 class ProjectFile {
 public:
   ProjectFile(std::string _p);
-  boost::filesystem::path getPath() const;
+  boost::filesystem::path getPath() const; // FIXME: relative?
   unsigned getId() const;
 
 private:

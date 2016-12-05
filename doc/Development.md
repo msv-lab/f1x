@@ -15,17 +15,16 @@ The entire search space is explicitly represented as a C++ vector `searchSpace` 
 f1x synthesizer is bit-precise. The following integer types are supported:
 
 * char (signed or unsigned depending on platform)
-* unsigned char
+* unsinged char
 * unsigned short
 * unsigned int
 * unsigned long
-* unsigned long long
+* signed char
 * short
 * int
 * long
-* long long
 
-All other integer types are currently casted to long long.
+All other integer types are currently casted to long.
 
 ## Runtime ##
 

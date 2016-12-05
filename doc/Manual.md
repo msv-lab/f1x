@@ -30,6 +30,8 @@ According to our study on large subject programs, f1x explores search space X ti
 f1x employs change minimality as the default patch prioritization strategy. Its guarantees to generate the syntactically minimal patch in the entire search space. Since the minimality is subjective (e.g. how to compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical and unsystematic manner.
 
 ## Usage ##
+
+**Warning** f1x is a research prototype and was not designed for production use. f1x executes arbitrary modifications of your source code which may lead to undesirable side effects such as data loss. Therefore, it is recommended to run f1x in an isolated environment. Apply f1x to a copy of your application, since it can corrupt the source code.
     
 Before using f1x:
 
