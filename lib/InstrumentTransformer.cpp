@@ -87,7 +87,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     std::ostringstream stringStream;
     stringStream << "if ("
                  << "__f1x_"
-                 << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
+                 << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
                  << "(" << ")"
                  << ") "
                  << toString(stmt);
@@ -119,11 +119,11 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
                  << beginColumn << " "
                  << endLine << " "
                  << endColumn << "\n"
-                 << toString(expr);
+                 << toString(expr) << "\n";
 
     std::ostringstream stringStream;
     stringStream << "__f1x_"
-                 << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
+                 << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
                  << "(" << ")";
     std::string replacement = stringStream.str();
 

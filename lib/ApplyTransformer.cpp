@@ -56,6 +56,30 @@ ApplicationStatementHandler::ApplicationStatementHandler(Rewriter &Rewrite) : Re
 
 void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
   if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {
+      SourceManager &srcMgr = Rewrite.getSourceMgr();
+
+      SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
+
+      unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+      unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+      unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+      unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+
+      if (beginLine == globalBeginLine &&
+          beginColumn == globalBeginColumn &&
+          endLine == globalEndLine &&
+          endColumn == globalEndColumn) {
+
+        std::stringstream replacement;
+
+        replacement << "if (" << globalPatch << ") " << toString(stmt);
+
+        llvm::errs() << beginLine << " " << beginColumn << " " << endLine << " " << endColumn << "\n"
+          << "<   " << toString(stmt) << "\n"
+          << ">   " << replacement.str() << "\n";
+        
+        Rewrite.ReplaceText(expandedLoc, replacement.str());
+      }
   }
 }
 
@@ -64,6 +88,25 @@ ApplicationExpressionHandler::ApplicationExpressionHandler(Rewriter &Rewrite) : 
 
 void ApplicationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
   if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>("repairable")) {
+      SourceManager &srcMgr = Rewrite.getSourceMgr();
+
+      SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
+
+      unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+      unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+      unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+      unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+
+      if (beginLine == globalBeginLine &&
+          beginColumn == globalBeginColumn &&
+          endLine == globalEndLine &&
+          endColumn == globalEndColumn) {
+        llvm::errs() << beginLine << " " << beginColumn << " " << endLine << " " << endColumn << "\n"
+          << "<   " << toString(expr) << "\n"
+          << ">   " << globalPatch << "\n";
+        
+        Rewrite.ReplaceText(expandedLoc, globalPatch);
+      }
   }
 }
 
