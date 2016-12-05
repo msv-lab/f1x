@@ -81,7 +81,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     // FIXME: this instrumentation is incorrect for cases
     // if (condition)
     //   statement;
-    // because it can create dangling else brach.
+    // because it can create dangling else branch.
     // wrapping it with {} will not work because break/continue are matched without semicolon
 
     std::ostringstream stringStream;

@@ -21,6 +21,8 @@ require () {
 }
 
 require f1x
+require make
+require patch
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 
@@ -33,16 +35,28 @@ for test in $TESTS; do
     echo -n "* testing $test... "
     case "$test" in
         if-condition)
-            args="--files program.c --tests 1 2 3 --test-timeout 1000"
+            subject_files="program.c"
+            subject_driver="./test.sh"
+            subject_tests="1 2 3"
+            subject_args="--test-timeout 1000"
             ;;
         assign-in-condition)
-            args="--files program.c --tests 1 2 3 --test-timeout 1000"
+            subject_files="program.c"
+            subject_driver="./test.sh"
+            subject_tests="1 2 3"
+            subject_args="--test-timeout 1000"
             ;;
         guarded-condition)
-            args="--files program.c --tests 1 2 3 --test-timeout 1000"
+            subject_files="program.c"
+            subject_driver="./test.sh"
+            subject_tests="1 2 3"
+            subject_args="--test-timeout 1000"
             ;;
         int-assignment)
-            args="--files program.c --tests 1 2 3 --test-timeout 1000"
+            subject_files="program.c"
+            subject_driver="./test.sh"
+            subject_tests="1 2 3"
+            subject_args="--test-timeout 1000"
             ;;
         *)
             echo "command for test $test is not defined"
@@ -50,27 +64,83 @@ for test in $TESTS; do
             ;;
     esac
 
-    dir=`mktemp -d`
-    cp -r "$test" "$dir"
+    repair_cmd="f1x $test --files $subject_files --tests $subject_tests --driver $subject_driver --output output.patch $subject_args"
+
+    repair_dir=`mktemp -d`
+    cp -r "$test" "$repair_dir"
     (
-        cd $dir
-        f1x "$test" $args --output output.patch &> log.txt
-        status=$?
-        if [[ ($status != 0) || (! -f output.patch) || (! -s output.patch) ]]; then
+        cd $repair_dir
+        $repair_cmd &> log.txt
+        repair_status=$?
+        if [[ ($repair_status != 0) || (! -f output.patch) || (! -s output.patch) ]]; then
             echo 'FAIL'
             echo "----------------------------------------"
-            echo "failed test: $test"
-            echo "directory: $dir"
-            echo "command: f1x $test $args --output output.patch"
+            echo "repair directory: $repair_dir"
+            echo "failed command: $repair_cmd"
             echo "----------------------------------------"
             exit 1
         fi
     )
-    subshell=$?
-    if [[ ($subshell != 0) ]]; then
+    repair_subshell=$?
+    if [[ ($repair_subshell != 0) ]]; then
         exit 1
     fi
-    rm -rf "$dir"
+
+    validation_dir=`mktemp -d`
+    cp -r "$test" "$validation_dir"
+    (
+        cd $validation_dir
+        cd $test
+
+        patch -p0 < $repair_dir/output.patch &> /dev/null
+        application_status=$?
+        if [[ $application_status != 0 ]]; then
+            echo 'FAIL'
+            echo "----------------------------------------"
+            echo "repair directory: $repair_dir"
+            echo "repair command: $repair_cmd"
+            echo "validation directory: $validation_dir"
+            echo "failed command: patch -p0 < $repair_dir/output.patch"
+            echo "----------------------------------------"
+            exit 1
+        fi
+
+        make &> /dev/null
+        compilation_status=$?
+        if [[ $compilation_status != 0 ]]; then
+            echo 'FAIL'
+            echo "----------------------------------------"
+            echo "repair directory: $repair_dir"
+            echo "repair command: $repair_cmd"
+            echo "validation directory: $validation_dir"
+            echo "failed command: make"
+            echo "----------------------------------------"
+            exit 1
+        fi
+
+        for current_id in $subject_tests; do
+            $subject_driver $current_id &> /dev/null
+            validation_status=$?
+            if [[ ($validation_status != 0) ]]; then
+                echo 'FAIL'
+                echo "----------------------------------------"
+                echo "repair directory: $repair_dir"
+                echo "repair command: $repair_cmd"
+                echo "validation directory: $validation_dir"
+                echo "failed command: $subject_driver $current_id"
+                echo "----------------------------------------"
+                exit 1
+            fi
+        done
+    )
+    validation_subshell=$?
+    if [[ ($validation_subshell != 0) ]]; then
+        exit 1
+    fi
+
+    rm -rf "$repair_dir"
+    rm -rf "$validation_dir"
+
     echo 'PASS'
 done
 

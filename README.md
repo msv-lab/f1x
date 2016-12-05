@@ -6,6 +6,10 @@ f1x combines ideas from existing syntax-based and semantics-based techniques in 
 
 More details about f1x can be found in our publication.
 
+## Warning ##
+
+f1x is a research prototype and was not designed for production use. f1x executes arbitrary modifications of your source code which may lead to undesirable side effects such as data loss. Therefore, it is recommended to run f1x in an isolated environment. Apply f1x to a copy of your application, since it can corrupt the source code.
+
 ## Installation ##
 
 f1x currently supports Linux-based systems; it was tested on Ubuntu 14.04.
@@ -31,7 +35,7 @@ To install f1x, add the `tools` directory into your `PATH`:
     export PATH=$PWD/tools:$PATH
     
 To test f1x, execute `./tests/runall.sh`.
-    
+
 ## Documentation ##
 
 * [Tutorial (small program)](doc/Tutorial.md)
