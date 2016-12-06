@@ -24,6 +24,7 @@
 #include "TransformationUtil.h"
 #include "InstrumentTransformer.h"
 #include "ApplyTransformer.h"
+#include "Config.h"
 
 using namespace clang::tooling;
 using namespace llvm;
@@ -45,13 +46,13 @@ static llvm::cl::OptionCategory F1XCategory("f1x-transform options");
 static cl::opt<bool>
 Instrument("instrument", cl::desc("instrument search space"), cl::cat(F1XCategory));
 
-static cl::opt<unsigned>
+static cl::opt<uint>
 FileId("file-id", cl::desc("file id"), cl::cat(F1XCategory));
 
-static cl::opt<unsigned>
+static cl::opt<uint>
 FromLine("from-line", cl::desc("from line"), cl::cat(F1XCategory));
 
-static cl::opt<unsigned>
+static cl::opt<uint>
 ToLine("to-line", cl::desc("to line"), cl::cat(F1XCategory));
 
 static cl::opt<std::string>
@@ -63,16 +64,16 @@ Output("output", cl::desc("output file"), cl::cat(F1XCategory));
 static cl::opt<bool>
 Apply("apply", cl::desc("apply patch"), cl::cat(F1XCategory));
 
-static cl::opt<unsigned>
+static cl::opt<uint>
 BeginLine("bl", cl::desc("begin line"), cl::cat(F1XCategory));
 
-static cl::opt<unsigned>
+static cl::opt<uint>
 BeginColumn("bc", cl::desc("begin column"), cl::cat(F1XCategory));
 
-static cl::opt<unsigned>
+static cl::opt<uint>
 EndLine("el", cl::desc("end line"), cl::cat(F1XCategory));
 
-static cl::opt<unsigned>
+static cl::opt<uint>
 EndColumn("ec", cl::desc("end column"), cl::cat(F1XCategory));
 
 static cl::opt<std::string>

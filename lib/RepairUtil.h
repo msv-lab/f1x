@@ -19,7 +19,7 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
-
+#include "Config.h"
 
 void addClangHeadersToCompileDB(boost::filesystem::path projectRoot);
 
@@ -35,11 +35,11 @@ class ProjectFile {
 public:
   ProjectFile(std::string _p);
   boost::filesystem::path getPath() const; // FIXME: relative?
-  unsigned getId() const;
+  uint getId() const;
 
 private:
-  static unsigned next_id;
-  unsigned id;
+  static uint next_id;
+  uint id;
   boost::filesystem::path path;
 };
 
@@ -48,22 +48,22 @@ class RepairLocation {
 public:
   RepairLocation(DefectClass _dc,
                  ProjectFile _f,
-                 unsigned _bl,
-                 unsigned _bc,
-                 unsigned _el,
-                 unsigned _ec);
+                 uint _bl,
+                 uint _bc,
+                 uint _el,
+                 uint _ec);
   DefectClass getDefectClass() const;
   ProjectFile getProjectFile() const;
-  unsigned getBeginLine() const;
-  unsigned getBeginColumn() const;
-  unsigned getEndLine() const;
-  unsigned getEndColumn() const;
+  uint getBeginLine() const;
+  uint getBeginColumn() const;
+  uint getEndLine() const;
+  uint getEndColumn() const;
 
 private:
   DefectClass defectClass;
   ProjectFile file;
-  unsigned beginLine;
-  unsigned beginColumn;
-  unsigned endLine;
-  unsigned endColumn;
+  uint beginLine;
+  uint beginColumn;
+  uint endLine;
+  uint endColumn;
 };

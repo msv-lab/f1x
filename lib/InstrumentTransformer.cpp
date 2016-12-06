@@ -20,6 +20,7 @@
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "InstrumentTransformer.h"
+#include "Config.h"
 
 using namespace clang;
 using namespace ast_matchers;
@@ -67,10 +68,10 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
       
     SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
-    unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-    unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-    unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-    unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+    uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+    uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+    uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+    uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
     llvm::errs() << beginLine << " "
                  << beginColumn << " "
@@ -110,10 +111,10 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
 
     SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
-    unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-    unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-    unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-    unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+    uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+    uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+    uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+    uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
     llvm::errs() << beginLine << " "
                  << beginColumn << " "

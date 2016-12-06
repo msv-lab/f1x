@@ -44,7 +44,7 @@ int main (int argc, char *argv[])
   general.add_options()
     ("files,f", po::value<vector<string>>()->multitoken()->value_name("RELPATH..."), "list of source files to repair")
     ("tests,t", po::value<vector<string>>()->multitoken()->value_name("ID..."), "list of test IDs")
-    ("test-timeout,T", po::value<unsigned>()->value_name("MS"), "test execution timeout (default: none)")
+    ("test-timeout,T", po::value<uint>()->value_name("MS"), "test execution timeout (default: none)")
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
     ("output,o", po::value<string>()->value_name("PATH"), "output patch file (default: SRC-TIME.patch)")
@@ -90,9 +90,9 @@ int main (int argc, char *argv[])
   }
   fs::path root(vm["source"].as<string>());
 
-  unsigned testTimeout = 0;
+  uint testTimeout = 0;
   if (vm.count("test-timeout")) {
-    testTimeout = vm["test-timeout"].as<unsigned>();
+    testTimeout = vm["test-timeout"].as<uint>();
   }
 
   vector<fs::path> files;

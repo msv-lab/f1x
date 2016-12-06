@@ -18,6 +18,9 @@
 
 #pragma once
 
+#include <cstdint>
+
+typedef std::uint_least32_t uint;
 
 enum class LocalizationFormula {
   OCHIAI,

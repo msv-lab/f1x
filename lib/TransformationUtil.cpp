@@ -28,18 +28,18 @@ using std::string;
 using std::pair;
 
 
-unsigned globalFileId;
-unsigned globalFromLine;
-unsigned globalToLine;
+uint globalFileId;
+uint globalFromLine;
+uint globalToLine;
 std::string globalOutputFile;
-unsigned globalBeginLine;
-unsigned globalBeginColumn;
-unsigned globalEndLine;
-unsigned globalEndColumn;
+uint globalBeginLine;
+uint globalBeginColumn;
+uint globalEndLine;
+uint globalEndColumn;
 std::string globalPatch;
 
 
-unsigned getDeclExpandedLine(const Decl* decl, SourceManager &srcMgr) {
+uint getDeclExpandedLine(const Decl* decl, SourceManager &srcMgr) {
   SourceLocation startLoc = decl->getLocStart();
   if(startLoc.isMacroID()) {
     // Get the start/end expansion locations

@@ -20,6 +20,7 @@
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "ApplyTransformer.h"
+#include "Config.h"
 
 using namespace clang;
 using namespace ast_matchers;
@@ -60,10 +61,10 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
 
       SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
-      unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-      unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-      unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-      unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+      uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+      uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+      uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+      uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
       if (beginLine == globalBeginLine &&
           beginColumn == globalBeginColumn &&
@@ -92,10 +93,10 @@ void ApplicationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
 
       SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
-      unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-      unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-      unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-      unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+      uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+      uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+      uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+      uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
       if (beginLine == globalBeginLine &&
           beginColumn == globalBeginColumn &&

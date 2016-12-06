@@ -47,7 +47,7 @@ void addClangHeadersToCompileDB(fs::path projectRoot) {
     // assume there is always a first space in which we insert our include
     // FIXME: add escape for the spaces in the include path
     string command = entry.GetObject()["command"].GetString();
-    int index = command.find(" ");
+    uint index = command.find(" ");
     string newCommand = command.substr(0, index) + " -I" + F1X_CLANG_INCLUDE + " " + command.substr(index);
     entry.GetObject()["command"].SetString(newCommand.c_str(), db.GetAllocator());
   }
@@ -71,19 +71,19 @@ fs::path ProjectFile::getPath() const {
   return path;
 }
 
-unsigned ProjectFile::getId() const {
+uint ProjectFile::getId() const {
   return id;
 }
 
-unsigned ProjectFile::next_id = 0;
+uint ProjectFile::next_id = 0;
 
 
 RepairLocation::RepairLocation(DefectClass _dc,
-                                   ProjectFile _f,
-                                   unsigned _bl,
-                                   unsigned _bc,
-                                   unsigned _el,
-                                   unsigned _ec):
+                               ProjectFile _f,
+                               uint _bl,
+                               uint _bc,
+                               uint _el,
+                               uint _ec):
   defectClass(_dc),
   file(_f),
   beginLine(_bl),
@@ -99,18 +99,18 @@ ProjectFile RepairLocation::getProjectFile() const {
   return file;
 }
 
-unsigned RepairLocation::getBeginLine() const {
+uint RepairLocation::getBeginLine() const {
   return beginLine;
 }
 
-unsigned RepairLocation::getBeginColumn() const {
+uint RepairLocation::getBeginColumn() const {
   return beginColumn;
 }
 
-unsigned RepairLocation::getEndLine() const {
+uint RepairLocation::getEndLine() const {
   return endLine;
 }
 
-unsigned RepairLocation::getEndColumn() const {
+uint RepairLocation::getEndColumn() const {
   return endColumn;
 }

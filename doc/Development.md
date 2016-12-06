@@ -12,20 +12,6 @@ The repair module is responsible for running tests, maintaining search space and
 
 The entire search space is explicitly represented as a C++ vector `searchSpace` in the SearchEngine.cpp. The search space can be freely manipulated and efficiently traversed in an arbitrary order.
 
-f1x synthesizer is bit-precise. The following integer types are supported:
-
-* char (signed or unsigned depending on platform)
-* unsinged char
-* unsigned short
-* unsigned int
-* unsigned long
-* signed char
-* short
-* int
-* long
-
-All other integer types are currently casted to long.
-
 ## Runtime ##
 
 f1x runtime (meta-program) is generated automatically and dynamically linked to the buggy program. The runtime is responsible for computing semantic partitions. It takes a candidate and a search space to partition as the arguments and outputs a subset of the given search space that have the same semantic impact as the given candidate.
@@ -41,7 +27,7 @@ After partitioning, it writes a new line in the end of file starting from the ev
 
 This protocol ensures correct partitioning when the candidate is executed multiple times or in multiple runtimes.
 
-Each element of the search space is transparently identified by an ID called `__f1x_id`. A part of the bits used in this ID can encode some information, that is ID is not arbitrary. Apart from that, each candidate has a location ID `__f1x_loc` that transparently identifies its location in the buggy program.
+Each element of the search space is transparently identified by a 32bit ID called `__f1x_id`. A part of the bits used in this ID can encode some information, that is ID is not arbitrary. Apart from that, each candidate has a 32bit location ID `__f1x_loc` that transparently identifies its location in the buggy program. A part of the bits in this ID encode the buggy file.
 
 ## Transformation ##
 

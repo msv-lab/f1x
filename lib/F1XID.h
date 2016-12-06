@@ -18,18 +18,24 @@
 
 #pragma once
 
-#include <boost/filesystem.hpp>
-
 #include "Config.h"
 
 
 /*
-  Initializes the repair process, performs search, returns patch of found.
+  __f1x_id is a 32 bit transparent candidate ID. The left 10 bits of this id is the parameter value.
  */
-bool repair(boost::filesystem::path root,
-            std::vector<boost::filesystem::path> files,
-            std::vector<std::string> tests,
-            uint testTimeout,
-            boost::filesystem::path driver,
-            std::string buildCmd,
-            std::string& patch);
+uint f1xid(uint baseId, uint parameter) {
+  return 0;
+}
+
+/*
+  __f1x_loc is a 32 bit transparent location ID. The left 10 bits of this id is the file ID.
+ */
+
+uint f1xloc(uint baseId, uint fileId) {
+  uint result = fileId;
+  result <<= 22;
+  result += baseId;
+  return result;
+}
+

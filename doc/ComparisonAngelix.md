@@ -13,3 +13,5 @@ Choose Angelix if you
 
 - Need more complex patches (e.g. multi-line patches)
 - Research symbolic techniques (symbolic execution, SMT solving)
+
+From the user perpective, f1x employs an equivalent model of the analysed software (Makefile-based build, test framework abstraction, etc.), so it can serve almost as a drop-in replacement of Angelix. A notable difference is that f1x is not hygienic, that is it operates directly on the provided source tree.

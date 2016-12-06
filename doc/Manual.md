@@ -13,36 +13,40 @@ The three main characteristics of a repair tool are the search space (syntactica
 The search space of f1x is the following:
 
 1. Modification of conditional expressions (inside if, for, while)
-2. Modification of RHS of assignments (numeric and pointer types)
-3. Modification of return arguments (numeric and pointer types)
+2. Modification of RHS of assignments (integer and pointer types)
+3. Modification of return arguments (integer and pointer types)
 4. Inserting if-guards for break, continue, function calls
 
-The search space of f1x is not formally defined; it relies on approximations (e.g. which variables are selected for modifying expressions) and can evolve over time. f1x does not guarantee exhaustiveness.
+f1x expression synthesizer is bit-precise. The following integer types are supported:
 
-f1x can operate in two modes: with specified buggy file(s) and when the buggy files are identified automatically using statistical fault localization. In the table below you can see the average size of the generated search spaces (the number of candidate patches) for the subjects of ManyBugs benchmark.
+* char
+* unsinged char
+* unsigned short
+* unsigned int
+* unsigned long
+* signed char
+* short
+* int
+* long
 
-### Performance ###
+All other integer types are currently casted to long.
 
-According to our study on large subject programs, f1x explores search space X times faster then previous approaches. In the table below you can see the average exploration speed (candidates per second) and the average total repair time for subjects in the ManyBugs benchmark.
+f1x can operate in two modes: with specified buggy file(s) and when the buggy files are identified automatically using statistical fault localization.
 
 ### Prioritization ###
 
-f1x employs change minimality as the default patch prioritization strategy. Its guarantees to generate the syntactically minimal patch in the entire search space. Since the minimality is subjective (e.g. how to compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical and unsystematic manner.
+f1x employs change minimality as the default patch prioritization strategy. Its guarantees to generate the syntactically minimal patch in the entire search space. Since the minimality is subjective (e.g. how to compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical manner.
+
+### Performance analysis ###
+
+TODO
 
 ## Usage ##
 
-**Warning** f1x is a research prototype and was not designed for production use. f1x executes arbitrary modifications of your source code which may lead to undesirable side effects such as data loss. Therefore, it is recommended to run f1x in an isolated environment. Apply f1x to a copy of your application, since it can corrupt the source code.
+**Warning** f1x executes arbitrary modifications of your source code which may lead to undesirable side effects. Therefore, it is recommended to run f1x in an isolated environment. Apply f1x to a copy of your application, since it can corrupt the source code.
     
 Before using f1x:
 
 - Create a copy of your project (f1x can corrupt your source files)
 - Configure your project using f1x compiler wrapper (e.g. `CC=f1x-cc ./configure`)
 - Clean binaries (e.g. `make clean`)
-
-Example:
-
-    $ f1x grep-1.4.5/src/ -d tests/run.sh -t 1 2 3
-    run time:     0:12:54
-    total execs:  1401
-    exec speed:   5.4/sec
-    evaluated:    120042
