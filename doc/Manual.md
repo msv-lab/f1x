@@ -62,7 +62,7 @@ f1x needs to be able to execute an arbitrary test and to identify if this test p
 - A set of unique test identifiers (e.g. "test1", "test2", ...)
 - A test driver executable that accepts a test identifier as the only argument, runs the corresponding test, and terminates with zero exit code if and only if the test passes.
 
-Note that when executing tests f1x appends a path to its runtime library (libf1xtr.so) to the `LD_LIBRARY_PATH` environment variable. Therefore, your testing framework should not overwrite this variable.
+Note that when executing tests f1x appends a path to its runtime library (libf1xrt.so) to the `LD_LIBRARY_PATH` environment variable. Therefore, your testing framework should not overwrite this variable.
 
 ### Options ###
 
@@ -72,22 +72,22 @@ f1x accepts one positional argument:
 
 f1x accepts the following options:
 
-** -f [ --files ] RELPATH... ** is the list of buggy files. The paths should be relative to the root of the source directory. If omitted, the files are localized automatically.
+**-f [ --files ] RELPATH...** is the list of buggy files. The paths should be relative to the root of the source directory. If omitted, the files are localized automatically.
 
-** -t [ --tests ] ID... ** is the list of unique test identifiers.
+**-t [ --tests ] ID...** is the list of unique test identifiers.
 
-** -T [ --test-timeout ] MS ** is the test execution timeout in milliseconds.
+**-T [ --test-timeout ] MS** is the test execution timeout in milliseconds.
 
-** -d [ --driver ] PATH ** is the path to the test driver. The build command is executed from the root of the source directory.
+**-d [ --driver ] PATH** is the path to the test driver. The build command is executed from the root of the source directory.
 
-** -b [ --build ] CMD ** is the build command. It omitted, the `make -e` is used. The test driver is executed from the root of the source directory.
+**-b [ --build ] CMD** is the build command. It omitted, the `make -e` is used. The test driver is executed from the root of the source directory.
 
-** -o [ --output ] PATH ** is the path to the generated patch. If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch`
+**-o [ --output ] PATH** is the path to the generated patch. If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch`
 
-** -v [ --verbose ] ** enables extended output for troubleshooting
+**-v [ --verbose ]** enables extended output for troubleshooting
 
-** -h [ --help ] ** prints help message and exits
+**-h [ --help ]** prints help message and exits
 
-** --version ** prints version and exits
+**--version** prints version and exits
     
 ## Related publications ##
