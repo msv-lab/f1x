@@ -80,10 +80,22 @@ Argument | Description
 **-t [ --tests ] ID...** | The list of unique test identifiers.
 **-T [ --test-timeout ] MS** | The test execution timeout in milliseconds.
 **-d [ --driver ] PATH** | The path to the test driver. The test driver is executed from the root of the source directory.
-**-b [ --build ] CMD** | The build command. It omitted, the `make -e` is used. The build command is executed from the root of the source directory.
+**-b [ --build ] CMD** | The build command. If omitted, `make -e` is used. The build command is executed from the root of the source directory.
 **-o [ --output ] PATH** | The path to the generated patch. If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch`
 **-v [ --verbose ]** | Enables extended output for troubleshooting
 **-h [ --help ]** | Prints help message and exits
 **--version** | Prints version and exits
     
 ## Related publications ##
+
+**Angelix: Scalable Multiline Program Patch Synthesis via Symbolic Analysis.** [\[pdf\]](http://www.comp.nus.edu.sg/~abhik/pdf/ICSE16-angelix.pdf)  
+S. Mechtaev, J. Yi, A. Roychoudhury.  
+International Conference on Software Engineering (ICSE) 2016.  
+
+**DirectFix: Looking for Simple Program Repairs.**  [\[pdf\]](https://www.comp.nus.edu.sg/~abhik/pdf/ICSE15-directfix.pdf)  
+S. Mechtaev, J. Yi, A. Roychoudhury.  
+International Conference on Software Engineering (ICSE) 2015.  
+
+**SemFix: Program Repair via Semantic Analysis.** [\[pdf\]](https://www.comp.nus.edu.sg/~abhik/pdf/ICSE13-SEMFIX.pdf)  
+H.D.T. Nguyen, D. Qi, A. Roychoudhury, S. Chandra.  
+International Conference on Software Engineering (ICSE) 2013.  
