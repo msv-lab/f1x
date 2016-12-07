@@ -17,10 +17,13 @@
 */
 
 #include <sstream>
+
+#include "Config.h"
+#include "F1XID.h"
+
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "InstrumentTransformer.h"
-#include "Config.h"
 
 using namespace clang;
 using namespace ast_matchers;
@@ -65,6 +68,9 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
 
     if(!isTopLevelStatement(stmt, Result.Context))
       return;
+
+    uint locId = f1xloc(globalBaseLocId, globalFileId);
+    globalBaseLocId++;
       
     SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
@@ -77,6 +83,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
                  << beginColumn << " "
                  << endLine << " "
                  << endColumn << "\n"
+                 << locId << "\n"
                  << toString(stmt);
 
     // FIXME: this instrumentation is incorrect for cases
@@ -87,8 +94,8 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
 
     std::ostringstream stringStream;
     stringStream << "if ("
-                 << "__f1x_"
-                 << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
+                 << "!(__f1x_init || __f1x_loc == " << locId << "ul) || "
+                 << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
                  << "(" << ")"
                  << ") "
                  << toString(stmt);
@@ -109,6 +116,9 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     if (insideMacro(expr, srcMgr, langOpts))
       return;
 
+    uint locId = f1xloc(globalBaseLocId, globalFileId);
+    globalBaseLocId++;
+
     SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
     uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
@@ -120,12 +130,14 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
                  << beginColumn << " "
                  << endLine << " "
                  << endColumn << "\n"
+                 << locId << "\n"
                  << toString(expr) << "\n";
 
     std::ostringstream stringStream;
-    stringStream << "__f1x_"
-                 << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
-                 << "(" << ")";
+    stringStream << "(__f1x_init || __f1x_loc == " << locId << "ul ? "
+                 << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
+                 << "(" << ")"
+                 << " : " << toString(expr) << ")";
     std::string replacement = stringStream.str();
 
     Rewrite.ReplaceText(expandedLoc, replacement);

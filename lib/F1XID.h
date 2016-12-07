@@ -18,23 +18,32 @@
 
 #pragma once
 
+#include <assert.h>
 #include "Config.h"
+
+const uint F1XID_WIDTH = 32;
+const uint F1XID_VALUE_BITS = 10;
 
 
 /*
-  __f1x_id is a 32 bit transparent candidate ID. The left 10 bits of this id is the parameter value.
+  __f1x_id is a F1XID_WIDTH bit transparent candidate ID. The left F1XID_VALUE_BITS bits of this id is the parameter value.
  */
 uint f1xid(uint baseId, uint parameter) {
-  return 0;
+  assert(baseId < (1 << (F1XID_WIDTH - F1XID_VALUE_BITS)));
+  uint result = parameter;
+  result <<= (F1XID_WIDTH - F1XID_VALUE_BITS);
+  result += baseId;
+  return result;
 }
 
 /*
-  __f1x_loc is a 32 bit transparent location ID. The left 10 bits of this id is the file ID.
+  __f1x_loc is a F1XID_WIDTH bit transparent location ID. The left F1XID_VALUE_BITS bits of this id is the file ID.
  */
 
 uint f1xloc(uint baseId, uint fileId) {
+  assert(baseId < (1 << (F1XID_WIDTH - F1XID_VALUE_BITS)));
   uint result = fileId;
-  result <<= 22;
+  result <<= (F1XID_WIDTH - F1XID_VALUE_BITS);
   result += baseId;
   return result;
 }

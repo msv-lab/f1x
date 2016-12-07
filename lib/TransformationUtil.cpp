@@ -37,6 +37,7 @@ uint globalBeginColumn;
 uint globalEndLine;
 uint globalEndColumn;
 std::string globalPatch;
+uint globalBaseLocId = 0;
 
 
 uint getDeclExpandedLine(const Decl* decl, SourceManager &srcMgr) {

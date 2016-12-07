@@ -34,7 +34,7 @@ extern uint globalBeginColumn;
 extern uint globalEndLine;
 extern uint globalEndColumn;
 extern std::string globalPatch;
-
+extern uint globalBaseLocId;
 
 uint getDeclExpandedLine(const clang::Decl *decl, clang::SourceManager &srcMgr);
 
