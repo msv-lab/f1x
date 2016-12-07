@@ -45,10 +45,49 @@ TODO
 
 **Warning** f1x executes arbitrary modifications of your source code which may lead to undesirable side effects. Therefore, it is recommended to run f1x in an isolated environment. Apply f1x to a copy of your application, since it can corrupt the source code.
     
-Before using f1x:
+In order to repair a program, f1x requires a special build configuration and an interface to the testing framework.
 
-- Create a copy of your project (f1x can corrupt your source files)
-- Configure your project using f1x compiler wrapper (e.g. `CC=f1x-cc ./configure`)
-- Clean binaries (e.g. `make clean`)
+### Build system ###
 
+It order to let f1x transform and compile your application, you need to substitute C compiler in your build system with the `f1x-cc` tool. For instance, autotools-based projects require
+
+- configuring using f1x compiler wrapper (e.g. `CC=f1x-cc ./configure`)
+- removing binaries before executing f1x (e.g. `make clean`)
+- ensuring that the build command passed to f1x uses compiler from the `CC` environment variable (e.g. use `make` with the `-e` option)
+
+### Testing framework ###
+
+f1x needs to be able to execute an arbitrary test and to identify if this test passes or fails. To abstract over testing frameworks, f1x uses the following concepts:
+
+- A set of unique test identifiers (e.g. "test1", "test2", ...)
+- A test driver executable that accepts a test identifier as the only argument, runs the corresponding test, and terminates with zero exit code if and only if the test passes.
+
+Note that when executing tests f1x appends a path to its runtime library (libf1xtr.so) to the `LD_LIBRARY_PATH` environment variable. Therefore, your testing framework should not overwrite this variable.
+
+### Options ###
+
+f1x accepts one positional argument:
+
+**PATH** is the source directory of your buggy program.
+
+f1x accepts the following options:
+
+** -f [ --files ] RELPATH... ** is the list of buggy files. The paths should be relative to the root of the source directory. If omitted, the files are localized automatically.
+
+** -t [ --tests ] ID... ** is the list of unique test identifiers.
+
+** -T [ --test-timeout ] MS ** is the test execution timeout in milliseconds.
+
+** -d [ --driver ] PATH ** is the path to the test driver. The build command is executed from the root of the source directory.
+
+** -b [ --build ] CMD ** is the build command. It omitted, the `make -e` is used. The test driver is executed from the root of the source directory.
+
+** -o [ --output ] PATH ** is the path to the generated patch. If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch`
+
+** -v [ --verbose ] ** enables extended output for troubleshooting
+
+** -h [ --help ] ** prints help message and exits
+
+** --version ** prints version and exits
+    
 ## Related publications ##

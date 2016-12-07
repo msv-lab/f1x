@@ -37,13 +37,15 @@ f1x-transform represents the extracted expressions in the following way:
 
     [
         {
-            "fileId": 1,
+            "fileId": 0,
+            "locId": 1;
             "beginLine": 1,
             "beginColumn": 2,
             "endLine": 1,
             "endColumn": 10,
             "defect": "assignment",
             "type": "int",
+            "components": [...],
             "expression": {...}
         },
         ...
