@@ -79,8 +79,8 @@ Argument | Description
 **-f [ --files ] RELPATH...** | The list of buggy files. The paths should be relative to the root of the source directory. If omitted, the files are localized automatically.
 **-t [ --tests ] ID...** | The list of unique test identifiers.
 **-T [ --test-timeout ] MS** | The test execution timeout in milliseconds.
-**-d [ --driver ] PATH** | The path to the test driver. The build command is executed from the root of the source directory.
-**-b [ --build ] CMD** | The build command. It omitted, the `make -e` is used. The test driver is executed from the root of the source directory.
+**-d [ --driver ] PATH** | The path to the test driver. The test driver is executed from the root of the source directory.
+**-b [ --build ] CMD** | The build command. It omitted, the `make -e` is used. The build command is executed from the root of the source directory.
 **-o [ --output ] PATH** | The path to the generated patch. If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch`
 **-v [ --verbose ]** | Enables extended output for troubleshooting
 **-h [ --help ]** | Prints help message and exits
