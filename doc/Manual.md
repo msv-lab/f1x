@@ -68,26 +68,22 @@ Note that when executing tests f1x appends a path to its runtime library (libf1x
 
 f1x accepts one positional argument:
 
-**PATH** is the source directory of your buggy program.
+Argument | Description
+-------- | -----------
+**PATH** | The source directory of your buggy program.
 
 f1x accepts the following options:
 
-**-f [ --files ] RELPATH...** is the list of buggy files. The paths should be relative to the root of the source directory. If omitted, the files are localized automatically.
-
-**-t [ --tests ] ID...** is the list of unique test identifiers.
-
-**-T [ --test-timeout ] MS** is the test execution timeout in milliseconds.
-
-**-d [ --driver ] PATH** is the path to the test driver. The build command is executed from the root of the source directory.
-
-**-b [ --build ] CMD** is the build command. It omitted, the `make -e` is used. The test driver is executed from the root of the source directory.
-
-**-o [ --output ] PATH** is the path to the generated patch. If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch`
-
-**-v [ --verbose ]** enables extended output for troubleshooting
-
-**-h [ --help ]** prints help message and exits
-
-**--version** prints version and exits
+Argument | Description
+-------- | -----------
+**-f [ --files ] RELPATH...** | The list of buggy files. The paths should be relative to the root of the source directory. If omitted, the files are localized automatically.
+**-t [ --tests ] ID...** | The list of unique test identifiers.
+**-T [ --test-timeout ] MS** | The test execution timeout in milliseconds.
+**-d [ --driver ] PATH** | The path to the test driver. The build command is executed from the root of the source directory.
+**-b [ --build ] CMD** | The build command. It omitted, the `make -e` is used. The test driver is executed from the root of the source directory.
+**-o [ --output ] PATH** | The path to the generated patch. If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch`
+**-v [ --verbose ]** | Enables extended output for troubleshooting
+**-h [ --help ]** | Prints help message and exits
+**--version** | Prints version and exits
     
 ## Related publications ##
