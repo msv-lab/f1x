@@ -35,7 +35,7 @@ f1x can operate in two modes: with specified buggy file(s) and when the buggy fi
 
 ### Prioritization ###
 
-f1x employs change minimality as the default patch prioritization strategy. Its guarantees to generate the syntactically minimal patch in the entire search space. Since the minimality is subjective (e.g. how to compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical manner.
+f1x employs change minimality as the default patch prioritization strategy. It guarantees to generate the syntactically minimal patch in the entire search space. The syntactical change is measured in the number of changed AST nodes. For certain situations (e.g. how to compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical manner.
 
 ### Performance analysis ###
 
