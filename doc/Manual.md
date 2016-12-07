@@ -1,8 +1,8 @@
 # Manual #
 
-f1x is a test-driven automated program repair tool for C/C++ program. It can automatically find and fix bugs in program expressions based on given passing and failing tests. f1x was designed for the purpose of large scale experimentation, which is critical for the future of automated program repair research. Specifically, f1x aims to be reliable, efficient and easy-to-use.
+f1x is a test-driven automated program repair engine for C/C++ programs. It can automatically find and fix bugs in program expressions based on given passing and failing tests. f1x was designed for the purpose of large scale experimentation, which is critical for the future of automated program repair research. Specifically, f1x aims to be reliable, efficient and easy-to-use.
 
-f1x combines ideas from existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. This enables f1x to traverse the search space in arbitrary order without sacrificing efficiency. As a result, f1x is the first system that guarantees that it always generates the most reliable patch in the search space according to a given static prioritization strategy. Specifically, in the current implementation f1x guarantees to find a modification that is syntactically minimal in the entire search space. Apart from that, the exploration algorithm enables f1x to achieve X times efficiency boost when repairing large programs (such as PHP, Libtiff, etc) compared to previous approaches.
+f1x combines ideas from existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. This enables f1x to traverse the search space in an arbitrary order without sacrificing efficiency. As a result, f1x is the first system that guarantees to always generate the most reliable patch in the search space according to a given static prioritization strategy. Specifically, in the current implementation f1x finds the syntactically minimal modification in the entire search space. Apart from that, f1x explores search space X times faster compared to previous approaches when repairing large programs such as PHP, Libtiff, etc.
 
 ## Characteristics ##
 
@@ -50,3 +50,5 @@ Before using f1x:
 - Create a copy of your project (f1x can corrupt your source files)
 - Configure your project using f1x compiler wrapper (e.g. `CC=f1x-cc ./configure`)
 - Clean binaries (e.g. `make clean`)
+
+## Related publications ##
