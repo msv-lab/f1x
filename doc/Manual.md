@@ -31,15 +31,13 @@ f1x expression synthesizer is bit-precise. The following integer types are suppo
 
 All other integer types are currently casted to long.
 
-f1x can operate in two modes: with specified buggy file(s) and when the buggy files are identified automatically using statistical fault localization.
-
 ### Prioritization ###
 
 f1x employs change minimality as the default patch prioritization strategy. It guarantees to generate the syntactically minimal patch in the entire search space. The syntactical change is measured in the number of changed AST nodes. For certain situations (e.g. how to compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical manner.
 
 ### Performance analysis ###
 
-TODO
+f1x algorithm was designed and optimized for repairing large open source programs such as PHP and Libtiff. The default configuration may not be optimal for small subjects such as TCAS from SIR benchmark and subjects from Codeflaws benchmark. Various algorithm parameters can be modified in the `Config.h.in` file (requires recompilation).
 
 ## Usage ##
 
@@ -76,7 +74,7 @@ f1x accepts the following options:
 
 Argument | Description
 -------- | -----------
-**-f [ --files ] RELPATH...** | The list of buggy files. The paths should be relative to the root of the source directory. If omitted, the files are localized automatically.
+**-f [ --files ] RELPATH...** | The list of buggy files. The paths should be relative to the root of the source directory.
 **-t [ --tests ] ID...** | The list of unique test identifiers.
 **-T [ --test-timeout ] MS** | The test execution timeout in milliseconds.
 **-d [ --driver ] PATH** | The path to the test driver. The test driver is executed from the root of the source directory.

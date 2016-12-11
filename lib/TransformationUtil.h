@@ -21,6 +21,8 @@
 #include "clang/AST/AST.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 
+#include <rapidjson/document.h>
+
 
 const bool INPLACE_MODIFICATION = true;
 
@@ -54,3 +56,6 @@ bool overwriteMainChangedFile(clang::Rewriter &TheRewriter);
   it should not be, for example, the increment of for loop
  */
 bool isTopLevelStatement(const clang::Stmt *stmt, clang::ASTContext *context);
+
+
+rapidjson::Document stmtToJSON(const clang::Stmt* stmt);
