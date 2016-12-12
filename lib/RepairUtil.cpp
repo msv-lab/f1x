@@ -67,7 +67,7 @@ ProjectFile::ProjectFile(std::string _p):
   next_id++;
 }
 
-fs::path ProjectFile::getPath() const {
+fs::path ProjectFile::getRelativePath() const {
   return path;
 }
 
@@ -76,41 +76,3 @@ uint ProjectFile::getId() const {
 }
 
 uint ProjectFile::next_id = 0;
-
-
-RepairLocation::RepairLocation(DefectClass _dc,
-                               ProjectFile _f,
-                               uint _bl,
-                               uint _bc,
-                               uint _el,
-                               uint _ec):
-  defectClass(_dc),
-  file(_f),
-  beginLine(_bl),
-  beginColumn(_bc),
-  endLine(_el),
-  endColumn(_ec) {}
-
-DefectClass RepairLocation::getDefectClass() const {
-  return defectClass;
-}
-
-ProjectFile RepairLocation::getProjectFile() const {
-  return file;
-}
-
-uint RepairLocation::getBeginLine() const {
-  return beginLine;
-}
-
-uint RepairLocation::getBeginColumn() const {
-  return beginColumn;
-}
-
-uint RepairLocation::getEndLine() const {
-  return endLine;
-}
-
-uint RepairLocation::getEndColumn() const {
-  return endColumn;
-}

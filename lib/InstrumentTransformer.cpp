@@ -17,10 +17,15 @@
 */
 
 #include <sstream>
+#include <fstream>
+
+#include <rapidjson/document.h>
+#include <rapidjson/istreamwrapper.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <rapidjson/writer.h>
 
 #include "Config.h"
 #include "F1XID.h"
-
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "InstrumentTransformer.h"
@@ -28,6 +33,16 @@
 using namespace clang;
 using namespace ast_matchers;
 
+using std::vector;
+
+
+rapidjson::Document candidateLocations;
+
+
+bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
+  candidateLocations.SetArray();
+  return true;
+}
 
 void InstrumentRepairableAction::EndSourceFileAction() {
   FileID ID = TheRewriter.getSourceMgr().getMainFileID();
@@ -38,6 +53,11 @@ void InstrumentRepairableAction::EndSourceFileAction() {
   } else {
       TheRewriter.getEditBuffer(ID).write(llvm::outs());
   }
+
+  std::ofstream ofs(globalOutputFile);
+  rapidjson::OStreamWrapper osw(ofs);
+  rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
+  candidateLocations.Accept(writer);
 }
 
 std::unique_ptr<ASTConsumer> InstrumentRepairableAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
@@ -84,7 +104,19 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
                  << endLine << " "
                  << endColumn << "\n"
                  << locId << "\n"
-                 << toString(stmt);
+                 << toString(stmt) << "\n";
+
+    rapidjson::Value candidateLoc(rapidjson::kObjectType);
+    candidateLoc.AddMember("defect", rapidjson::Value().SetString("guard"), candidateLocations.GetAllocator());
+    rapidjson::Value exprJSON(rapidjson::kObjectType);
+    exprJSON.AddMember("kind", rapidjson::Value().SetString("constant"), candidateLocations.GetAllocator());
+    exprJSON.AddMember("type", rapidjson::Value().SetString("int"), candidateLocations.GetAllocator());
+    exprJSON.AddMember("repr", rapidjson::Value().SetString("1"), candidateLocations.GetAllocator());
+    candidateLoc.AddMember("expression", exprJSON, candidateLocations.GetAllocator());
+    rapidjson::Value locJSON = locToJSON(globalFileId, locId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
+    candidateLoc.AddMember("location", locJSON, candidateLocations.GetAllocator());
+
+    candidateLocations.PushBack(candidateLoc, candidateLocations.GetAllocator());
 
     // FIXME: this instrumentation is incorrect for cases
     // if (condition)
@@ -133,6 +165,21 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
                  << locId << "\n"
                  << toString(expr) << "\n";
 
+    rapidjson::Value candidateLoc(rapidjson::kObjectType);
+    //FIXME: it can be condition or assignment
+    candidateLoc.AddMember("defect", rapidjson::Value().SetString("assignment"), candidateLocations.GetAllocator());
+    rapidjson::Value exprJSON = stmtToJSON(expr, candidateLocations.GetAllocator());
+    candidateLoc.AddMember("expression", exprJSON, candidateLocations.GetAllocator());
+    rapidjson::Value locJSON = locToJSON(globalFileId, locId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
+    candidateLoc.AddMember("location", locJSON, candidateLocations.GetAllocator());
+    rapidjson::Value componentsJSON(rapidjson::kArrayType);
+    vector<rapidjson::Value> components = collectComponents(expr, beginLine, Result.Context, candidateLocations.GetAllocator());
+    for (auto &component : components) {
+      componentsJSON.PushBack(component, candidateLocations.GetAllocator());
+    }
+    candidateLoc.AddMember("components", componentsJSON, candidateLocations.GetAllocator());
+    candidateLocations.PushBack(candidateLoc, candidateLocations.GetAllocator());
+    
     std::ostringstream stringStream;
     stringStream << "(__f1x_init || __f1x_loc == " << locId << "ul ? "
                  << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn

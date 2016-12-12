@@ -22,6 +22,7 @@ using namespace clang;
 using namespace ast_matchers;
 
 
+// FIXME: how about unary negation?
 StatementMatcher RepairableOperator = 
   anyOf(binaryOperator(anyOf(hasOperatorName("=="),
                              hasOperatorName("!="),
@@ -39,7 +40,6 @@ StatementMatcher RepairableOperator =
         unaryOperator(hasOperatorName("!")).bind(BOUND),
         binaryOperator(anyOf(hasOperatorName("&"),
                              hasOperatorName("|"),
-                             hasOperatorName("~"),
                              hasOperatorName("<<"),
                              hasOperatorName(">>"))).bind(BOUND),
         unaryOperator(hasOperatorName("~")).bind(BOUND));

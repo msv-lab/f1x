@@ -37,35 +37,41 @@ f1x-transform represents the extracted expressions in the following way:
 
     [
         {
-            "fileId": 0,
-            "locId": 1;
-            "beginLine": 1,
-            "beginColumn": 2,
-            "endLine": 1,
-            "endColumn": 10,
             "defect": "assignment",
-            "type": "int",
-            "components": [...],
-            "expression": {...}
+            "location" : {...},
+            "expression": {...},
+            "components": [...]
         },
         ...
     ]
-
-Where each expression is represented as follows:
+    
+Where each location is represented as follows:
 
     {
-        "node": "operator",
-        "operator": ">",
+        "fileId": 0,
+        "locId": 1;
+        "beginLine": 1,
+        "beginColumn": 2,
+        "endLine": 1,
+        "endColumn": 10
+    }
+
+Each expression is represented as follows:
+
+    {
+        "kind": "operator",
+        "type": "int",
+        "repr": ">",
         "args": [
             {
-                "node": "constant",
+                "kind": "constant",
                 "type": "int",
-                "value": 1
+                "repr": 1
             },
             {
-                "node": "variable",
-                "type": "int",
-                "name": "x"
+                "kind": "variable",
+                "type": "unsigned int",
+                "repr": "x"
             }
         ]
     }

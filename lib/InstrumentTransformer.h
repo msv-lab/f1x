@@ -69,6 +69,8 @@ class InstrumentRepairableAction : public ASTFrontendAction {
 public:
   InstrumentRepairableAction() {}
 
+  bool BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) override;
+
   void EndSourceFileAction() override;
 
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override;

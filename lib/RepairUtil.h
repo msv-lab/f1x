@@ -18,14 +18,63 @@
 
 #pragma once
 
+#include <memory>
 #include <boost/filesystem.hpp>
 #include "Config.h"
+
 
 void addClangHeadersToCompileDB(boost::filesystem::path projectRoot);
 
 
+enum class Kind {
+  OPERATOR, VARIABLE, CONSTANT, PARAMETER
+};
+
+
+enum class Type {
+  BOOLEAN, INTEGER, POINTER, BITVECTOR
+};
+
+
+enum class Operator {
+  EQ, NEQ, LT, LE, GT, GE, OR, AND, ADD, SUB, MUL, DIV, MOD, NOT,
+  BV_AND, BV_OR, BV_SHL, BV_SHR, BV_NOT,
+  BV_TO_INT, INT_TO_BV // auxiliary operators
+};
+
+
+class Expression {
+  Kind kind;
+  
+  Type type;
+
+  /* 
+     Either 
+       char
+       unsinged char
+       unsigned short
+       unsigned int
+       unsigned long
+       signed char
+       short
+       int
+       long
+     or
+       the base type of pointer
+   */
+  std::string rawType;
+
+  /*
+    1, 2,... for constants; "x", "y",... for variables; ">=",... for ops
+  */
+  std::string repr;
+
+  std::vector<Expression> args;
+};
+
+
 enum class DefectClass {
-  CONDITION,  // existing program conditions (e.g. if, for, while, ...)
+  CONDITION,  // existing program conditions in if, for, while, etc.
   EXPRESSION, // right side of assignments, call arguments
   GUARD       // adding guard for existing statement
 };
@@ -34,7 +83,7 @@ enum class DefectClass {
 class ProjectFile {
 public:
   ProjectFile(std::string _p);
-  boost::filesystem::path getPath() const; // FIXME: relative?
+  boost::filesystem::path getRelativePath() const;
   uint getId() const;
 
 private:
@@ -44,26 +93,43 @@ private:
 };
 
 
-class RepairLocation {
-public:
-  RepairLocation(DefectClass _dc,
-                 ProjectFile _f,
-                 uint _bl,
-                 uint _bc,
-                 uint _el,
-                 uint _ec);
-  DefectClass getDefectClass() const;
-  ProjectFile getProjectFile() const;
-  uint getBeginLine() const;
-  uint getBeginColumn() const;
-  uint getEndLine() const;
-  uint getEndColumn() const;
-
-private:
-  DefectClass defectClass;
+class Location {
   ProjectFile file;
   uint beginLine;
   uint beginColumn;
   uint endLine;
   uint endColumn;
+  uint id;
+};
+
+
+class CandidateLocation {
+  DefectClass defect;
+  Location loc;
+  Expression original;
+  std::vector<Expression> components;
+};
+
+
+enum class Transformation {
+  ALTERNATIVE,    // alternative operator e.g. > --> >=
+  SWAPING,        // swaping arguments
+  GENERALIZATION, // e.g. 1 --> x
+  CONCRETIZATION, // e.g. x --> 1
+  SUBSTITUTION,   // (generic) substution of subnode
+  WIDENING,       // adding "|| something"
+  NARROWING       // adding "&& something"
+};
+
+
+class PatchMeta {
+  Transformation transformation;
+  uint distance;
+};
+
+
+class SearchSpaceElement {
+  std::shared_ptr<CandidateLocation> buggy;
+  Expression patch;
+  PatchMeta meta;
 };

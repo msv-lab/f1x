@@ -24,6 +24,7 @@
 const uint F1XID_WIDTH = 32;
 const uint F1XID_VALUE_BITS = 10;
 
+// FIXME: single 32 value will not be enough to encode 10^9 candidates with sharing. Better to use several ids
 
 /*
   __f1x_id is a F1XID_WIDTH bit transparent candidate ID. The left F1XID_VALUE_BITS bits of this id is the parameter value.
