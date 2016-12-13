@@ -17,6 +17,7 @@
 */
 
 #include <stack>
+#include <sstream>
 
 #include "clang/Lex/Preprocessor.h"
 #include "llvm/Support/raw_ostream.h"
@@ -184,13 +185,12 @@ public:
     
     node.AddMember("kind", rapidjson::Value().SetString("operator"), *allocator);
     // FIXME: should set real type
+    // possibly from Expr::getType()
     node.AddMember("type", rapidjson::Value().SetString("int"), *allocator);
     rapidjson::Value repr;
     string opcode_str = BinaryOperator::getOpcodeStr(Node->getOpcode()).lower();
     repr.SetString(opcode_str.c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
-
-    llvm::errs() << opcode_str << "\n";
 
     rapidjson::Value args(rapidjson::kArrayType);
     Visit(Node->getLHS());
@@ -235,7 +235,8 @@ public:
   }
 
   void VisitCastExpr(CastExpr *Node) {
-    Visit(Node->getSubExpr()); // TODO: this may not always work
+    // FIXME: this may not always work, and I need to save explicit cast as operator
+    Visit(Node->getSubExpr());
   }
 
   void VisitParenExpr(ParenExpr *Node) {
@@ -385,18 +386,198 @@ public:
 
 
 vector<rapidjson::Value> collectFromExpression(const Stmt *stmt,
-                                               rapidjson::Document::AllocatorType &allocator) {
+                                                      rapidjson::Document::AllocatorType &allocator) {
   CollectComponents T(&allocator);
   T.Visit(const_cast<Stmt*>(stmt));
   return T.getCollected();
 }
 
 
+//TODO: these functions are taken from Angelix and need to be refactored
+bool suitableVarDecl(VarDecl *vd) {
+  return (vd->getType().getTypePtr()->isIntegerType() ||
+          vd->getType().getTypePtr()->isCharType());
+  // vd->getType().getTypePtr()->isPointerType();
+}
+
+
+rapidjson::Value varDeclToJSON(VarDecl *vd, rapidjson::Document::AllocatorType &allocator) {
+  rapidjson::Value node(rapidjson::kObjectType);
+  node.AddMember("kind", rapidjson::Value().SetString("variable"), allocator);
+  // FIXME: should set real type
+  node.AddMember("type", rapidjson::Value().SetString("int"), allocator);
+  rapidjson::Value repr;
+  string name = vd->getName();
+  repr.SetString(name.c_str(), allocator);
+  node.AddMember("repr", repr, allocator);
+  return node;
+}
+
+
+vector<rapidjson::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
+                                     uint line,
+                                     ASTContext* context,
+                                     rapidjson::Document::AllocatorType &allocator) {
+  vector<rapidjson::Value> result;
+
+  const FunctionDecl* fd;
+  if ((fd = node.get<FunctionDecl>()) != NULL) {
+
+    // adding function parameters
+    for (auto it = fd->param_begin(); it != fd->param_end(); ++it) {
+      auto vd = cast<VarDecl>(*it);
+      if (suitableVarDecl(vd)) {
+        result.push_back(varDeclToJSON(vd, allocator));
+      }
+    }
+
+    if (USE_GLOBAL_VARIABLES) {
+      auto parents = context->getParents(node);
+      if (parents.size() > 0) {
+        const ast_type_traits::DynTypedNode parent = *(parents.begin()); // FIXME: for now only first
+        const TranslationUnitDecl* tu;
+        if ((tu = parent.get<TranslationUnitDecl>()) != NULL) {
+          for (auto it = tu->decls_begin(); it != tu->decls_end(); ++it) {
+            if (isa<VarDecl>(*it)) {
+              VarDecl* vd = cast<VarDecl>(*it);
+              unsigned beginLine = getDeclExpandedLine(vd, context->getSourceManager());
+              if (line > beginLine && suitableVarDecl(vd)) {
+                result.push_back(varDeclToJSON(vd, allocator));
+              }
+            }
+          }
+        }
+      }
+    }
+    
+  } else {
+
+    const CompoundStmt* cstmt;
+    if ((cstmt = node.get<CompoundStmt>()) != NULL) {
+      for (auto it = cstmt->body_begin(); it != cstmt->body_end(); ++it) {
+
+        if (isa<BinaryOperator>(*it)) {
+          BinaryOperator* op = cast<BinaryOperator>(*it);
+          SourceRange expandedLoc = getExpandedLoc(op, context->getSourceManager());
+          uint beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
+          if (line > beginLine &&
+              BinaryOperator::getOpcodeStr(op->getOpcode()).lower() == "=" &&
+              isa<DeclRefExpr>(op->getLHS())) {
+            DeclRefExpr* dref = cast<DeclRefExpr>(op->getLHS());
+            VarDecl* vd;
+            if ((vd = cast<VarDecl>(dref->getDecl())) != NULL && suitableVarDecl(vd)) {
+              result.push_back(varDeclToJSON(vd, allocator));
+            }
+          }
+        }
+
+        if (isa<DeclStmt>(*it)) {
+          DeclStmt* dstmt = cast<DeclStmt>(*it);
+          SourceRange expandedLoc = getExpandedLoc(dstmt, context->getSourceManager());
+          uint beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
+          if (dstmt->isSingleDecl()) {
+            Decl* d = dstmt->getSingleDecl();
+            if (isa<VarDecl>(d)) {
+              VarDecl* vd = cast<VarDecl>(d);
+              if (line > beginLine && vd->hasInit() && suitableVarDecl(vd)) {
+                result.push_back(varDeclToJSON(vd, allocator));
+              }
+            }
+          }
+        }
+
+        Stmt* stmt = cast<Stmt>(*it);
+        SourceRange expandedLoc = getExpandedLoc(stmt, context->getSourceManager());
+        unsigned beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
+        if (line > beginLine) {
+          vector<rapidjson::Value> fromExpr = collectFromExpression(*it, allocator);
+          for (auto &c : fromExpr) {
+            result.push_back(std::move(c));
+          }
+          
+          //TODO: should be generalized for other cases:
+          if (isa<IfStmt>(*it)) {
+            IfStmt* ifStmt = cast<IfStmt>(*it);
+            Stmt* thenStmt = ifStmt->getThen();
+            if (isa<CallExpr>(*thenStmt)) {
+              CallExpr* callExpr = cast<CallExpr>(thenStmt);
+              for (auto a = callExpr->arg_begin(); a != callExpr->arg_end(); ++a) {
+                auto e = cast<Expr>(*a);
+                vector<rapidjson::Value> fromParamExpr = collectFromExpression(e, allocator);
+                for (auto &c : fromParamExpr) {
+                  result.push_back(std::move(c));
+                }
+              }
+            }
+          }
+        }
+        
+      }
+    }
+    
+    auto parents = context->getParents(node);
+    if (parents.size() > 0) {
+      const ast_type_traits::DynTypedNode parent = *(parents.begin()); // TODO: for now only first
+      vector<rapidjson::Value> parentResult = collectVisible(parent, line, context, allocator);
+      for (auto &c : parentResult) {
+        result.push_back(std::move(c));
+      }
+    }
+  }
+  
+  return result;
+}
+
 
 vector<rapidjson::Value> collectComponents(const Stmt *stmt,
-                                           uint line,
-                                           ASTContext *context,
-                                           rapidjson::Document::AllocatorType &allocator) {
+                                        uint line,
+                                        ASTContext *context,
+                                        rapidjson::Document::AllocatorType &allocator) {
   vector<rapidjson::Value> fromExpr = collectFromExpression(stmt, allocator);
-  return fromExpr;
+
+  const ast_type_traits::DynTypedNode node = ast_type_traits::DynTypedNode::create(*stmt);
+  vector<rapidjson::Value> visible = collectVisible(node, line, context, allocator);
+
+  vector<rapidjson::Value> result;
+
+  for (auto &c : fromExpr) {
+    bool newComponent = true;
+    for (auto &old : result) {
+      if (c["repr"] == old["repr"])
+        newComponent = false;
+    }
+    if (newComponent)
+      result.push_back(std::move(c));
+  }  
+
+  for (auto &c : visible) {
+    bool newComponent = true;
+    for (auto &old : result) {
+      if (c["repr"] == old["repr"])
+        newComponent = false;
+    }
+    if (newComponent)
+      result.push_back(std::move(c));
+  }  
+
+  return result;
+}
+
+
+string makeArgumentList(const vector<rapidjson::Value> &components) {
+  std::ostringstream result;
+
+  result << "((int[]){";
+  bool first = true;
+  for (auto &c : components) {
+    if (first) {
+      first = false;
+    } else {
+      result << ", ";
+    }
+    result << c["repr"].GetString();
+  }
+  result << "}";
+
+  return result.str();
 }

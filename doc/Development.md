@@ -78,7 +78,11 @@ Each expression is represented as follows:
     
 ## TODO ##
 
+- support pointer variables in transformation
+- infer correct types
+- support explicit cast operator
 - support expressions inside case
 - support expressions with side-effects (with eager evaluation)
 - support project-scale localization with gcov
 - what to do if evaluation causes segmentation fault?
+- add initialization step what computes program-wide partitioning

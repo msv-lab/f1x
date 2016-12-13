@@ -34,7 +34,7 @@ using namespace clang;
 using namespace ast_matchers;
 
 using std::vector;
-
+using std::string;
 
 rapidjson::Document candidateLocations;
 
@@ -115,7 +115,13 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     candidateLoc.AddMember("expression", exprJSON, candidateLocations.GetAllocator());
     rapidjson::Value locJSON = locToJSON(globalFileId, locId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
     candidateLoc.AddMember("location", locJSON, candidateLocations.GetAllocator());
-
+    rapidjson::Value componentsJSON(rapidjson::kArrayType);    
+    vector<rapidjson::Value> components = collectComponents(stmt, beginLine, Result.Context, candidateLocations.GetAllocator());
+    string arguments = makeArgumentList(components);
+    for (auto &component : components) {
+      componentsJSON.PushBack(component, candidateLocations.GetAllocator());
+    }
+    candidateLoc.AddMember("components", componentsJSON, candidateLocations.GetAllocator());
     candidateLocations.PushBack(candidateLoc, candidateLocations.GetAllocator());
 
     // FIXME: this instrumentation is incorrect for cases
@@ -126,12 +132,12 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
 
     std::ostringstream stringStream;
     stringStream << "if ("
-                 << "!(__f1x_init || __f1x_loc == " << locId << "ul) || "
+                 << "!(__f1x_loc == " << locId << "ul) || "
                  << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
-                 << "(" << ")"
+                 << "(" << arguments << ")"
                  << ") "
                  << toString(stmt);
-    std::string replacement = stringStream.str();
+    string replacement = stringStream.str();
 
     Rewrite.ReplaceText(expandedLoc, replacement);
   }
@@ -174,6 +180,7 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     candidateLoc.AddMember("location", locJSON, candidateLocations.GetAllocator());
     rapidjson::Value componentsJSON(rapidjson::kArrayType);
     vector<rapidjson::Value> components = collectComponents(expr, beginLine, Result.Context, candidateLocations.GetAllocator());
+    string arguments = makeArgumentList(components);
     for (auto &component : components) {
       componentsJSON.PushBack(component, candidateLocations.GetAllocator());
     }
@@ -181,11 +188,11 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     candidateLocations.PushBack(candidateLoc, candidateLocations.GetAllocator());
     
     std::ostringstream stringStream;
-    stringStream << "(__f1x_init || __f1x_loc == " << locId << "ul ? "
+    stringStream << "(__f1x_loc == " << locId << "ul ? "
                  << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
-                 << "(" << ")"
+                 << "(" << arguments << ")"
                  << " : " << toString(expr) << ")";
-    std::string replacement = stringStream.str();
+    string replacement = stringStream.str();
 
     Rewrite.ReplaceText(expandedLoc, replacement);
   }

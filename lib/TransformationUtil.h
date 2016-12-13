@@ -70,3 +70,6 @@ std::vector<rapidjson::Value> collectComponents(const clang::Stmt *stmt,
                                                 uint line,
                                                 clang::ASTContext *context,
                                                 rapidjson::Document::AllocatorType &allocator);
+
+
+std::string makeArgumentList(const std::vector<rapidjson::Value> &components);
