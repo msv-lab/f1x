@@ -8,12 +8,15 @@ More details about f1x can be found in our publication.
 
 ## Installation ##
 
-f1x currently supports Linux-based systems; it was tested on Ubuntu 14.04.
+f1x currently supports Linux-based systems; it was tested on Ubuntu 14.04 and Ubuntu 16.04.
 
-Install dependencies (Ubuntu):
+Install dependencies (GCC, G++, Make, Boost.Filesystem, Boost.Program_options, Boost.Log, diff, patch):
 
-    sudo apt-get install build-essential cmake bear libboost-program-options-dev libboost-log-dev libboost-filesystem-dev
+    # Ubuntu:
+    sudo apt-get install build-essential libboost-filesystem-dev libboost-program-options-dev libboost-log-dev
     
+Install a new version of `cmake` (3.4.3 or higher).
+
 Install LLVM and Clang 3.8.1. You can use the provided installation script to download, build and install it locally:
 
     cd <my-llvm-dir>
