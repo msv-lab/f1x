@@ -117,7 +117,7 @@ vector<Expression> mutate(const Expression &expr, const vector<Expression> &comp
         result.push_back(Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {m, expr.args[1]}});
       }
       vector<Expression> rightMutants = mutate(expr.args[1], components);
-      for (auto &m : leftMutants) {
+      for (auto &m : rightMutants) {
         result.push_back(Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {expr.args[0], m}});
       }
     }
@@ -128,7 +128,7 @@ vector<Expression> mutate(const Expression &expr, const vector<Expression> &comp
 
 void substituteRealNames(Expression &expression,
                          unordered_map<string, unsigned> &indexByName) {
-  if (expression.args.size() == 0) {
+  if (expression.args.size() == 0 && expression.kind == Kind::VARIABLE) {
     expression.repr = "i[" + std::to_string(indexByName[expression.repr]) + "]";
   } else {
     for (auto &arg : expression.args) {

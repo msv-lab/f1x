@@ -123,9 +123,11 @@ bool repair(const fs::path &root,
   SearchSpaceElement patch;
   bool found = search(searchSpace, tests, tester, patch);
 
-  restoreSource(workDir, root, files);
+  
 
   if (found) {
+    restoreSource(workDir, root, files);
+
     BOOST_LOG_TRIVIAL(info) << "applying patch";
     {
       FromDirectory dir(root);
