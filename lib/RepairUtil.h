@@ -146,4 +146,19 @@ class parse_error : public std::logic_error {
 };
 
 
-std::vector<std::shared_ptr<CandidateLocation>> loadCondidateLocations(const boost::filesystem::path &path);
+std::vector<std::shared_ptr<CandidateLocation>> loadCandidateLocations(const boost::filesystem::path &path);
+
+
+class TestingFramework {
+ public:
+  TestingFramework(const std::vector<std::string> &tests,
+                   const boost::filesystem::path &root,
+                   const boost::filesystem::path &driver);
+  
+  bool isPassing(const std::string &testId);
+
+ private:
+  std::vector<std::string> tests;
+  boost::filesystem::path root;
+  boost::filesystem::path driver;
+};

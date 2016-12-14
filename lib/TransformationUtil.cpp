@@ -567,7 +567,7 @@ vector<rapidjson::Value> collectComponents(const Stmt *stmt,
 string makeArgumentList(const vector<rapidjson::Value> &components) {
   std::ostringstream result;
 
-  result << "((int[]){";
+  result << "(int[]){";
   bool first = true;
   for (auto &c : components) {
     if (first) {

@@ -20,31 +20,37 @@
 #include <memory>
 #include <iostream>
 
+#include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
 
 #include "Repair.h"
 #include "RepairUtil.h"
+#include "MetaProgram.h"
+#include "SearchEngine.h"
 
 namespace fs = boost::filesystem;
 using std::vector;
 using std::string;
+using std::pair;
 using std::shared_ptr;
 
 
-bool repair(fs::path root,
-            vector<fs::path> files,
-            vector<string> tests,
-            unsigned testTimeout,
-            fs::path driver,
-            string buildCmd,
-            string& patch) {
+bool repair(const fs::path &root,
+            const vector<fs::path> &files,
+            const vector<string> &tests,
+            const uint testTimeout,
+            const fs::path &driver,
+            const string &buildCmd,
+            string &patch) {
   BOOST_LOG_TRIVIAL(info) << "repairing project " << root;
   BOOST_LOG_TRIVIAL(debug) << "with timeout " << testTimeout;
+
+  setenv("CC", "f1x-cc", true);
 
   BOOST_LOG_TRIVIAL(info) << "building with " << buildCmd;
   {
     FromDirectory dir(root);
-    string cmd = "bear " + buildCmd;
+    string cmd = "bear -- " + buildCmd;
     uint status = std::system(cmd.c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "compilation failed";
@@ -53,14 +59,19 @@ bool repair(fs::path root,
     }
   }
 
-  BOOST_LOG_TRIVIAL(info) << "adjusting compilation database";  
+  BOOST_LOG_TRIVIAL(info) << "adjusting compilation database";
   addClangHeadersToCompileDB(root);
+
+  fs::path workDir = fs::temp_directory_path() / fs::unique_path();
+  fs::create_directory(workDir);
+  BOOST_LOG_TRIVIAL(info) << "working directory: " + workDir.string();
+
+  fs::path candidateLocationsFile = workDir / fs::path("cl.json");
 
   BOOST_LOG_TRIVIAL(info) << "instrumenting";
   {
     FromDirectory dir(root);
-    string cmd = "f1x-transform " + files[0].string() + " --instrument --file-id 0 --output /home/sergey/cl.json";
-    std::cout << cmd << std::endl;
+    string cmd = "f1x-transform " + files[0].string() + " --instrument --file-id 0 --output " + candidateLocationsFile.string();
     uint status = std::system(cmd.c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "transformation failed";
@@ -70,17 +81,44 @@ bool repair(fs::path root,
   }
 
   BOOST_LOG_TRIVIAL(info) << "loading candidate locations";
-  fs::path clfile("/home/sergey/cl.json");
-  vector<shared_ptr<CandidateLocation>> cls = loadCondidateLocations(clfile);
+  vector<shared_ptr<CandidateLocation>> cls = loadCandidateLocations(candidateLocationsFile);
 
-  for (auto cl : cls) {
-    std::cout << cl->location.beginLine << " "
-              << cl->location.beginColumn << " "
-              << cl->location.endLine << " "
-              << cl->location.endColumn << " "
-              << expressionToString(cl->original)
-              << std::endl;
+  fs::path runtimeSourceFile = workDir / fs::path("rt.cpp");
+  fs::path runtimeHeaderFile = workDir / fs::path("rt.h");
+
+  BOOST_LOG_TRIVIAL(info) << "generating search space";
+  {
+    fs::ofstream os(runtimeSourceFile);
+    fs::ofstream oh(runtimeHeaderFile);
+    vector<SearchSpaceElement> searchSpace = generateSearchSpace(cls, os, oh);
   }
 
+  BOOST_LOG_TRIVIAL(info) << "compiling search space";
+  {
+    FromDirectory dir(workDir);
+    string cmd = RUNTIME_COMPILER + " -O2 -fPIC rt.cpp -shared -o libf1xrt.so";
+    uint status = std::system(cmd.c_str());
+    if (status != 0) {
+      BOOST_LOG_TRIVIAL(warning) << "runtime compilation failed";
+    } else {
+      BOOST_LOG_TRIVIAL(info) << "runtime compilation succeeded";
+    }
+  }
+
+  setenv("F1X_RUNTIME_H", runtimeHeaderFile.string().c_str(), true);
+  setenv("F1X_RUNTIME_LIB", workDir.string().c_str(), true);
+
+  BOOST_LOG_TRIVIAL(info) << "rebuilding project";
+  {
+    FromDirectory dir(root);
+    string cmd = buildCmd;
+    uint status = std::system(cmd.c_str());
+    if (status != 0) {
+      BOOST_LOG_TRIVIAL(warning) << "compilation failed";
+    } else {
+      BOOST_LOG_TRIVIAL(info) << "compilation succeeded";
+    }
+  }
+  
   return false;
 }

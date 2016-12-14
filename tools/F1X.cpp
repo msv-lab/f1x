@@ -120,6 +120,7 @@ int main (int argc, char *argv[])
   }
   // FIXME: check if driver exists and executable
   fs::path driver(vm["driver"].as<string>());
+  driver = fs::absolute(driver);
 
   string buildCmd = "make -e";
   if (vm.count("build")) {

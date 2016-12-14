@@ -18,6 +18,8 @@
 
 #include <iostream>
 #include <memory>
+#include <cstdlib>
+
 #include <boost/filesystem/fstream.hpp>
 
 #include <rapidjson/document.h>
@@ -301,7 +303,7 @@ Expression convertExpression(const json::Value &json) {
 }
 
 
-vector<shared_ptr<CandidateLocation>> loadCondidateLocations(const fs::path &path) {
+vector<shared_ptr<CandidateLocation>> loadCandidateLocations(const fs::path &path) {
   vector<shared_ptr<CandidateLocation>> result;
   json::Document d;
   {
@@ -334,4 +336,19 @@ vector<shared_ptr<CandidateLocation>> loadCondidateLocations(const fs::path &pat
   }
 
   return result;
+}
+
+
+TestingFramework::TestingFramework(const std::vector<std::string> &tests,
+                                   const boost::filesystem::path &root,
+                                   const boost::filesystem::path &driver):
+  tests(tests),
+  root(root),
+  driver(driver) {}
+
+bool TestingFramework::isPassing(const std::string &testId) {
+  FromDirectory dir(root);
+  string cmd = driver.string() + " " + testId;
+  uint status = std::system(cmd.c_str());
+  return (status == 0);
 }

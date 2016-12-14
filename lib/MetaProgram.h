@@ -16,6 +16,11 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <memory>
+
+#include "RepairUtil.h"
+
+
 /*
   n - number of variables
   p - max parameter value
@@ -53,3 +58,6 @@
 
   Also need: swap, simplify, change parenthesis
  */
+
+
+std::vector<SearchSpaceElement> generateSearchSpace(const std::vector<std::shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH);

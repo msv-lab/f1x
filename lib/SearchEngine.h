@@ -17,3 +17,11 @@
 */
 
 #pragma once
+
+#include "RepairUtil.h"
+
+
+bool search(const std::vector<SearchSpaceElement> &searchSpace,
+            const std::vector<std::string> tests,
+            const TestingFramework &tester,
+            SearchSpaceElement &patch);

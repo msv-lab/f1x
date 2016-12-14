@@ -26,10 +26,10 @@
 /*
   Initializes the repair process, performs search, returns patch of found.
  */
-bool repair(boost::filesystem::path root,
-            std::vector<boost::filesystem::path> files,
-            std::vector<std::string> tests,
-            uint testTimeout,
-            boost::filesystem::path driver,
-            std::string buildCmd,
-            std::string& patch);
+bool repair(const boost::filesystem::path &root,
+            const std::vector<boost::filesystem::path> &files,
+            const std::vector<std::string> &tests,
+            const uint testTimeout,
+            const boost::filesystem::path &driver,
+            const std::string &buildCmd,
+            std::string &patch);
