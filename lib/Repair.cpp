@@ -51,7 +51,7 @@ bool repair(const fs::path &root,
   BOOST_LOG_TRIVIAL(info) << "building with " << buildCmd;
   {
     FromDirectory dir(root);
-    string cmd = "bear -- " + buildCmd;
+    string cmd = "f1x-bear " + buildCmd;
     uint status = std::system(cmd.c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "compilation failed";

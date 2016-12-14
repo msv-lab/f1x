@@ -1,5 +1,5 @@
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/main.py.in ${CMAKE_CURRENT_BINARY_DIR}/bear)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/main.py.in ${F1X_TOOLS_DIR}/f1x-bear)
 
 include(GNUInstallDirs)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bear
+install(PROGRAMS ${F1X_TOOLS_DIR}/bear
     DESTINATION ${CMAKE_INSTALL_BINDIR})

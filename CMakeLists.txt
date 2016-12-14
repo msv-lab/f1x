@@ -75,3 +75,8 @@ include_directories(lib)
 
 add_subdirectory(lib)
 add_subdirectory(tools)
+
+set (F1X_TOOLS_DIR "${PROJECT_BINARY_DIR}/tools/")
+set (F1X_LIBEAR_DIR "${PROJECT_BINARY_DIR}/thirdparty/bear/libear/")
+
+add_subdirectory(thirdparty/bear)
