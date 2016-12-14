@@ -16,12 +16,32 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string>
+#include <cstdlib>
+
+#include <boost/log/trivial.hpp>
+
 #include "SearchEngine.h"
 
 
 bool search(const std::vector<SearchSpaceElement> &searchSpace,
             const std::vector<std::string> tests,
-            const TestingFramework &tester,
+            TestingFramework &tester,
             SearchSpaceElement &patch) {
+  for (auto &elem : searchSpace) {
+    setenv("F1X_ID", std::to_string(elem.id).c_str(), true);
+    setenv("F1X_LOC", std::to_string(elem.buggy->location.locId).c_str(), true);
+    bool passAll = true;
+    for (auto &test : tests) {
+      BOOST_LOG_TRIVIAL(info) << "executing candidate " << elem.id << " with test " << test;
+      passAll = passAll && tester.isPassing(test);
+      if (!passAll)
+        break;
+    }
+    if (passAll) {
+      patch = elem;
+      return true;
+    }
+  }
   return false;
 }

@@ -32,4 +32,4 @@ bool repair(const boost::filesystem::path &root,
             const uint testTimeout,
             const boost::filesystem::path &driver,
             const std::string &buildCmd,
-            std::string &patch);
+            const boost::filesystem::path &patchFile);

@@ -107,6 +107,7 @@ struct CandidateLocation {
 
 
 enum class Transformation {
+  NONE,
   ALTERNATIVE,    // alternative operator e.g. > --> >=
   SWAPING,        // swaping arguments
   GENERALIZATION, // e.g. 1 --> x
@@ -125,6 +126,7 @@ struct PatchMeta {
 
 struct SearchSpaceElement {
   std::shared_ptr<CandidateLocation> buggy;
+  uint id;
   Expression patch;
   PatchMeta meta;
 };
@@ -151,14 +153,28 @@ std::vector<std::shared_ptr<CandidateLocation>> loadCandidateLocations(const boo
 
 class TestingFramework {
  public:
-  TestingFramework(const std::vector<std::string> &tests,
-                   const boost::filesystem::path &root,
+  TestingFramework(const boost::filesystem::path &root,
                    const boost::filesystem::path &driver);
   
   bool isPassing(const std::string &testId);
 
  private:
-  std::vector<std::string> tests;
   boost::filesystem::path root;
   boost::filesystem::path driver;
 };
+
+
+void backupSource(const boost::filesystem::path &workDir,
+                  const boost::filesystem::path &root,
+                  const std::vector<boost::filesystem::path> &files);
+
+
+void restoreSource(const boost::filesystem::path &workDir,
+                   const boost::filesystem::path &root,
+                   const std::vector<boost::filesystem::path> &files);
+
+
+void computeDiff(const boost::filesystem::path &root,
+                 const boost::filesystem::path &file,
+                 const uint id,
+                 const boost::filesystem::path &output);

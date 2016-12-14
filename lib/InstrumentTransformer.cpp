@@ -33,10 +33,12 @@
 using namespace clang;
 using namespace ast_matchers;
 
+namespace json = rapidjson;
+
 using std::vector;
 using std::string;
 
-rapidjson::Document candidateLocations;
+json::Document candidateLocations;
 
 
 bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
@@ -55,8 +57,8 @@ void InstrumentRepairableAction::EndSourceFileAction() {
   }
 
   std::ofstream ofs(globalOutputFile);
-  rapidjson::OStreamWrapper osw(ofs);
-  rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
+  json::OStreamWrapper osw(ofs);
+  json::Writer<json::OStreamWrapper> writer(osw);
   candidateLocations.Accept(writer);
 }
 
@@ -106,17 +108,17 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
                  << locId << "\n"
                  << toString(stmt) << "\n";
 
-    rapidjson::Value candidateLoc(rapidjson::kObjectType);
-    candidateLoc.AddMember("defect", rapidjson::Value().SetString("guard"), candidateLocations.GetAllocator());
-    rapidjson::Value exprJSON(rapidjson::kObjectType);
-    exprJSON.AddMember("kind", rapidjson::Value().SetString("constant"), candidateLocations.GetAllocator());
-    exprJSON.AddMember("type", rapidjson::Value().SetString("int"), candidateLocations.GetAllocator());
-    exprJSON.AddMember("repr", rapidjson::Value().SetString("1"), candidateLocations.GetAllocator());
+    json::Value candidateLoc(json::kObjectType);
+    candidateLoc.AddMember("defect", json::Value().SetString("guard"), candidateLocations.GetAllocator());
+    json::Value exprJSON(json::kObjectType);
+    exprJSON.AddMember("kind", json::Value().SetString("constant"), candidateLocations.GetAllocator());
+    exprJSON.AddMember("type", json::Value().SetString("int"), candidateLocations.GetAllocator());
+    exprJSON.AddMember("repr", json::Value().SetString("1"), candidateLocations.GetAllocator());
     candidateLoc.AddMember("expression", exprJSON, candidateLocations.GetAllocator());
-    rapidjson::Value locJSON = locToJSON(globalFileId, locId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
+    json::Value locJSON = locToJSON(globalFileId, locId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
     candidateLoc.AddMember("location", locJSON, candidateLocations.GetAllocator());
-    rapidjson::Value componentsJSON(rapidjson::kArrayType);    
-    vector<rapidjson::Value> components = collectComponents(stmt, beginLine, Result.Context, candidateLocations.GetAllocator());
+    json::Value componentsJSON(json::kArrayType);    
+    vector<json::Value> components = collectComponents(stmt, beginLine, Result.Context, candidateLocations.GetAllocator());
     string arguments = makeArgumentList(components);
     for (auto &component : components) {
       componentsJSON.PushBack(component, candidateLocations.GetAllocator());
@@ -171,15 +173,15 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
                  << locId << "\n"
                  << toString(expr) << "\n";
 
-    rapidjson::Value candidateLoc(rapidjson::kObjectType);
+    json::Value candidateLoc(json::kObjectType);
     //FIXME: condition is more precise defect class:
-    candidateLoc.AddMember("defect", rapidjson::Value().SetString("expression"), candidateLocations.GetAllocator());
-    rapidjson::Value exprJSON = stmtToJSON(expr, candidateLocations.GetAllocator());
+    candidateLoc.AddMember("defect", json::Value().SetString("expression"), candidateLocations.GetAllocator());
+    json::Value exprJSON = stmtToJSON(expr, candidateLocations.GetAllocator());
     candidateLoc.AddMember("expression", exprJSON, candidateLocations.GetAllocator());
-    rapidjson::Value locJSON = locToJSON(globalFileId, locId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
+    json::Value locJSON = locToJSON(globalFileId, locId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
     candidateLoc.AddMember("location", locJSON, candidateLocations.GetAllocator());
-    rapidjson::Value componentsJSON(rapidjson::kArrayType);
-    vector<rapidjson::Value> components = collectComponents(expr, beginLine, Result.Context, candidateLocations.GetAllocator());
+    json::Value componentsJSON(json::kArrayType);
+    vector<json::Value> components = collectComponents(expr, beginLine, Result.Context, candidateLocations.GetAllocator());
     string arguments = makeArgumentList(components);
     for (auto &component : components) {
       componentsJSON.PushBack(component, candidateLocations.GetAllocator());

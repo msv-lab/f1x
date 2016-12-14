@@ -16,7 +16,9 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string>
 #include <sstream>
+#include <unordered_map>
 
 #include "MetaProgram.h"
 
@@ -24,10 +26,11 @@ using std::pair;
 using std::vector;
 using std::string;
 using std::shared_ptr;
+using std::unordered_map;
 
 
-void addRuntimeLoader(std::ostream &OS) {
-  OS << "unsigned long __f1x_id;" << "\n"
+void addRuntimeLoader(std::ostream &OH) {
+  OH << "unsigned long __f1x_id;" << "\n"
      << "unsigned long __f1x_loc;" << "\n"
      << "class F1XRuntimeLoader {" << "\n"
      << "public:" << "\n"
@@ -37,6 +40,37 @@ void addRuntimeLoader(std::ostream &OS) {
      << "}" << "\n"
      << "};" << "\n"
      << "static F1XRuntimeLoader __loader;" << "\n";
+}
+
+void substituteRealNames(Expression &expression,
+                         unordered_map<string, unsigned> &indexByName) {
+  if (expression.args.size() == 0) {
+    expression.repr = "i[" + std::to_string(indexByName[expression.repr]) + "]";
+  } else {
+    for (auto &arg : expression.args) {
+      substituteRealNames(arg, indexByName);
+    }
+  }
+}
+
+void generateExpressions(shared_ptr<CandidateLocation> cl,
+                         uint &id,
+                         std::ostream &OS,
+                         vector<SearchSpaceElement> &ss) {
+  unordered_map<string, unsigned> indexByName;
+  for (int index = 0; index < cl->components.size(); index++) {
+    indexByName[cl->components[index].repr] = index;
+  }
+  
+  // original
+  uint currentId = ++id;
+  Expression repairRepr = cl->original;
+  Expression runtimeRepr = repairRepr;
+  substituteRealNames(runtimeRepr, indexByName);
+  OS << "case " << currentId << ":" << "\n"
+     << "return " << expressionToString(runtimeRepr) << ";" << "\n";
+  PatchMeta meta{Transformation::NONE, 0};
+  ss.push_back(SearchSpaceElement{cl, currentId, repairRepr, meta});
 }
 
 
@@ -70,6 +104,10 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
 
   addRuntimeLoader(OS);
 
+  vector<SearchSpaceElement> searchSpace;
+
+  uint id = 0;
+
   for (auto cl : candidateLocations) {
     OS << "int __f1x_" 
        << cl->location.fileId << "_"
@@ -80,11 +118,12 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
        << "(int i[])"
        << "{" << "\n";
 
-    OS << "return 0;" << "\n";
+    OS << "switch (__f1x_id) {" << "\n";
+    generateExpressions(cl, id, OS, searchSpace);
+    OS << "}" << "\n";
 
     OS << "}" << "\n";
   }
 
-  vector<SearchSpaceElement> searchSpace;
   return searchSpace;
 }

@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <cstdlib>
+#include <string>
 
 #include <boost/filesystem/fstream.hpp>
 
@@ -339,10 +340,8 @@ vector<shared_ptr<CandidateLocation>> loadCandidateLocations(const fs::path &pat
 }
 
 
-TestingFramework::TestingFramework(const std::vector<std::string> &tests,
-                                   const boost::filesystem::path &root,
+TestingFramework::TestingFramework(const boost::filesystem::path &root,
                                    const boost::filesystem::path &driver):
-  tests(tests),
   root(root),
   driver(driver) {}
 
@@ -351,4 +350,36 @@ bool TestingFramework::isPassing(const std::string &testId) {
   string cmd = driver.string() + " " + testId;
   uint status = std::system(cmd.c_str());
   return (status == 0);
+}
+
+
+void backupSource(const fs::path &workDir,
+                  const fs::path &root,
+                  const vector<fs::path> &files) {
+  for (int i = 0; i < files.size(); i++) {
+    fs::copy(root / files[i], workDir / fs::path(std::to_string(i) + ".c"));
+  }
+}
+
+
+void restoreSource(const fs::path &workDir,
+                   const fs::path &root,
+                   const vector<fs::path> &files) {
+  for (int i = 0; i < files.size(); i++) {
+    if(fs::exists(root / files[i])) {
+      fs::remove(root / files[i]);
+    }
+    fs::copy(workDir / fs::path(std::to_string(i) + ".c"), root / files[i]);
+  }
+}
+
+
+void computeDiff(const fs::path &root,
+                 const fs::path &file,
+                 const uint id,
+                 const fs::path &output) {
+  fs::path fromFile = root / file;
+  fs::path toFile = root / file;
+  string cmd = "diff " + fromFile.string() + " " + toFile.string() + " > " + output.string();
+  std::system(cmd.c_str());
 }

@@ -17,6 +17,8 @@
 */
 
 #include <iostream>
+#include <ctime>
+#include <sstream>
 
 #include <boost/program_options.hpp>
 #include <boost/log/core.hpp>
@@ -127,8 +129,22 @@ int main (int argc, char *argv[])
     buildCmd = vm["build"].as<string>();
   }
 
-  string patch;
-  bool found = repair(root, files, tests, testTimeout, driver, buildCmd, patch);
+  fs::path output;
+  if (!vm.count("output")) {
+    std::time_t now = std::time(0);
+    struct std::tm tstruct;
+    char timeRepr[80];
+    tstruct = *localtime(&now);
+    strftime(timeRepr, sizeof(timeRepr), "%y%m%d_%H%M%S", &tstruct);
+    std::stringstream name;
+    name << fs::basename(root) << "-" << timeRepr << ".patch";
+    output = fs::path(name.str());
+  } else {
+    output = fs::path(vm["output"].as<string>());
+  }
+  output = fs::absolute(output);
+
+  bool found = repair(root, files, tests, testTimeout, driver, buildCmd, output);
 
   if (found) {
     std::cout << "SUCCESS" << std::endl;

@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <memory>
 #include <iostream>
+#include <sstream>
 
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
@@ -41,7 +42,7 @@ bool repair(const fs::path &root,
             const uint testTimeout,
             const fs::path &driver,
             const string &buildCmd,
-            string &patch) {
+            const fs::path &patchFile) {
   BOOST_LOG_TRIVIAL(info) << "repairing project " << root;
   BOOST_LOG_TRIVIAL(debug) << "with timeout " << testTimeout;
 
@@ -54,8 +55,6 @@ bool repair(const fs::path &root,
     uint status = std::system(cmd.c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "compilation failed";
-    } else {
-      BOOST_LOG_TRIVIAL(info) << "compilation succeeded";
     }
   }
 
@@ -66,6 +65,8 @@ bool repair(const fs::path &root,
   fs::create_directory(workDir);
   BOOST_LOG_TRIVIAL(info) << "working directory: " + workDir.string();
 
+  backupSource(workDir, root, files);
+
   fs::path candidateLocationsFile = workDir / fs::path("cl.json");
 
   BOOST_LOG_TRIVIAL(info) << "instrumenting";
@@ -75,8 +76,6 @@ bool repair(const fs::path &root,
     uint status = std::system(cmd.c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "transformation failed";
-    } else {
-      BOOST_LOG_TRIVIAL(info) << "transformation succeeded";
     }
   }
 
@@ -86,11 +85,13 @@ bool repair(const fs::path &root,
   fs::path runtimeSourceFile = workDir / fs::path("rt.cpp");
   fs::path runtimeHeaderFile = workDir / fs::path("rt.h");
 
+  vector<SearchSpaceElement> searchSpace;
+
   BOOST_LOG_TRIVIAL(info) << "generating search space";
   {
     fs::ofstream os(runtimeSourceFile);
     fs::ofstream oh(runtimeHeaderFile);
-    vector<SearchSpaceElement> searchSpace = generateSearchSpace(cls, os, oh);
+    searchSpace = generateSearchSpace(cls, os, oh);
   }
 
   BOOST_LOG_TRIVIAL(info) << "compiling search space";
@@ -100,13 +101,12 @@ bool repair(const fs::path &root,
     uint status = std::system(cmd.c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "runtime compilation failed";
-    } else {
-      BOOST_LOG_TRIVIAL(info) << "runtime compilation succeeded";
     }
   }
 
   setenv("F1X_RUNTIME_H", runtimeHeaderFile.string().c_str(), true);
   setenv("F1X_RUNTIME_LIB", workDir.string().c_str(), true);
+  setenv("LD_LIBRARY_PATH", workDir.string().c_str(), true);
 
   BOOST_LOG_TRIVIAL(info) << "rebuilding project";
   {
@@ -115,10 +115,41 @@ bool repair(const fs::path &root,
     uint status = std::system(cmd.c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "compilation failed";
-    } else {
-      BOOST_LOG_TRIVIAL(info) << "compilation succeeded";
     }
   }
-  
-  return false;
+
+  TestingFramework tester(root, driver);
+
+  SearchSpaceElement patch;
+  bool found = search(searchSpace, tests, tester, patch);
+
+  restoreSource(workDir, root, files);
+
+  if (found) {
+    BOOST_LOG_TRIVIAL(info) << "applying patch";
+    {
+      FromDirectory dir(root);
+      uint beginLine = patch.buggy->location.beginLine;
+      uint beginColumn = patch.buggy->location.beginColumn;
+      uint endLine = patch.buggy->location.endLine;
+      uint endColumn = patch.buggy->location.endColumn;
+      std::stringstream cmd;
+      cmd << "f1x-transform " << files[0].string() << " --apply" 
+          << " --bl " << beginLine 
+          << " --bc " << beginColumn
+          << " --el " << endLine 
+          << " --ec " << endColumn 
+          << " --patch " << "\"" << expressionToString(patch.patch) << "\"";
+      uint status = std::system(cmd.str().c_str());
+      if (status != 0) {
+        BOOST_LOG_TRIVIAL(warning) << "transformation failed";
+      }
+    }
+
+    computeDiff(root, files[0], 0, patchFile);
+  }
+
+  restoreSource(workDir, root, files);
+
+  return found;
 }

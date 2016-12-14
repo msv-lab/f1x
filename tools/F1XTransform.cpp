@@ -35,7 +35,7 @@ using namespace llvm;
 static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 
 // A help message for this specific tool can be added afterwards.
-static cl::extrahelp MoreHelp("\nf1x-transform is a tool used internally by f1x");
+static cl::extrahelp MoreHelp("\nf1x-transform is a tool used internally by f1x\n");
 
 // Apply a custom category to all command-line options so that they are the
 // only ones displayed.

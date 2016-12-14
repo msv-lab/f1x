@@ -25,6 +25,8 @@
 #include "TransformationUtil.h"
 #include "Config.h"
 
+namespace json = rapidjson;
+
 using namespace clang;
 using namespace llvm;
 using std::string;
@@ -161,17 +163,17 @@ bool isTopLevelStatement(const Stmt *stmt, ASTContext *context) {
 
 
 class StmtToJSON : public StmtVisitor<StmtToJSON> {
-  rapidjson::Document::AllocatorType *allocator;
+  json::Document::AllocatorType *allocator;
   PrintingPolicy policy;
-  stack<rapidjson::Value> path;
+  stack<json::Value> path;
 
 public:
   StmtToJSON(const PrintingPolicy &policy,
-             rapidjson::Document::AllocatorType *allocator):
+             json::Document::AllocatorType *allocator):
     policy(policy),
     allocator(allocator) {}
 
-  rapidjson::Value getValue() {
+  json::Value getValue() {
     assert(path.size() == 1);
     return std::move(path.top());
   }
@@ -181,23 +183,23 @@ public:
   }
 
   void VisitBinaryOperator(BinaryOperator *Node) {
-    rapidjson::Value node(rapidjson::kObjectType);
+    json::Value node(json::kObjectType);
     
-    node.AddMember("kind", rapidjson::Value().SetString("operator"), *allocator);
+    node.AddMember("kind", json::Value().SetString("operator"), *allocator);
     // FIXME: should set real type
     // possibly from Expr::getType()
-    node.AddMember("type", rapidjson::Value().SetString("int"), *allocator);
-    rapidjson::Value repr;
+    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    json::Value repr;
     string opcode_str = BinaryOperator::getOpcodeStr(Node->getOpcode()).lower();
     repr.SetString(opcode_str.c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
 
-    rapidjson::Value args(rapidjson::kArrayType);
+    json::Value args(json::kArrayType);
     Visit(Node->getLHS());
     Visit(Node->getRHS());
-    rapidjson::Value right = std::move(path.top());
+    json::Value right = std::move(path.top());
     path.pop();
-    rapidjson::Value left = std::move(path.top());
+    json::Value left = std::move(path.top());
     path.pop();
     args.PushBack(left, *allocator);
     args.PushBack(right, *allocator);
@@ -208,21 +210,21 @@ public:
   }
 
   void VisitUnaryOperator(UnaryOperator *Node) {
-    rapidjson::Value node(rapidjson::kObjectType);
+    json::Value node(json::kObjectType);
 
-    node.AddMember("kind", rapidjson::Value().SetString("operator"), *allocator);
+    node.AddMember("kind", json::Value().SetString("operator"), *allocator);
     // FIXME: should set real type
-    node.AddMember("type", rapidjson::Value().SetString("int"), *allocator);
-    rapidjson::Value repr;
+    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    json::Value repr;
     string opcode_str = UnaryOperator::getOpcodeStr(Node->getOpcode());
     repr.SetString(opcode_str.c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
 
     llvm::errs() << opcode_str << "\n";
 
-    rapidjson::Value args(rapidjson::kArrayType);
+    json::Value args(json::kArrayType);
     Visit(Node->getSubExpr());
-    rapidjson::Value arg = std::move(path.top());
+    json::Value arg = std::move(path.top());
     path.pop();
     args.PushBack(arg, *allocator);
     node.AddMember("args", args, *allocator);
@@ -244,12 +246,12 @@ public:
   }
 
   void VisitMemberExpr(MemberExpr *Node) {
-    rapidjson::Value node(rapidjson::kObjectType);
+    json::Value node(json::kObjectType);
 
-    node.AddMember("kind", rapidjson::Value().SetString("variable"), *allocator);
+    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
     // FIXME: should set real type
-    node.AddMember("type", rapidjson::Value().SetString("int"), *allocator);
-    rapidjson::Value repr;
+    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
 
@@ -257,12 +259,12 @@ public:
   }
 
   void VisitIntegerLiteral(IntegerLiteral *Node) {
-    rapidjson::Value node(rapidjson::kObjectType);
+    json::Value node(json::kObjectType);
 
-    node.AddMember("kind", rapidjson::Value().SetString("constant"), *allocator);
+    node.AddMember("kind", json::Value().SetString("constant"), *allocator);
     // FIXME: should set real type
-    node.AddMember("type", rapidjson::Value().SetString("int"), *allocator);
-    rapidjson::Value repr;
+    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
 
@@ -270,12 +272,12 @@ public:
   }
 
   void VisitCharacterLiteral(CharacterLiteral *Node) {
-    rapidjson::Value node(rapidjson::kObjectType);
+    json::Value node(json::kObjectType);
 
-    node.AddMember("kind", rapidjson::Value().SetString("constant"), *allocator);
+    node.AddMember("kind", json::Value().SetString("constant"), *allocator);
     // FIXME: should set real type
-    node.AddMember("type", rapidjson::Value().SetString("char"), *allocator);
-    rapidjson::Value repr;
+    node.AddMember("type", json::Value().SetString("char"), *allocator);
+    json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
 
@@ -283,12 +285,12 @@ public:
   }
 
   void VisitDeclRefExpr(DeclRefExpr *Node) {
-    rapidjson::Value node(rapidjson::kObjectType);
+    json::Value node(json::kObjectType);
 
-    node.AddMember("kind", rapidjson::Value().SetString("variable"), *allocator);
+    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
     // FIXME: should set real type
-    node.AddMember("type", rapidjson::Value().SetString("int"), *allocator);
-    rapidjson::Value repr;
+    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
 
@@ -296,12 +298,12 @@ public:
   }
 
   void VisitArraySubscriptExpr(ArraySubscriptExpr *Node) {
-    rapidjson::Value node(rapidjson::kObjectType);
+    json::Value node(json::kObjectType);
 
-    node.AddMember("kind", rapidjson::Value().SetString("constant"), *allocator);
+    node.AddMember("kind", json::Value().SetString("constant"), *allocator);
     // FIXME: should set real type
-    node.AddMember("type", rapidjson::Value().SetString("int"), *allocator);
-    rapidjson::Value repr;
+    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
 
@@ -311,8 +313,8 @@ public:
 };
 
 
-rapidjson::Value stmtToJSON(const clang::Stmt *stmt,
-                            rapidjson::Document::AllocatorType &allocator) {
+json::Value stmtToJSON(const clang::Stmt *stmt,
+                       json::Document::AllocatorType &allocator) {
     PrintingPolicy policy = PrintingPolicy(LangOptions());
     StmtToJSON T(policy, &allocator);
     T.Visit(const_cast<Stmt*>(stmt));
@@ -320,28 +322,28 @@ rapidjson::Value stmtToJSON(const clang::Stmt *stmt,
 }
 
 
-rapidjson::Value locToJSON(uint fileId, uint locId, uint bl, uint bc, uint el, uint ec,
-                           rapidjson::Document::AllocatorType &allocator) {
-  rapidjson::Value entry(rapidjson::kObjectType);
-  entry.AddMember("fileId", rapidjson::Value().SetInt(fileId), allocator);
-  entry.AddMember("locId", rapidjson::Value().SetInt(locId), allocator);
-  entry.AddMember("beginLine", rapidjson::Value().SetInt(bl), allocator);
-  entry.AddMember("beginColumn", rapidjson::Value().SetInt(bc), allocator);
-  entry.AddMember("endLine", rapidjson::Value().SetInt(el), allocator);
-  entry.AddMember("endColumn", rapidjson::Value().SetInt(ec), allocator);
+json::Value locToJSON(uint fileId, uint locId, uint bl, uint bc, uint el, uint ec,
+                      json::Document::AllocatorType &allocator) {
+  json::Value entry(json::kObjectType);
+  entry.AddMember("fileId", json::Value().SetInt(fileId), allocator);
+  entry.AddMember("locId", json::Value().SetInt(locId), allocator);
+  entry.AddMember("beginLine", json::Value().SetInt(bl), allocator);
+  entry.AddMember("beginColumn", json::Value().SetInt(bc), allocator);
+  entry.AddMember("endLine", json::Value().SetInt(el), allocator);
+  entry.AddMember("endColumn", json::Value().SetInt(ec), allocator);
   return entry;
 }
 
 
 class CollectComponents : public StmtVisitor<CollectComponents> {
-  rapidjson::Document::AllocatorType *allocator;
-  vector<rapidjson::Value> collected;
+  json::Document::AllocatorType *allocator;
+  vector<json::Value> collected;
 
 public:
-  CollectComponents(rapidjson::Document::AllocatorType *allocator):
+  CollectComponents(json::Document::AllocatorType *allocator):
     allocator(allocator) {}
 
-  vector<rapidjson::Value> getCollected() {
+  vector<json::Value> getCollected() {
     return std::move(collected);
   }
 
@@ -385,8 +387,8 @@ public:
 };
 
 
-vector<rapidjson::Value> collectFromExpression(const Stmt *stmt,
-                                                      rapidjson::Document::AllocatorType &allocator) {
+vector<json::Value> collectFromExpression(const Stmt *stmt,
+                                          json::Document::AllocatorType &allocator) {
   CollectComponents T(&allocator);
   T.Visit(const_cast<Stmt*>(stmt));
   return T.getCollected();
@@ -401,12 +403,12 @@ bool suitableVarDecl(VarDecl *vd) {
 }
 
 
-rapidjson::Value varDeclToJSON(VarDecl *vd, rapidjson::Document::AllocatorType &allocator) {
-  rapidjson::Value node(rapidjson::kObjectType);
-  node.AddMember("kind", rapidjson::Value().SetString("variable"), allocator);
+json::Value varDeclToJSON(VarDecl *vd, json::Document::AllocatorType &allocator) {
+  json::Value node(json::kObjectType);
+  node.AddMember("kind", json::Value().SetString("variable"), allocator);
   // FIXME: should set real type
-  node.AddMember("type", rapidjson::Value().SetString("int"), allocator);
-  rapidjson::Value repr;
+  node.AddMember("type", json::Value().SetString("int"), allocator);
+  json::Value repr;
   string name = vd->getName();
   repr.SetString(name.c_str(), allocator);
   node.AddMember("repr", repr, allocator);
@@ -414,11 +416,11 @@ rapidjson::Value varDeclToJSON(VarDecl *vd, rapidjson::Document::AllocatorType &
 }
 
 
-vector<rapidjson::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
-                                     uint line,
-                                     ASTContext* context,
-                                     rapidjson::Document::AllocatorType &allocator) {
-  vector<rapidjson::Value> result;
+vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
+                                   uint line,
+                                   ASTContext* context,
+                                   json::Document::AllocatorType &allocator) {
+  vector<json::Value> result;
 
   const FunctionDecl* fd;
   if ((fd = node.get<FunctionDecl>()) != NULL) {
@@ -490,7 +492,7 @@ vector<rapidjson::Value> collectVisible(const ast_type_traits::DynTypedNode &nod
         SourceRange expandedLoc = getExpandedLoc(stmt, context->getSourceManager());
         unsigned beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
         if (line > beginLine) {
-          vector<rapidjson::Value> fromExpr = collectFromExpression(*it, allocator);
+          vector<json::Value> fromExpr = collectFromExpression(*it, allocator);
           for (auto &c : fromExpr) {
             result.push_back(std::move(c));
           }
@@ -503,7 +505,7 @@ vector<rapidjson::Value> collectVisible(const ast_type_traits::DynTypedNode &nod
               CallExpr* callExpr = cast<CallExpr>(thenStmt);
               for (auto a = callExpr->arg_begin(); a != callExpr->arg_end(); ++a) {
                 auto e = cast<Expr>(*a);
-                vector<rapidjson::Value> fromParamExpr = collectFromExpression(e, allocator);
+                vector<json::Value> fromParamExpr = collectFromExpression(e, allocator);
                 for (auto &c : fromParamExpr) {
                   result.push_back(std::move(c));
                 }
@@ -518,7 +520,7 @@ vector<rapidjson::Value> collectVisible(const ast_type_traits::DynTypedNode &nod
     auto parents = context->getParents(node);
     if (parents.size() > 0) {
       const ast_type_traits::DynTypedNode parent = *(parents.begin()); // TODO: for now only first
-      vector<rapidjson::Value> parentResult = collectVisible(parent, line, context, allocator);
+      vector<json::Value> parentResult = collectVisible(parent, line, context, allocator);
       for (auto &c : parentResult) {
         result.push_back(std::move(c));
       }
@@ -529,16 +531,16 @@ vector<rapidjson::Value> collectVisible(const ast_type_traits::DynTypedNode &nod
 }
 
 
-vector<rapidjson::Value> collectComponents(const Stmt *stmt,
-                                        uint line,
-                                        ASTContext *context,
-                                        rapidjson::Document::AllocatorType &allocator) {
-  vector<rapidjson::Value> fromExpr = collectFromExpression(stmt, allocator);
+vector<json::Value> collectComponents(const Stmt *stmt,
+                                      uint line,
+                                      ASTContext *context,
+                                      json::Document::AllocatorType &allocator) {
+  vector<json::Value> fromExpr = collectFromExpression(stmt, allocator);
 
   const ast_type_traits::DynTypedNode node = ast_type_traits::DynTypedNode::create(*stmt);
-  vector<rapidjson::Value> visible = collectVisible(node, line, context, allocator);
+  vector<json::Value> visible = collectVisible(node, line, context, allocator);
 
-  vector<rapidjson::Value> result;
+  vector<json::Value> result;
 
   for (auto &c : fromExpr) {
     bool newComponent = true;
@@ -564,7 +566,7 @@ vector<rapidjson::Value> collectComponents(const Stmt *stmt,
 }
 
 
-string makeArgumentList(const vector<rapidjson::Value> &components) {
+string makeArgumentList(const vector<json::Value> &components) {
   std::ostringstream result;
 
   result << "(int[]){";

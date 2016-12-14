@@ -23,5 +23,5 @@
 
 bool search(const std::vector<SearchSpaceElement> &searchSpace,
             const std::vector<std::string> tests,
-            const TestingFramework &tester,
+            TestingFramework &tester,
             SearchSpaceElement &patch);
