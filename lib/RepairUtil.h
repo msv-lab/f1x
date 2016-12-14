@@ -174,7 +174,8 @@ void restoreSource(const boost::filesystem::path &workDir,
                    const std::vector<boost::filesystem::path> &files);
 
 
-void computeDiff(const boost::filesystem::path &root,
+void computeDiff(const boost::filesystem::path &workDir,
+                 const boost::filesystem::path &root,
                  const boost::filesystem::path &file,
                  const uint id,
                  const boost::filesystem::path &output);

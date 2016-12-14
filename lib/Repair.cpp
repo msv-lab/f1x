@@ -146,7 +146,7 @@ bool repair(const fs::path &root,
       }
     }
 
-    computeDiff(root, files[0], 0, patchFile);
+    computeDiff(workDir, root, files[0], 0, patchFile);
   }
 
   restoreSource(workDir, root, files);

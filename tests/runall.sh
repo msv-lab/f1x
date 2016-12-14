@@ -36,25 +36,25 @@ for test in $TESTS; do
     case "$test" in
         if-condition)
             subject_files="program.c"
-            subject_driver="./test.sh"
+            subject_driver="$PWD/$test/test.sh"
             subject_tests="1 2 3"
             subject_args="--test-timeout 1000"
             ;;
         assign-in-condition)
             subject_files="program.c"
-            subject_driver="./test.sh"
+            subject_driver="$PWD/$test/test.sh"
             subject_tests="1 2 3"
             subject_args="--test-timeout 1000"
             ;;
-        guarded-condition)
+        guarded-assignment)
             subject_files="program.c"
-            subject_driver="./test.sh"
+            subject_driver="$PWD/$test/test.sh"
             subject_tests="1 2 3"
             subject_args="--test-timeout 1000"
             ;;
         int-assignment)
             subject_files="program.c"
-            subject_driver="./test.sh"
+            subject_driver="$PWD/$test/test.sh"
             subject_tests="1 2 3"
             subject_args="--test-timeout 1000"
             ;;
@@ -92,7 +92,7 @@ for test in $TESTS; do
         cd $validation_dir
         cd $test
 
-        patch -p0 < $repair_dir/output.patch &> /dev/null
+        patch -p1 < $repair_dir/output.patch &> /dev/null
         application_status=$?
         if [[ $application_status != 0 ]]; then
             echo 'FAIL'

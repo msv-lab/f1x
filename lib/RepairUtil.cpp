@@ -374,12 +374,20 @@ void restoreSource(const fs::path &workDir,
 }
 
 
-void computeDiff(const fs::path &root,
+void computeDiff(const fs::path &workDir,
+                 const fs::path &root,
                  const fs::path &file,
                  const uint id,
                  const fs::path &output) {
-  fs::path fromFile = root / file;
+  {
+    fs::path a = fs::path("a") / file;
+    fs::path b = fs::path("b") / file;
+    fs::ofstream ofs(output);
+    ofs << "--- " << a.string() << "\n"
+        << "+++ " << b.string() << "\n";
+  }
+  fs::path fromFile = workDir / fs::path(std::to_string(id) + ".c");
   fs::path toFile = root / file;
-  string cmd = "diff " + fromFile.string() + " " + toFile.string() + " > " + output.string();
+  string cmd = "diff " + fromFile.string() + " " + toFile.string() + " >> " + output.string();
   std::system(cmd.c_str());
 }
