@@ -40,6 +40,7 @@ StatementMatcher RepairableOperator =
         unaryOperator(hasOperatorName("!")).bind(BOUND),
         binaryOperator(anyOf(hasOperatorName("&"),
                              hasOperatorName("|"),
+                             hasOperatorName("^"),
                              hasOperatorName("<<"),
                              hasOperatorName(">>"))).bind(BOUND),
         unaryOperator(hasOperatorName("~")).bind(BOUND));

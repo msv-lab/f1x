@@ -37,7 +37,7 @@ f1x-transform represents the extracted expressions in the following way:
 
     [
         {
-            "defect": "assignment",
+            "defect": "condition",
             "location" : {...},
             "expression": {...},
             "components": [...]

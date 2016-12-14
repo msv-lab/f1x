@@ -19,6 +19,7 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 #include <boost/filesystem.hpp>
 #include "Config.h"
 
@@ -37,28 +38,33 @@ enum class Type {
 
 
 enum class Operator {
-  EQ, NEQ, LT, LE, GT, GE, OR, AND, ADD, SUB, MUL, DIV, MOD, NOT,
-  BV_AND, BV_OR, BV_SHL, BV_SHR, BV_NOT,
+  EQ, NEQ, LT, LE, GT, GE, OR, AND, ADD, SUB, MUL, DIV, MOD, NEG, NOT,
+  BV_AND, BV_XOR, BV_OR, BV_SHL, BV_SHR, BV_NOT,
   BV_TO_INT, INT_TO_BV // auxiliary operators
 };
 
+Type operatorType(const Operator &op);
 
-class Expression {
+Operator binaryOperatorByString(const std::string &repr);
+
+Operator unaryOperatorByString(const std::string &repr);
+
+std::string operatorToString(const Operator &op);
+
+
+struct Expression {
   Kind kind;
   
   Type type;
 
+  /*
+    only if kind is OPERATOR
+   */
+  Operator op;
+
   /* 
      Either 
-       char
-       unsinged char
-       unsigned short
-       unsigned int
-       unsigned long
-       signed char
-       short
-       int
-       long
+       char, unsinged char, unsigned short, unsigned int, unsigned long, signed char, short, int, long
      or
        the base type of pointer
    */
@@ -72,6 +78,8 @@ class Expression {
   std::vector<Expression> args;
 };
 
+std::string expressionToString(const Expression &expression);
+
 
 enum class DefectClass {
   CONDITION,  // existing program conditions in if, for, while, etc.
@@ -80,32 +88,19 @@ enum class DefectClass {
 };
 
 
-class ProjectFile {
-public:
-  ProjectFile(std::string _p);
-  boost::filesystem::path getRelativePath() const;
-  uint getId() const;
-
-private:
-  static uint next_id;
-  uint id;
-  boost::filesystem::path path;
-};
-
-
-class Location {
-  ProjectFile file;
+struct Location {
+  uint fileId;
+  uint locId;  
   uint beginLine;
   uint beginColumn;
   uint endLine;
   uint endColumn;
-  uint id;
 };
 
 
-class CandidateLocation {
+struct CandidateLocation {
   DefectClass defect;
-  Location loc;
+  Location location;
   Expression original;
   std::vector<Expression> components;
 };
@@ -122,14 +117,33 @@ enum class Transformation {
 };
 
 
-class PatchMeta {
+struct PatchMeta {
   Transformation transformation;
   uint distance;
 };
 
 
-class SearchSpaceElement {
+struct SearchSpaceElement {
   std::shared_ptr<CandidateLocation> buggy;
   Expression patch;
   PatchMeta meta;
 };
+
+
+class FromDirectory {
+ public:
+  FromDirectory(const boost::filesystem::path &path);
+  ~FromDirectory();
+
+ private:
+  boost::filesystem::path original;
+};
+
+
+class parse_error : public std::logic_error {
+ public:
+  using std::logic_error::logic_error;
+};
+
+
+std::vector<std::shared_ptr<CandidateLocation>> loadCondidateLocations(const boost::filesystem::path &path);

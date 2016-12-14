@@ -172,8 +172,8 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
                  << toString(expr) << "\n";
 
     rapidjson::Value candidateLoc(rapidjson::kObjectType);
-    //FIXME: it can be condition or assignment
-    candidateLoc.AddMember("defect", rapidjson::Value().SetString("assignment"), candidateLocations.GetAllocator());
+    //FIXME: condition is more precise defect class:
+    candidateLoc.AddMember("defect", rapidjson::Value().SetString("expression"), candidateLocations.GetAllocator());
     rapidjson::Value exprJSON = stmtToJSON(expr, candidateLocations.GetAllocator());
     candidateLoc.AddMember("expression", exprJSON, candidateLocations.GetAllocator());
     rapidjson::Value locJSON = locToJSON(globalFileId, locId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());

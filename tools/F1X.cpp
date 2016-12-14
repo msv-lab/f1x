@@ -89,6 +89,7 @@ int main (int argc, char *argv[])
     return 1;
   }
   fs::path root(vm["source"].as<string>());
+  root = fs::absolute(root);
 
   uint testTimeout = 0;
   if (vm.count("test-timeout")) {
@@ -102,7 +103,7 @@ int main (int argc, char *argv[])
   }
   vector<string> fileNames = vm["files"].as<vector<string>>();
   for(string &name : fileNames) {
-    fs::path file;
+    fs::path file(name);
     // FIXME: check if file exists
     files.push_back(file);
   }

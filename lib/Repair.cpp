@@ -16,12 +16,19 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Repair.h"
+#include <cstdlib>
+#include <memory>
+#include <iostream>
+
 #include <boost/log/trivial.hpp>
+
+#include "Repair.h"
+#include "RepairUtil.h"
 
 namespace fs = boost::filesystem;
 using std::vector;
 using std::string;
+using std::shared_ptr;
 
 
 bool repair(fs::path root,
@@ -33,8 +40,47 @@ bool repair(fs::path root,
             string& patch) {
   BOOST_LOG_TRIVIAL(info) << "repairing project " << root;
   BOOST_LOG_TRIVIAL(debug) << "with timeout " << testTimeout;
-  
-  //addClangHeadersToCompileDB(root);
+
+  BOOST_LOG_TRIVIAL(info) << "building with " << buildCmd;
+  {
+    FromDirectory dir(root);
+    string cmd = "bear " + buildCmd;
+    uint status = std::system(cmd.c_str());
+    if (status != 0) {
+      BOOST_LOG_TRIVIAL(warning) << "compilation failed";
+    } else {
+      BOOST_LOG_TRIVIAL(info) << "compilation succeeded";
+    }
+  }
+
+  BOOST_LOG_TRIVIAL(info) << "adjusting compilation database";  
+  addClangHeadersToCompileDB(root);
+
+  BOOST_LOG_TRIVIAL(info) << "instrumenting";
+  {
+    FromDirectory dir(root);
+    string cmd = "f1x-transform " + files[0].string() + " --instrument --file-id 0 --output /home/sergey/cl.json";
+    std::cout << cmd << std::endl;
+    uint status = std::system(cmd.c_str());
+    if (status != 0) {
+      BOOST_LOG_TRIVIAL(warning) << "transformation failed";
+    } else {
+      BOOST_LOG_TRIVIAL(info) << "transformation succeeded";
+    }
+  }
+
+  BOOST_LOG_TRIVIAL(info) << "loading candidate locations";
+  fs::path clfile("/home/sergey/cl.json");
+  vector<shared_ptr<CandidateLocation>> cls = loadCondidateLocations(clfile);
+
+  for (auto cl : cls) {
+    std::cout << cl->location.beginLine << " "
+              << cl->location.beginColumn << " "
+              << cl->location.endLine << " "
+              << cl->location.endColumn << " "
+              << expressionToString(cl->original)
+              << std::endl;
+  }
 
   return false;
 }
