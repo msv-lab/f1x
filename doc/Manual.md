@@ -62,7 +62,9 @@ f1x needs to be able to execute an arbitrary test and to identify if this test p
 
 Note that when executing tests f1x appends a path to its runtime library (libf1xrt.so) to the `LD_LIBRARY_PATH` environment variable. Therefore, your testing framework should not overwrite this variable.
 
-### Options ###
+### Command-line interface ###
+
+f1x command-line tool accepts user options, executes the repair algorithm and saves the generated patch into a patch file in unidiff format. f1x prints log messages on the standard error output and terminates with zero exit code if and only if it finds a patch.
 
 f1x accepts one positional argument:
 

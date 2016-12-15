@@ -26,10 +26,14 @@ class Project {
  public:
   Project(const boost::filesystem::path &root,
           const std::vector<boost::filesystem::path> &files,
+          const std::string &buildCmd,          
           const boost::filesystem::path &workDir);
 
+  bool initialBuild();
+  bool buildWithRuntime(const boost::filesystem::path &header);
   void backupFiles();
   void restoreFiles();
+  void saveFilesWithPrefix(const std::string &prefix);
   void computeDiff(const boost::filesystem::path &file,
                    const boost::filesystem::path &outputFile);
   boost::filesystem::path getRoot();
@@ -37,6 +41,7 @@ class Project {
  private:
   boost::filesystem::path root;
   std::vector<boost::filesystem::path> files;
+  std::string buildCmd;
   boost::filesystem::path workDir;
 };
 

@@ -25,8 +25,6 @@
 
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
-#include <rapidjson/ostreamwrapper.h>
-#include <rapidjson/writer.h>
 
 #include "RepairUtil.h"
 #include "Config.h"
@@ -39,34 +37,6 @@ using std::vector;
 using std::shared_ptr;
 
 
-void addClangHeadersToCompileDB(fs::path projectRoot) {
-  fs::path compileDB("compile_commands.json");
-  fs::path path = projectRoot / compileDB;
-  json::Document db;
-  {
-    fs::ifstream ifs(path);
-    json::IStreamWrapper isw(ifs);
-    db.ParseStream(isw);
-  }
-
-  for (auto& entry : db.GetArray()) {
-    // assume there is always a first space in which we insert our include
-    // FIXME: add escape for the spaces in the include path
-    string command = entry.GetObject()["command"].GetString();
-    uint index = command.find(" ");
-    string newCommand = command.substr(0, index) + " -I" + F1X_CLANG_INCLUDE + " " + command.substr(index);
-    entry.GetObject()["command"].SetString(newCommand.c_str(), db.GetAllocator());
-  }
-  
-  {
-    fs::ofstream ofs(path);
-    json::OStreamWrapper osw(ofs);
-    json::Writer<json::OStreamWrapper> writer(osw);
-    db.Accept(writer);
-  }
-}
-
-
 FromDirectory::FromDirectory(const boost::filesystem::path &path):
   original(path) {
   fs::current_path(path);
@@ -76,6 +46,22 @@ FromDirectory::~FromDirectory() {
   fs::current_path(original);    
 }
 
+InEnvironment::InEnvironment(const std::map<std::string, std::string> &env) {
+  for (auto &entry : env) {
+    string orig;
+    if (getenv(entry.first.c_str())) {
+      original[entry.first] = getenv(entry.first.c_str());
+    }
+    setenv(entry.first.c_str(), entry.second.c_str(), true);
+  }
+}
+
+InEnvironment::~InEnvironment() {
+  // TODO: possibly can also erase previously undefined
+  for (auto &entry : original) {
+    setenv(entry.first.c_str(), entry.second.c_str(), true);
+  }
+}
 
 Kind kindByString(const string &kindStr) {
   if (kindStr == "operator") {

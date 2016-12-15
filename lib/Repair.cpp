@@ -36,6 +36,10 @@ using std::string;
 using std::pair;
 using std::shared_ptr;
 
+const string CANDADATE_LOCATIONS_FILE_NAME = "cl.json";
+const string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
+const string RUNTIME_HEADER_FILE_NAME = "rt.h";
+
 
 bool repair(const fs::path &root,
             const vector<fs::path> &files,
@@ -50,42 +54,38 @@ bool repair(const fs::path &root,
   fs::create_directory(workDir);
   BOOST_LOG_TRIVIAL(debug) << "working directory: " + workDir.string();
 
-  Project project(root, files, workDir);
+  Project project(root, files, buildCmd, workDir);
 
-  setenv("CC", "f1x-cc", true);
+  bool buildSucceeded = project.initialBuild();
 
-  BOOST_LOG_TRIVIAL(info) << "building with " << buildCmd;
-  {
-    FromDirectory dir(root);
-    string cmd = "f1x-bear " + buildCmd;
-    uint status = std::system(cmd.c_str());
-    if (status != 0) {
-      BOOST_LOG_TRIVIAL(warning) << "compilation failed";
-    }
+  if (! buildSucceeded) {
+    BOOST_LOG_TRIVIAL(warning) << "compilation returned non-zero exit code";
   }
-
-  BOOST_LOG_TRIVIAL(info) << "adjusting compilation database";
-  addClangHeadersToCompileDB(root);
 
   project.backupFiles();
 
-  fs::path candidateLocationsFile = workDir / fs::path("cl.json");
+  fs::path clFile = workDir / fs::path(CANDADATE_LOCATIONS_FILE_NAME);
 
-  BOOST_LOG_TRIVIAL(info) << "instrumenting";
+  BOOST_LOG_TRIVIAL(debug) << "instrumenting";
   {
     FromDirectory dir(root);
-    string cmd = "f1x-transform " + files[0].string() + " --instrument --file-id 0 --output " + candidateLocationsFile.string();
-    uint status = std::system(cmd.c_str());
+    std::stringstream s;
+    s << "f1x-transform " << files[0].string() << " --instrument"
+      << " --file-id 0"
+      << " --output " + clFile.string();
+    uint status = std::system(s.str().c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "transformation failed";
     }
   }
 
-  BOOST_LOG_TRIVIAL(info) << "loading candidate locations";
-  vector<shared_ptr<CandidateLocation>> cls = loadCandidateLocations(candidateLocationsFile);
+  project.saveFilesWithPrefix("instrumented");
 
-  fs::path runtimeSourceFile = workDir / fs::path("rt.cpp");
-  fs::path runtimeHeaderFile = workDir / fs::path("rt.h");
+  BOOST_LOG_TRIVIAL(debug) << "loading candidate locations";
+  vector<shared_ptr<CandidateLocation>> cls = loadCandidateLocations(clFile);
+
+  fs::path runtimeSourceFile = workDir / fs::path(RUNTIME_SOURCE_FILE_NAME);
+  fs::path runtimeHeaderFile = workDir / fs::path(RUNTIME_HEADER_FILE_NAME);
 
   vector<SearchSpaceElement> searchSpace;
 
@@ -106,18 +106,11 @@ bool repair(const fs::path &root,
     }
   }
 
-  setenv("F1X_RUNTIME_H", runtimeHeaderFile.string().c_str(), true);
-  setenv("F1X_RUNTIME_LIB", workDir.string().c_str(), true);
-  setenv("LD_LIBRARY_PATH", workDir.string().c_str(), true);
 
-  BOOST_LOG_TRIVIAL(info) << "rebuilding project";
-  {
-    FromDirectory dir(root);
-    string cmd = buildCmd;
-    uint status = std::system(cmd.c_str());
-    if (status != 0) {
-      BOOST_LOG_TRIVIAL(warning) << "compilation failed";
-    }
+  bool rebuildSucceeded = project.buildWithRuntime(runtimeHeaderFile);
+
+  if (! rebuildSucceeded) {
+    BOOST_LOG_TRIVIAL(warning) << "compilation with runtime returned non-zero exit code";
   }
 
   TestingFramework tester(project, driver);
@@ -128,7 +121,7 @@ bool repair(const fs::path &root,
   if (found) {
     project.restoreFiles();
 
-    BOOST_LOG_TRIVIAL(info) << "applying patch";
+    BOOST_LOG_TRIVIAL(debug) << "applying patch";
     {
       FromDirectory dir(root);
       uint beginLine = patch.buggy->location.beginLine;
@@ -144,7 +137,7 @@ bool repair(const fs::path &root,
           << " --patch " << "\"" << expressionToString(patch.patch) << "\"";
       uint status = std::system(cmd.str().c_str());
       if (status != 0) {
-        BOOST_LOG_TRIVIAL(warning) << "transformation failed";
+        BOOST_LOG_TRIVIAL(warning) << "patch application failed";
       }
     }
 

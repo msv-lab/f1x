@@ -20,11 +20,11 @@
 
 #include <memory>
 #include <stdexcept>
+#include <map>
+
 #include <boost/filesystem.hpp>
+
 #include "Config.h"
-
-
-void addClangHeadersToCompileDB(boost::filesystem::path projectRoot);
 
 
 enum class Kind {
@@ -139,6 +139,16 @@ class FromDirectory {
 
  private:
   boost::filesystem::path original;
+};
+
+
+class InEnvironment {
+ public:
+  InEnvironment(const std::map<std::string, std::string> &env);
+  ~InEnvironment();
+
+ private:
+  std::map<std::string, std::string> original;
 };
 
 
