@@ -37,25 +37,31 @@ for test in $TESTS; do
         if-condition)
             subject_files="program.c"
             subject_driver="$PWD/$test/test.sh"
-            subject_tests="1 2 3"
+            subject_tests="n1 p1 p2"
             subject_args="--test-timeout 1000"
             ;;
         assign-in-condition)
             subject_files="program.c"
             subject_driver="$PWD/$test/test.sh"
-            subject_tests="1 2 3"
+            subject_tests="n1 p1 p2"
             subject_args="--test-timeout 1000"
             ;;
         guarded-assignment)
             subject_files="program.c"
             subject_driver="$PWD/$test/test.sh"
-            subject_tests="1 2 3"
+            subject_tests="n1 p1 p2"
             subject_args="--test-timeout 1000"
             ;;
         int-assignment)
             subject_files="program.c"
             subject_driver="$PWD/$test/test.sh"
-            subject_tests="1 2 3"
+            subject_tests="n1 p1 p2"
+            subject_args="--test-timeout 1000"
+            ;;
+        dangling-else)
+            subject_files="program.c"
+            subject_driver="$PWD/$test/test.sh"
+            subject_tests="n1 p1 p2"
             subject_args="--test-timeout 1000"
             ;;
         *)
