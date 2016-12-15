@@ -66,7 +66,7 @@ const uint MAX_EXECUTIONS_PER_LOCATION = 0; /* UNSUPPORTED */
 const uint MAX_CANDIDATES_PER_LOCATION = 0; /* UNSUPPORTED */
 const uint MAX_PARAMETER_VALUE = 256; /* UNSUPPORTED */
 
-const Exploration EXPLORATION = Exploration.SEMANTIC_PARTITIONING; /* UNSUPPORTED */
+const Exploration EXPLORATION = Exploration::SEMANTIC_PARTITIONING; /* UNSUPPORTED */
 
 const LocalizationFormula LOCALIZATION = LocalizationFormula::JACCARD; /* UNSUPPORTED */
 

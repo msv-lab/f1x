@@ -58,7 +58,7 @@ bool repair(Project &project,
 
   fs::path clFile = workDir / fs::path(CANDADATE_LOCATIONS_FILE_NAME);
 
-  BOOST_LOG_TRIVIAL(debug) << "instrumenting source files";
+  BOOST_LOG_TRIVIAL(info) << "instrumenting source files";
   {
     FromDirectory dir(project.getRoot());
     std::stringstream cmd;
@@ -97,7 +97,6 @@ bool repair(Project &project,
       BOOST_LOG_TRIVIAL(warning) << "runtime compilation failed";
     }
   }
-
 
   bool rebuildSucceeded = project.buildWithRuntime(runtimeHeaderFile);
 

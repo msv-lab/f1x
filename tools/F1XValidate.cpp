@@ -44,12 +44,12 @@ int main (int argc, char *argv[])
   // Declare supported options.
   po::options_description general("Usage: f1x PATH OPTIONS\n\nSupported options");
   general.add_options()
+    ("patch,p", po::value<string>()->value_name("PATH"), "patch file")
     ("files,f", po::value<vector<string>>()->multitoken()->value_name("RELPATH..."), "list of source files to repair")
     ("tests,t", po::value<vector<string>>()->multitoken()->value_name("ID..."), "list of test IDs")
     ("test-timeout,T", po::value<uint>()->value_name("MS"), "test execution timeout (default: none)")
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
-    ("output,o", po::value<string>()->value_name("PATH"), "output patch file (default: SRC-TIME.patch)")
     ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
@@ -117,7 +117,7 @@ int main (int argc, char *argv[])
     }
     files.push_back(file);
   }
-
+  
   if (!vm.count("tests")) {
     BOOST_LOG_TRIVIAL(error) << "tests are not specified (use --help)";
     return 1;
@@ -143,21 +143,17 @@ int main (int argc, char *argv[])
   if (vm.count("build")) {
     buildCmd = vm["build"].as<string>();
   }
-
-  fs::path output;
-  if (!vm.count("output")) {
-    std::time_t now = std::time(0);
-    struct std::tm tstruct;
-    char timeRepr[80];
-    tstruct = *localtime(&now);
-    strftime(timeRepr, sizeof(timeRepr), "%y%m%d_%H%M%S", &tstruct);
-    std::stringstream name;
-    name << fs::basename(root) << "-" << timeRepr << ".patch";
-    output = fs::path(name.str());
-  } else {
-    output = fs::path(vm["output"].as<string>());
+  
+  if (!vm.count("patch")) {
+    BOOST_LOG_TRIVIAL(error) << "patch file is not specified (use --help)";
+    return 1;
   }
-  output = fs::absolute(output);
+  fs::path patch = fs::path(vm["patch"].as<string>());
+  patch = fs::absolute(patch);
+  if (! fs::exists(patch)) {
+    BOOST_LOG_TRIVIAL(error) << "patch " << driver.string() << " does not exist";
+    return 1;
+  }
 
   fs::path workDir = fs::temp_directory_path() / fs::unique_path();
   fs::create_directory(workDir);
@@ -166,13 +162,39 @@ int main (int argc, char *argv[])
   Project project(root, files, buildCmd, workDir);
   TestingFramework tester(project, driver, testTimeout);
 
-  bool found = repair(project, tester, tests, workDir, output);
+  project.backupFiles();
 
-  if (found) {
-    BOOST_LOG_TRIVIAL(info) << "patch successfully generated: " << output;
+  BOOST_LOG_TRIVIAL(debug) << "applying patch";
+  {
+    FromDirectory dir(project.getRoot());
+    std::stringstream cmd;
+    cmd << "patch -p1 < " << patch.string();
+    uint status = std::system(cmd.str().c_str());
+    if (status != 0) {
+      BOOST_LOG_TRIVIAL(error) << "patch application failed";
+      return 1;
+    }
+  }
+
+  project.initialBuild();
+
+  vector<string> failingTests;
+
+  for (auto &test : tests) {
+    if (! tester.isPassing(test)) {
+      failingTests.push_back(test);
+    }
+  }
+
+  project.restoreFiles();
+
+  if (failingTests.empty()) {
+    BOOST_LOG_TRIVIAL(info) << "patch successfully validated";
     return 0;
   } else {
-    BOOST_LOG_TRIVIAL(info) << "failed to generated a patch";
+    for (auto &test : failingTests) {
+      BOOST_LOG_TRIVIAL(info) << "failing test: " << test;
+    }
     return 1;
   }
 }

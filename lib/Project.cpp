@@ -84,7 +84,7 @@ vector<fs::path> Project::getFiles() const {
 }
 
 bool Project::initialBuild() {
-  BOOST_LOG_TRIVIAL(debug) << "building with " << buildCmd;
+  BOOST_LOG_TRIVIAL(info) << "building project using \"" << buildCmd << "\"";
 
   FromDirectory dir(root);
   InEnvironment env(map<string, string> { {"CC", "f1x-cc"} });
@@ -99,7 +99,7 @@ bool Project::initialBuild() {
 }
 
 bool Project::buildWithRuntime(const fs::path &header) {
-  BOOST_LOG_TRIVIAL(debug) << "rebuilding project";
+  BOOST_LOG_TRIVIAL(info) << "rebuilding project with f1x runtime";
   FromDirectory dir(root);
   // FIXME: I need to append LD_LIBRARY_PATH
   InEnvironment env({ {"F1X_RUNTIME_H", header.string()},
