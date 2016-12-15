@@ -29,9 +29,9 @@ To compile f1x, create `build` directory and execute:
     cmake -DF1X_LLVM=<my-llvm-dir>/install/ ..
     make
     
-To install f1x, add the `tools` directory into your `PATH`:
+To install f1x, add the `build/tools` directory into your `PATH`:
 
-    export PATH=$PWD/tools:$PATH
+    export PATH=$PWD/build/tools:$PATH
     
 To test f1x, execute `./tests/runall.sh`.
 

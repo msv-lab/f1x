@@ -26,6 +26,7 @@
 
 #include "Repair.h"
 #include "RepairUtil.h"
+#include "Project.h"
 #include "MetaProgram.h"
 #include "SearchEngine.h"
 
@@ -44,7 +45,12 @@ bool repair(const fs::path &root,
             const string &buildCmd,
             const fs::path &patchFile) {
   BOOST_LOG_TRIVIAL(info) << "repairing project " << root;
-  BOOST_LOG_TRIVIAL(debug) << "with timeout " << testTimeout;
+
+  fs::path workDir = fs::temp_directory_path() / fs::unique_path();
+  fs::create_directory(workDir);
+  BOOST_LOG_TRIVIAL(debug) << "working directory: " + workDir.string();
+
+  Project project(root, files, workDir);
 
   setenv("CC", "f1x-cc", true);
 
@@ -61,11 +67,7 @@ bool repair(const fs::path &root,
   BOOST_LOG_TRIVIAL(info) << "adjusting compilation database";
   addClangHeadersToCompileDB(root);
 
-  fs::path workDir = fs::temp_directory_path() / fs::unique_path();
-  fs::create_directory(workDir);
-  BOOST_LOG_TRIVIAL(info) << "working directory: " + workDir.string();
-
-  backupSource(workDir, root, files);
+  project.backupFiles();
 
   fs::path candidateLocationsFile = workDir / fs::path("cl.json");
 
@@ -118,15 +120,13 @@ bool repair(const fs::path &root,
     }
   }
 
-  TestingFramework tester(root, driver);
+  TestingFramework tester(project, driver);
 
   SearchSpaceElement patch;
   bool found = search(searchSpace, tests, tester, patch);
 
-  
-
   if (found) {
-    restoreSource(workDir, root, files);
+    project.restoreFiles();
 
     BOOST_LOG_TRIVIAL(info) << "applying patch";
     {
@@ -148,10 +148,10 @@ bool repair(const fs::path &root,
       }
     }
 
-    computeDiff(workDir, root, files[0], 0, patchFile);
+    project.computeDiff(files[0], patchFile);
   }
 
-  restoreSource(workDir, root, files);
+  project.restoreFiles();
 
   return found;
 }

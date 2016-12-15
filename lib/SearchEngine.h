@@ -19,6 +19,7 @@
 #pragma once
 
 #include "RepairUtil.h"
+#include "Project.h"
 
 
 bool search(const std::vector<SearchSpaceElement> &searchSpace,

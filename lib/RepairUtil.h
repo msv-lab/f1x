@@ -149,33 +149,3 @@ class parse_error : public std::logic_error {
 
 
 std::vector<std::shared_ptr<CandidateLocation>> loadCandidateLocations(const boost::filesystem::path &path);
-
-
-class TestingFramework {
- public:
-  TestingFramework(const boost::filesystem::path &root,
-                   const boost::filesystem::path &driver);
-  
-  bool isPassing(const std::string &testId);
-
- private:
-  boost::filesystem::path root;
-  boost::filesystem::path driver;
-};
-
-
-void backupSource(const boost::filesystem::path &workDir,
-                  const boost::filesystem::path &root,
-                  const std::vector<boost::filesystem::path> &files);
-
-
-void restoreSource(const boost::filesystem::path &workDir,
-                   const boost::filesystem::path &root,
-                   const std::vector<boost::filesystem::path> &files);
-
-
-void computeDiff(const boost::filesystem::path &workDir,
-                 const boost::filesystem::path &root,
-                 const boost::filesystem::path &file,
-                 const uint id,
-                 const boost::filesystem::path &output);
