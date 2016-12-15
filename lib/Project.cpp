@@ -75,8 +75,12 @@ Project::Project(const boost::filesystem::path &root,
   buildCmd(buildCmd),
   workDir(workDir) {}
 
-fs::path Project::getRoot() {
+fs::path Project::getRoot() const {
   return root;
+}
+
+vector<fs::path> Project::getFiles() const {
+  return files;
 }
 
 bool Project::initialBuild() {
@@ -145,11 +149,14 @@ void Project::computeDiff(const fs::path &file,
 
 
 TestingFramework::TestingFramework(const Project &project,
-                                   const boost::filesystem::path &driver):
+                                   const boost::filesystem::path &driver,
+                                   const uint testTimeout):
   project(project),
-  driver(driver) {}
+  driver(driver),
+  testTimeout(testTimeout) {}
 
 bool TestingFramework::isPassing(const std::string &testId) {
+  // FIXME: respect timeout
   FromDirectory dir(project.getRoot());
   string cmd = driver.string() + " " + testId;
   uint status = std::system(cmd.c_str());

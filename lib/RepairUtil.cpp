@@ -20,6 +20,7 @@
 #include <memory>
 #include <cstdlib>
 #include <string>
+#include <sys/stat.h>
 
 #include <boost/filesystem/fstream.hpp>
 
@@ -323,4 +324,16 @@ vector<shared_ptr<CandidateLocation>> loadCandidateLocations(const fs::path &pat
   }
 
   return result;
+}
+
+
+bool isExecutable(const char *file)
+{
+  struct stat  st;
+
+  if (stat(file, &st) < 0)
+    return false;
+  if ((st.st_mode & S_IEXEC) != 0)
+    return true;
+  return false;
 }

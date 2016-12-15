@@ -159,3 +159,6 @@ class parse_error : public std::logic_error {
 
 
 std::vector<std::shared_ptr<CandidateLocation>> loadCandidateLocations(const boost::filesystem::path &path);
+
+
+bool isExecutable(const char *file);

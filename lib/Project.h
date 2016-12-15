@@ -36,7 +36,8 @@ class Project {
   void saveFilesWithPrefix(const std::string &prefix);
   void computeDiff(const boost::filesystem::path &file,
                    const boost::filesystem::path &outputFile);
-  boost::filesystem::path getRoot();
+  boost::filesystem::path getRoot() const;
+  std::vector<boost::filesystem::path> getFiles() const;
 
  private:
   boost::filesystem::path root;
@@ -49,11 +50,13 @@ class Project {
 class TestingFramework {
  public:
   TestingFramework(const Project &project,
-                   const boost::filesystem::path &driver);
+                   const boost::filesystem::path &driver,
+                   const uint testTimeout);
   
   bool isPassing(const std::string &testId);
 
  private:
   Project project;
   boost::filesystem::path driver;
+  uint testTimeout;
 };

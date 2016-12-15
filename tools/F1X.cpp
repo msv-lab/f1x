@@ -19,37 +19,21 @@
 #include <iostream>
 #include <ctime>
 #include <sstream>
-#include <sys/stat.h>
 
 #include <boost/program_options.hpp>
 
-#include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/utility/setup/console.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
 
 #include "Config.h"
+#include "LoggerConfig.h"
 #include "Repair.h"
+#include "RepairUtil.h"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
-namespace logging = boost::log;
 
 using std::vector;
 using std::string;
-
-
-bool isExecutable(const char *file)
-{
-  struct stat  st;
-
-  if (stat(file, &st) < 0)
-    return false;
-  if ((st.st_mode & S_IEXEC) != 0)
-    return true;
-  return false;
-}
 
 
 int main (int argc, char *argv[])
@@ -95,13 +79,10 @@ int main (int argc, char *argv[])
     return 1;
   }
 
-  logging::add_common_attributes();
-  logging::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
-  logging::add_console_log(std::cerr, logging::keywords::format = "[%TimeStamp%] [%Severity%]\t%Message%");
-  if (vm.count("verbose")) {
-    logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::debug);    
+  if(vm.count("verbose")){
+    initializeTrivialLogger(true);
   } else {
-    logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::info);
+    initializeTrivialLogger(false);
   }
 
   if (!vm.count("source")) {
@@ -178,7 +159,14 @@ int main (int argc, char *argv[])
   }
   output = fs::absolute(output);
 
-  bool found = repair(root, files, tests, testTimeout, driver, buildCmd, output);
+  fs::path workDir = fs::temp_directory_path() / fs::unique_path();
+  fs::create_directory(workDir);
+  BOOST_LOG_TRIVIAL(debug) << "working directory: " + workDir.string();
+
+  Project project(root, files, buildCmd, workDir);
+  TestingFramework tester(project, driver, testTimeout);
+
+  bool found = repair(project, tester, tests, workDir, output);
 
   if (found) {
     BOOST_LOG_TRIVIAL(info) << "patch successfully generated: " << output.string();

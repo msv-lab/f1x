@@ -41,23 +41,15 @@ const string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
 const string RUNTIME_HEADER_FILE_NAME = "rt.h";
 
 
-bool repair(const fs::path &root,
-            const vector<fs::path> &files,
-            const vector<string> &tests,
-            const uint testTimeout,
-            const fs::path &driver,
-            const string &buildCmd,
-            const fs::path &patchFile) {
-  BOOST_LOG_TRIVIAL(info) << "repairing project " << root;
+bool repair(Project &project,
+            TestingFramework &tester,
+            const std::vector<std::string> &tests,
+            const boost::filesystem::path &workDir,
+            const boost::filesystem::path &patchFile) {
 
-  fs::path workDir = fs::temp_directory_path() / fs::unique_path();
-  fs::create_directory(workDir);
-  BOOST_LOG_TRIVIAL(debug) << "working directory: " + workDir.string();
-
-  Project project(root, files, buildCmd, workDir);
+  BOOST_LOG_TRIVIAL(info) << "repairing project " << project.getRoot();
 
   bool buildSucceeded = project.initialBuild();
-
   if (! buildSucceeded) {
     BOOST_LOG_TRIVIAL(warning) << "compilation returned non-zero exit code";
   }
@@ -66,14 +58,14 @@ bool repair(const fs::path &root,
 
   fs::path clFile = workDir / fs::path(CANDADATE_LOCATIONS_FILE_NAME);
 
-  BOOST_LOG_TRIVIAL(debug) << "instrumenting";
+  BOOST_LOG_TRIVIAL(debug) << "instrumenting source files";
   {
-    FromDirectory dir(root);
-    std::stringstream s;
-    s << "f1x-transform " << files[0].string() << " --instrument"
-      << " --file-id 0"
-      << " --output " + clFile.string();
-    uint status = std::system(s.str().c_str());
+    FromDirectory dir(project.getRoot());
+    std::stringstream cmd;
+    cmd << "f1x-transform " << project.getFiles()[0].string() << " --instrument"
+        << " --file-id 0"
+        << " --output " + clFile.string();
+    uint status = std::system(cmd.str().c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "transformation failed";
     }
@@ -113,9 +105,8 @@ bool repair(const fs::path &root,
     BOOST_LOG_TRIVIAL(warning) << "compilation with runtime returned non-zero exit code";
   }
 
-  TestingFramework tester(project, driver);
-
   SearchSpaceElement patch;
+
   bool found = search(searchSpace, tests, tester, patch);
 
   if (found) {
@@ -123,17 +114,17 @@ bool repair(const fs::path &root,
 
     BOOST_LOG_TRIVIAL(debug) << "applying patch";
     {
-      FromDirectory dir(root);
+      FromDirectory dir(project.getRoot());
       uint beginLine = patch.buggy->location.beginLine;
       uint beginColumn = patch.buggy->location.beginColumn;
       uint endLine = patch.buggy->location.endLine;
       uint endColumn = patch.buggy->location.endColumn;
       std::stringstream cmd;
-      cmd << "f1x-transform " << files[0].string() << " --apply" 
-          << " --bl " << beginLine 
+      cmd << "f1x-transform " << project.getFiles()[0].string() << " --apply"
+          << " --bl " << beginLine
           << " --bc " << beginColumn
-          << " --el " << endLine 
-          << " --ec " << endColumn 
+          << " --el " << endLine
+          << " --ec " << endColumn
           << " --patch " << "\"" << expressionToString(patch.patch) << "\"";
       uint status = std::system(cmd.str().c_str());
       if (status != 0) {
@@ -141,7 +132,7 @@ bool repair(const fs::path &root,
       }
     }
 
-    project.computeDiff(files[0], patchFile);
+    project.computeDiff(project.getFiles()[0], patchFile);
   }
 
   project.restoreFiles();
