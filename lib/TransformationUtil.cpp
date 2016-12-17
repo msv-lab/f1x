@@ -161,6 +161,23 @@ bool isTopLevelStatement(const Stmt *stmt, ASTContext *context) {
   return false;
 }
 
+bool shouldAddBrackets(const Stmt *stmt, ASTContext *context)
+{
+	auto it = context->getParents(*stmt).begin();
+	const IfStmt* is;
+    if ((is = it->get<IfStmt>()) != NULL) {
+    	return true;
+    }
+    const ForStmt* fs;
+  	if ((fs = it->get<ForStmt>()) != NULL) {
+  		return true;
+  	}
+  	const WhileStmt* ws;
+ 	if ((ws = it->get<WhileStmt>()) != NULL) {
+    	return true;
+    }
+    return false;
+} 
 
 class StmtToJSON : public StmtVisitor<StmtToJSON> {
   json::Document::AllocatorType *allocator;

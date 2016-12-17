@@ -64,6 +64,12 @@ for test in $TESTS; do
             subject_tests="n1 p1 p2"
             subject_args="--test-timeout 1000"
             ;;
+        return-continue)
+            subject_files="program.c"
+            subject_driver="$PWD/$test/test.sh"
+            subject_tests="n1 p1 p2"
+            subject_args="--test-timeout 1000"
+            ;;
         *)
             echo "command for test $test is not defined"
             exit 1

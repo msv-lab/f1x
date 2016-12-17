@@ -18,6 +18,7 @@
 
 #include <sstream>
 #include <fstream>
+#include <iostream>
 
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
@@ -81,7 +82,7 @@ void InstrumentationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
 InstrumentationStatementHandler::InstrumentationStatementHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
 void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result) {
-  if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {
+  if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {//Bound = repairable
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();
 
@@ -100,7 +101,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
     uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
-
+                 
     llvm::errs() << beginLine << " "
                  << beginColumn << " "
                  << endLine << " "
@@ -132,16 +133,40 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     // because it can create dangling else branch.
     // wrapping it with {} will not work because break/continue are matched without semicolon
 
+	unsigned origLength = Rewrite.getRangeSize(expandedLoc);
     std::ostringstream stringStream;
+    
+    bool addBrackets = shouldAddBrackets(stmt, Result.Context);
+    if(addBrackets)
+    	stringStream << "{\n\t";
     stringStream << "if ("
                  << "!(__f1x_loc == " << locId << "ul) || "
                  << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
                  << "(" << arguments << ")"
                  << ") "
                  << toString(stmt);
+    if(addBrackets)
+    {
+    	stringStream << ";\n}";
+    	const char *followingData = srcMgr.getCharacterData(expandedLoc.getBegin());
+    	int followingDataSize = strlen(followingData);
+    	origLength = 0;
+		for(int i=0; i<followingDataSize; i++)
+		{
+			origLength++;
+			char curChar = *(followingData+i);
+			if(curChar == ';')
+				break;
+			/*else if(curChar == ' ' || curChar == '\t' || curChar == '\n')
+			{
+				continue;
+			}*/
+		}
+    }
+    
     string replacement = stringStream.str();
 
-    Rewrite.ReplaceText(expandedLoc, replacement);
+    Rewrite.ReplaceText(expandedLoc.getBegin(), origLength, replacement);
   }
 }
 

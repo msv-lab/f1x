@@ -65,6 +65,7 @@ bool repair(Project &project,
     cmd << "f1x-transform " << project.getFiles()[0].string() << " --instrument"
         << " --file-id 0"
         << " --output " + clFile.string();
+    std::cout << "cmd: " << cmd.str() << std::endl;
     uint status = std::system(cmd.str().c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "transformation failed";

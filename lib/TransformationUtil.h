@@ -56,6 +56,7 @@ bool overwriteMainChangedFile(clang::Rewriter &TheRewriter);
   it should not be, for example, the increment of for loop
  */
 bool isTopLevelStatement(const clang::Stmt *stmt, clang::ASTContext *context);
+bool shouldAddBrackets(const clang::Stmt *stmt, clang::ASTContext *context);
 
 
 rapidjson::Value stmtToJSON(const clang::Stmt *stmt,
