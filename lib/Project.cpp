@@ -52,9 +52,12 @@ void addClangHeadersToCompileDB(fs::path projectRoot) {
     // assume there is always a first space in which we insert our include
     // FIXME: add escape for the spaces in the include path
     string command = entry.GetObject()["command"].GetString();
-    uint index = command.find(" ");
-    string newCommand = command.substr(0, index) + " -I" + F1X_CLANG_INCLUDE + " " + command.substr(index);
-    entry.GetObject()["command"].SetString(newCommand.c_str(), db.GetAllocator());
+    string includeCmd =  "-I" + F1X_CLANG_INCLUDE;
+    if (command.find(includeCmd) == std::string::npos) {
+      uint index = command.find(" ");
+      string newCommand = command.substr(0, index) + " " + includeCmd + " " + command.substr(index);
+      entry.GetObject()["command"].SetString(newCommand.c_str(), db.GetAllocator());
+    }
   }
   
   {
@@ -89,7 +92,13 @@ bool Project::initialBuild() {
   FromDirectory dir(root);
   InEnvironment env(map<string, string> { {"CC", "f1x-cc"} });
 
-  string cmd = "f1x-bear " + buildCmd;
+  string cmd;
+  if (fs::exists(root / "compile_commands.json")) {
+    BOOST_LOG_TRIVIAL(debug) << "using existing compilation database";
+    cmd = buildCmd;
+  } else {
+    cmd = "f1x-bear " + buildCmd;
+  }
   uint status = std::system(cmd.c_str());
 
   // FIXME: check that compilation database is non-empty

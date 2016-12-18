@@ -65,10 +65,15 @@ bool repair(Project &project,
     cmd << "f1x-transform " << project.getFiles()[0].string() << " --instrument"
         << " --file-id 0"
         << " --output " + clFile.string();
-    std::cout << "cmd: " << cmd.str() << std::endl;
+    BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
     uint status = std::system(cmd.str().c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "transformation failed";
+    }
+    if (! fs::exists(clFile)) {
+      BOOST_LOG_TRIVIAL(error) << "failed to extract candidate locations";
+      project.restoreFiles();
+      return false;
     }
   }
 
