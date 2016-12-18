@@ -42,48 +42,49 @@ void addRuntimeLoader(std::ostream &OH) {
      << "static F1XRuntimeLoader __loader;" << "\n";
 }
 
-vector<string> mutateOperator(Operator op) {
+
+vector<Operator> mutateOperator(Operator op) {
   switch (op) {
   case Operator::EQ:
-    return { "!=", "<", "<=", ">", ">=" };
+    return { Operator::NEQ, Operator::LT, Operator::LE, Operator::GT, Operator::GE };
   case Operator::NEQ:
-    return { "==", "<", "<=", ">", ">=" };
+    return { Operator::EQ, Operator::LT, Operator::LE, Operator::GT, Operator::GE };
   case Operator::LT:
-    return { "==", "!=", "<=", ">", ">=" };
+    return { Operator::EQ, Operator::NEQ, Operator::LE, Operator::GT, Operator::GE };
   case Operator::LE:
-    return { "==", "!=", "<", ">", ">=" };
+    return { Operator::EQ, Operator::NEQ, Operator::LT, Operator::GT, Operator::GE };
   case Operator::GT:
-    return { "==", "!=", "<", "<=", ">=" };
+    return { Operator::EQ, Operator::NEQ, Operator::LT, Operator::LE, Operator::GE };
   case Operator::GE:
-    return { "==", "!=", "<", "<=", ">" };
+    return { Operator::EQ, Operator::NEQ, Operator::LT, Operator::LE, Operator::GT };
   case Operator::OR:
-    return {};
+    return { Operator::AND };
   case Operator::AND:
-    return {};
+    return { Operator::OR };
   case Operator::ADD:
-    return {};
+    return { Operator::SUB, Operator::MUL }; // NOTE: no Operator::DIV and Operator::MOD
   case Operator::SUB:
-    return {};
+    return { Operator::ADD, Operator::MUL };
   case Operator::MUL:
-    return {};
+    return { Operator::ADD, Operator::SUB };
   case Operator::DIV:
-    return {};
+    return { Operator::ADD, Operator::SUB, Operator::MUL };
   case Operator::MOD:
-    return {};
+    return { Operator::ADD, Operator::SUB, Operator::MUL };
   case Operator::NEG:
     return {};
   case Operator::NOT:
     return {};
   case Operator::BV_AND:
-    return {};
+    return { Operator::BV_OR, Operator::BV_XOR };
   case Operator::BV_OR:
-    return {};
+    return { Operator::BV_AND, Operator::BV_XOR };
   case Operator::BV_XOR:
-    return {};
+    return { Operator::BV_AND, Operator::BV_OR };
   case Operator::BV_SHL:
-    return {};
+    return { Operator::BV_SHR };
   case Operator::BV_SHR:
-    return {};
+    return { Operator::BV_SHL };
   case Operator::BV_NOT:
     return {};
   case Operator::BV_TO_INT:
@@ -94,31 +95,48 @@ vector<string> mutateOperator(Operator op) {
 }
 
 
+Expression makeArgSubs(const Expression &expr, const Expression &subs) {
+  return Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {subs}};
+}
+
+
+Expression makeLeftSubs(const Expression &expr, const Expression &subs) {
+  return Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {subs, expr.args[1]}};
+}
+
+
+Expression makeRightSubs(const Expression &expr, const Expression &subs) {
+  return Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {expr.args[0], subs}};
+}
+
+
 vector<Expression> mutate(const Expression &expr, const vector<Expression> &components) {
   vector<Expression> result;
   if (expr.args.size() == 0) {
     result = components;
   } else {
-    vector<string> oms = mutateOperator(expr.op);
+    vector<Operator> oms = mutateOperator(expr.op);
     for (auto &m : oms) {
       Expression e = expr;
-      e.repr = m;
+      e.op = m;
+      e.repr = operatorToString(m);
       result.push_back(std::move(e));
     }
 
+    // FIXME: need to avoid division by zero
     if (expr.args.size() == 1) {
       vector<Expression> argMutants = mutate(expr.args[0], components);
       for (auto &m : argMutants) {
-        result.push_back(Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {m}});
+        result.push_back(makeArgSubs(expr, m));
       }
     } else if (expr.args.size() == 2) {
       vector<Expression> leftMutants = mutate(expr.args[0], components);
       for (auto &m : leftMutants) {
-        result.push_back(Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {m, expr.args[1]}});
+        result.push_back(makeLeftSubs(expr, m));
       }
       vector<Expression> rightMutants = mutate(expr.args[1], components);
       for (auto &m : rightMutants) {
-        result.push_back(Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {expr.args[0], m}});
+        result.push_back(makeRightSubs(expr, m));
       }
     }
   }
