@@ -35,10 +35,6 @@ All other integer types are currently casted to long.
 
 f1x employs change minimality as the default patch prioritization strategy. It guarantees to generate the syntactically minimal patch in the entire search space. The syntactical change is measured in the number of changed AST nodes. For certain situations (e.g. how to compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical manner.
 
-### Performance analysis ###
-
-f1x algorithm was designed and optimized for repairing large open source programs such as PHP and Libtiff. The default configuration may not be optimal for small subjects such as TCAS from SIR benchmark and subjects from Codeflaws benchmark. Various algorithm parameters can be modified in the `Config.h.in` file (requires recompilation).
-
 ## Usage ##
 
 **Warning** f1x executes arbitrary modifications of your source code which may lead to undesirable side effects. Therefore, it is recommended to run f1x in an isolated environment. Apply f1x to a copy of your application, since it can corrupt the source code.
@@ -85,6 +81,14 @@ Argument | Description
 **-v [ --verbose ]** | Enables extended output for troubleshooting
 **-h [ --help ]** | Prints help message and exits
 **--version** | Prints version and exits
+
+#### Advanced configuration ####
+
+f1x allows to restrict the search space to certain parts of the source code files. In the following example, the candidate locations will be restricted to the line 20 of `main.c` and from the line 5 to the line 45 (inclusive) of `lib.c`:
+
+    --files main.c:20 lib.c:5-45
+
+Various algorithm parameters can be modified in the `Config.h.in` file (requires reconfiguration and recompilation).
     
 ## Related publications ##
 

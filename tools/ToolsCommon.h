@@ -50,8 +50,8 @@ std::vector<ProjectFile> parseFilesArg(const boost::filesystem::path &root,
   std::vector<ProjectFile> files;
   for (auto &arg : args) {
     boost::filesystem::path file;
-    uint fromLine;
-    uint toLine;
+    uint fromLine = 0;
+    uint toLine = 0;
     auto colonIndex = arg.find(":");
     if (colonIndex == std::string::npos) {
       file = boost::filesystem::path(arg);

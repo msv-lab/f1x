@@ -47,3 +47,4 @@ To test f1x, execute `./tests/runall.sh`.
 
 * Abhik Roychoudhury, Professor, Principal investigator
 * Sergey Mechtaev, PhD student, Developer
+* Gao Xiang, PhD student, Developer
