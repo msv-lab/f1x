@@ -151,8 +151,12 @@ int main (int argc, char *argv[])
     char timeRepr[80];
     tstruct = *localtime(&now);
     strftime(timeRepr, sizeof(timeRepr), "%y%m%d_%H%M%S", &tstruct);
+    string dirname;
+    for(auto& e : root)
+      if (e.string() != ".")
+        dirname = e.string();
     std::stringstream name;
-    name << fs::basename(root) << "-" << timeRepr << ".patch";
+    name << dirname << "-" << timeRepr << ".patch";
     output = fs::path(name.str());
   } else {
     output = fs::path(vm["output"].as<string>());
