@@ -27,7 +27,7 @@
 #include "Repair.h"
 #include "RepairUtil.h"
 #include "Project.h"
-#include "MetaProgram.h"
+#include "Synthesis.h"
 #include "SearchEngine.h"
 
 namespace fs = boost::filesystem;

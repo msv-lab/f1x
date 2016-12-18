@@ -30,7 +30,7 @@ set_target_properties(f1xTransform PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exce
 add_library (f1xRepair
   RepairUtil.cpp
   Project.cpp
-  MetaProgram.cpp
+  Synthesis.cpp
   SearchEngine.cpp
   Repair.cpp
   )

@@ -20,7 +20,7 @@
 #include <sstream>
 #include <unordered_map>
 
-#include "MetaProgram.h"
+#include "Synthesis.h"
 
 using std::pair;
 using std::vector;
