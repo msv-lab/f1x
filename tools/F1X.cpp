@@ -25,7 +25,7 @@
 #include <boost/log/trivial.hpp>
 
 #include "Config.h"
-#include "LoggerConfig.h"
+#include "ToolsCommon.h"
 #include "Repair.h"
 #include "RepairUtil.h"
 
@@ -102,20 +102,17 @@ int main (int argc, char *argv[])
   }
   uint testTimeout = vm["test-timeout"].as<uint>();
 
-  vector<fs::path> files;
   if (!vm.count("files")) {
     BOOST_LOG_TRIVIAL(error) << "files are not specified (use --help)";
     return 1;
   }
-  vector<string> fileNames = vm["files"].as<vector<string>>();
-  for(string &name : fileNames) {
-    fs::path file(name);
-    fs::path fullPath = root / file;
-    if (! fs::exists(fullPath)) {
-      BOOST_LOG_TRIVIAL(error) << "source file " << fullPath.string() << " does not exist";
-      return 1;
-    }
-    files.push_back(file);
+  vector<string> fileArgs = vm["files"].as<vector<string>>();
+  vector<ProjectFile> files;
+  try {
+    files = parseFilesArg(root, fileArgs);
+  } catch (const parse_error& e) {
+    BOOST_LOG_TRIVIAL(error) << e.what();
+    return 1;
   }
 
   if (!vm.count("tests")) {

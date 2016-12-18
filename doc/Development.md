@@ -86,3 +86,4 @@ Each expression is represented as follows:
 - support project-scale localization with gcov
 - what to do if evaluation causes segmentation fault?
 - add initialization step what computes program-wide partitioning
+- support locations range specification

@@ -22,10 +22,18 @@
 #include "Config.h"
 
 
+// (!fromLine && !toLine) means no restriction
+struct ProjectFile {
+  boost::filesystem::path relpath;
+  uint fromLine;
+  uint toLine;
+};
+
+
 class Project {
  public:
   Project(const boost::filesystem::path &root,
-          const std::vector<boost::filesystem::path> &files,
+          const std::vector<ProjectFile> &files,
           const std::string &buildCmd,          
           const boost::filesystem::path &workDir);
 
@@ -34,14 +42,14 @@ class Project {
   void backupFiles();
   void restoreFiles();
   void saveFilesWithPrefix(const std::string &prefix);
-  void computeDiff(const boost::filesystem::path &file,
+  void computeDiff(const ProjectFile &file,
                    const boost::filesystem::path &outputFile);
   boost::filesystem::path getRoot() const;
-  std::vector<boost::filesystem::path> getFiles() const;
+  std::vector<ProjectFile> getFiles() const;
 
  private:
   boost::filesystem::path root;
-  std::vector<boost::filesystem::path> files;
+  std::vector<ProjectFile> files;
   std::string buildCmd;
   boost::filesystem::path workDir;
 };

@@ -42,6 +42,15 @@ using std::string;
 json::Document candidateLocations;
 
 
+bool inRange(uint line) {
+  if (globalFromLine || globalToLine) {
+    return globalFromLine <= line && line <= globalToLine;
+  } else {
+    return true;
+  }
+}
+
+
 bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
   candidateLocations.SetArray();
   return true;
@@ -101,6 +110,9 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
     uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+
+    if (!inRange(beginLine))
+      return;
                  
     llvm::errs() << beginLine << " "
                  << beginColumn << " "
@@ -190,6 +202,9 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
     uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+
+    if (!inRange(beginLine))
+      return;
 
     llvm::errs() << beginLine << " "
                  << beginColumn << " "

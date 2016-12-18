@@ -62,7 +62,9 @@ bool repair(Project &project,
   {
     FromDirectory dir(project.getRoot());
     std::stringstream cmd;
-    cmd << "f1x-transform " << project.getFiles()[0].string() << " --instrument"
+    cmd << "f1x-transform " << project.getFiles()[0].relpath.string() << " --instrument"
+        << " --from-line " << project.getFiles()[0].fromLine
+        << " --to-line " << project.getFiles()[0].toLine
         << " --file-id 0"
         << " --output " + clFile.string();
     BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
@@ -125,7 +127,7 @@ bool repair(Project &project,
       uint endLine = patch.buggy->location.endLine;
       uint endColumn = patch.buggy->location.endColumn;
       std::stringstream cmd;
-      cmd << "f1x-transform " << project.getFiles()[0].string() << " --apply"
+      cmd << "f1x-transform " << project.getFiles()[0].relpath.string() << " --apply"
           << " --bl " << beginLine
           << " --bc " << beginColumn
           << " --el " << endLine

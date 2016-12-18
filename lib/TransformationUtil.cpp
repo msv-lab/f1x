@@ -124,10 +124,13 @@ bool overwriteMainChangedFile(Rewriter &TheRewriter) {
   bool AllWritten = true;
   FileID id = TheRewriter.getSourceMgr().getMainFileID();
   const FileEntry *Entry = TheRewriter.getSourceMgr().getFileEntryForID(id);
-  std::error_code err_code;  
-  raw_fd_ostream out(Entry->getName(), err_code, sys::fs::F_None);
-  TheRewriter.getRewriteBufferFor(id)->write(out);
-  out.close();
+  std::error_code err_code;
+  auto buffer = TheRewriter.getRewriteBufferFor(id);
+  if (buffer) {// if there are modifications
+    raw_fd_ostream out(Entry->getName(), err_code, sys::fs::F_None);
+    buffer->write(out);
+    out.close();
+  }
   return !AllWritten;
 }
 

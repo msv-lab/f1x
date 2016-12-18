@@ -70,7 +70,7 @@ void addClangHeadersToCompileDB(fs::path projectRoot) {
 
 
 Project::Project(const boost::filesystem::path &root,
-                 const std::vector<boost::filesystem::path> &files,
+                 const std::vector<ProjectFile> &files,
                  const std::string &buildCmd,
                  const boost::filesystem::path &workDir):
   root(root),
@@ -82,7 +82,7 @@ fs::path Project::getRoot() const {
   return root;
 }
 
-vector<fs::path> Project::getFiles() const {
+vector<ProjectFile> Project::getFiles() const {
   return files;
 }
 
@@ -101,7 +101,7 @@ bool Project::initialBuild() {
   }
   uint status = std::system(cmd.c_str());
 
-  // FIXME: check that compilation database is non-empty
+  // FIXME: check that project files are in the compilation database
   addClangHeadersToCompileDB(root);
 
   return (status == 0);
@@ -121,7 +121,7 @@ bool Project::buildWithRuntime(const fs::path &header) {
 
 void Project::saveFilesWithPrefix(const string &prefix) {
   for (int i = 0; i < files.size(); i++) {
-    fs::copy(root / files[i], workDir / fs::path(prefix + std::to_string(i) + ".c"));
+    fs::copy(root / files[i].relpath, workDir / fs::path(prefix + std::to_string(i) + ".c"));
   }
 }
 
@@ -131,27 +131,31 @@ void Project::backupFiles() {
 
 void Project::restoreFiles() {
   for (int i = 0; i < files.size(); i++) {
-    if(fs::exists(root / files[i])) {
-      fs::remove(root / files[i]);
+    if(fs::exists(root / files[i].relpath)) {
+      fs::remove(root / files[i].relpath);
     }
-    fs::copy(workDir / fs::path(BACKUP_PREFIX + std::to_string(i) + ".c"), root / files[i]);
+    fs::copy(workDir / fs::path(BACKUP_PREFIX + std::to_string(i) + ".c"), root / files[i].relpath);
   }
 }
 
-void Project::computeDiff(const fs::path &file,
+void Project::computeDiff(const ProjectFile &file,
                           const fs::path &output) {
   {
-    fs::path a = fs::path("a") / file;
-    fs::path b = fs::path("b") / file;
+    fs::path a = fs::path("a") / file.relpath;
+    fs::path b = fs::path("b") / file.relpath;
     fs::ofstream ofs(output);
     ofs << "--- " << a.string() << "\n"
         << "+++ " << b.string() << "\n";
   }
-  uint id = std::find(files.begin(), files.end(), file) - files.begin();
+  uint id = 0;
+  for (auto &f : files) {
+    if (file.relpath != f.relpath)
+      id++;
+  }
   assert(id < files.size());
   
   fs::path fromFile = workDir / fs::path(BACKUP_PREFIX + std::to_string(id) + ".c");
-  fs::path toFile = root / file;
+  fs::path toFile = root / file.relpath;
   string cmd = "diff " + fromFile.string() + " " + toFile.string() + " >> " + output.string();
   std::system(cmd.c_str());
 }
