@@ -17,6 +17,7 @@
 */
 
 #include <sstream>
+#include <iomanip>
 
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
@@ -189,10 +190,10 @@ TestingFramework::TestingFramework(const Project &project,
   verbose(verbose) {}
 
 bool TestingFramework::isPassing(const std::string &testId) {
-  // FIXME: respect timeout
   FromDirectory dir(project.getRoot());
   std::stringstream cmd;
-  cmd << driver.string() << " " << testId;
+  cmd << "timeout " << std::setprecision(3) << ((double) testTimeout) / 1000.0 << "s"
+      << " " << driver.string() << " " << testId;
   if (verbose) {
     cmd << " >&2";
   } else {
