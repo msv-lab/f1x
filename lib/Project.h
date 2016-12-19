@@ -35,7 +35,8 @@ class Project {
   Project(const boost::filesystem::path &root,
           const std::vector<ProjectFile> &files,
           const std::string &buildCmd,          
-          const boost::filesystem::path &workDir);
+          const boost::filesystem::path &workDir,
+          bool verbose);
 
   bool initialBuild();
   bool buildWithRuntime(const boost::filesystem::path &header);
@@ -52,6 +53,7 @@ class Project {
   std::vector<ProjectFile> files;
   std::string buildCmd;
   boost::filesystem::path workDir;
+  bool verbose;
 };
 
 
@@ -59,7 +61,8 @@ class TestingFramework {
  public:
   TestingFramework(const Project &project,
                    const boost::filesystem::path &driver,
-                   const uint testTimeout);
+                   const uint testTimeout,
+                   bool verbose);
   
   bool isPassing(const std::string &testId);
 
@@ -67,4 +70,5 @@ class TestingFramework {
   Project project;
   boost::filesystem::path driver;
   uint testTimeout;
+  bool verbose;
 };

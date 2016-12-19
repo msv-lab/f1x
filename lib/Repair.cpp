@@ -45,7 +45,8 @@ bool repair(Project &project,
             TestingFramework &tester,
             const std::vector<std::string> &tests,
             const boost::filesystem::path &workDir,
-            const boost::filesystem::path &patchFile) {
+            const boost::filesystem::path &patchFile,
+            bool verbose) {
 
   BOOST_LOG_TRIVIAL(info) << "repairing project " << project.getRoot();
 
@@ -67,6 +68,11 @@ bool repair(Project &project,
         << " --to-line " << project.getFiles()[0].toLine
         << " --file-id 0"
         << " --output " + clFile.string();
+    if (verbose) {
+      cmd << " >&2";
+    } else {
+      cmd << " >/dev/null 2>&1";
+    }
     BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
     uint status = std::system(cmd.str().c_str());
     if (status != 0) {
@@ -99,8 +105,15 @@ bool repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "compiling search space";
   {
     FromDirectory dir(workDir);
-    string cmd = RUNTIME_COMPILER + " -O2 -fPIC rt.cpp -shared -o libf1xrt.so";
-    uint status = std::system(cmd.c_str());
+    std::stringstream cmd;
+    cmd << RUNTIME_COMPILER << " -O2 -fPIC rt.cpp -shared -o libf1xrt.so";
+    if (verbose) {
+      cmd << " >&2";
+    } else {
+      cmd << " >/dev/null 2>&1";
+    }
+    BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
+    uint status = std::system(cmd.str().c_str());
     if (status != 0) {
       BOOST_LOG_TRIVIAL(warning) << "runtime compilation failed";
     }
@@ -133,6 +146,12 @@ bool repair(Project &project,
           << " --el " << endLine
           << " --ec " << endColumn
           << " --patch " << "\"" << expressionToString(patch.patch) << "\"";
+      if (verbose) {
+        cmd << " >&2";
+      } else {
+        cmd << " >/dev/null 2>&1";
+      }
+      BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
       uint status = std::system(cmd.str().c_str());
       if (status != 0) {
         BOOST_LOG_TRIVIAL(warning) << "patch application failed";

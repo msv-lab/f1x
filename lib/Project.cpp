@@ -16,6 +16,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <sstream>
+
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
 
@@ -72,11 +74,13 @@ void addClangHeadersToCompileDB(fs::path projectRoot) {
 Project::Project(const boost::filesystem::path &root,
                  const std::vector<ProjectFile> &files,
                  const std::string &buildCmd,
-                 const boost::filesystem::path &workDir):
+                 const boost::filesystem::path &workDir,
+                 bool verbose):
   root(root),
   files(files),
   buildCmd(buildCmd),
-  workDir(workDir) {}
+  workDir(workDir),
+  verbose(verbose) {}
 
 fs::path Project::getRoot() const {
   return root;
@@ -92,14 +96,20 @@ bool Project::initialBuild() {
   FromDirectory dir(root);
   InEnvironment env(map<string, string> { {"CC", "f1x-cc"} });
 
-  string cmd;
+  std::stringstream cmd;
   if (fs::exists(root / "compile_commands.json")) {
     BOOST_LOG_TRIVIAL(debug) << "using existing compilation database";
-    cmd = buildCmd;
+    cmd << buildCmd;
   } else {
-    cmd = "f1x-bear " + buildCmd;
+    cmd << "f1x-bear " << buildCmd;
   }
-  uint status = std::system(cmd.c_str());
+  if (verbose) {
+    cmd << " >&2";
+  } else {
+    cmd << " >/dev/null 2>&1";
+  }
+  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
+  uint status = std::system(cmd.str().c_str());
 
   // FIXME: check that project files are in the compilation database
   addClangHeadersToCompileDB(root);
@@ -114,8 +124,15 @@ bool Project::buildWithRuntime(const fs::path &header) {
   InEnvironment env({ {"F1X_RUNTIME_H", header.string()},
                       {"F1X_RUNTIME_LIB", workDir.string()},
                       {"LD_LIBRARY_PATH", workDir.string()} });
-  string cmd = buildCmd;
-  uint status = std::system(cmd.c_str());
+  std::stringstream cmd;
+  cmd << buildCmd;
+  if (verbose) {
+    cmd << " >&2";
+  } else {
+    cmd << " >/dev/null 2>&1";
+  }
+  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
+  uint status = std::system(cmd.str().c_str());
   return (status == 0);
 }
 
@@ -157,21 +174,31 @@ void Project::computeDiff(const ProjectFile &file,
   fs::path fromFile = workDir / fs::path(BACKUP_PREFIX + std::to_string(id) + ".c");
   fs::path toFile = root / file.relpath;
   string cmd = "diff " + fromFile.string() + " " + toFile.string() + " >> " + output.string();
+  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd;
   std::system(cmd.c_str());
 }
 
 
 TestingFramework::TestingFramework(const Project &project,
                                    const boost::filesystem::path &driver,
-                                   const uint testTimeout):
+                                   const uint testTimeout,
+                                   bool verbose):
   project(project),
   driver(driver),
-  testTimeout(testTimeout) {}
+  testTimeout(testTimeout),
+  verbose(verbose) {}
 
 bool TestingFramework::isPassing(const std::string &testId) {
   // FIXME: respect timeout
   FromDirectory dir(project.getRoot());
-  string cmd = driver.string() + " " + testId;
-  uint status = std::system(cmd.c_str());
+  std::stringstream cmd;
+  cmd << driver.string() << " " << testId;
+  if (verbose) {
+    cmd << " >&2";
+  } else {
+    cmd << " >/dev/null 2>&1";
+  }
+  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
+  uint status = std::system(cmd.str().c_str());
   return (status == 0);
 }

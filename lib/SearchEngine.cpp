@@ -28,12 +28,13 @@ bool search(const std::vector<SearchSpaceElement> &searchSpace,
             const std::vector<std::string> tests,
             TestingFramework &tester,
             SearchSpaceElement &patch) {
+  BOOST_LOG_TRIVIAL(info) << "searching space consisting of " << searchSpace.size() << " candidates";
   for (auto &elem : searchSpace) {
     setenv("F1X_ID", std::to_string(elem.id).c_str(), true);
     setenv("F1X_LOC", std::to_string(elem.buggy->location.locId).c_str(), true);
     bool passAll = true;
     for (auto &test : tests) {
-      BOOST_LOG_TRIVIAL(info) << "executing candidate " << elem.id << " with test " << test;
+      BOOST_LOG_TRIVIAL(debug) << "executing candidate " << elem.id << " with test " << test;
       passAll = passAll && tester.isPassing(test);
       if (!passAll)
         break;

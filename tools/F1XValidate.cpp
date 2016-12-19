@@ -79,11 +79,13 @@ int main (int argc, char *argv[])
     return 1;
   }
 
+  bool verbose;
   if(vm.count("verbose")){
-    initializeTrivialLogger(true);
+    verbose = true;
   } else {
-    initializeTrivialLogger(false);
+    verbose = false;
   }
+  initializeTrivialLogger(verbose);
 
   if (!vm.count("source")) {
     BOOST_LOG_TRIVIAL(error) << "source directory is not specified (use --help)";
@@ -156,8 +158,8 @@ int main (int argc, char *argv[])
   fs::create_directory(workDir);
   BOOST_LOG_TRIVIAL(debug) << "working directory: " + workDir.string();
 
-  Project project(root, files, buildCmd, workDir);
-  TestingFramework tester(project, driver, testTimeout);
+  Project project(root, files, buildCmd, workDir, verbose);
+  TestingFramework tester(project, driver, testTimeout, verbose);
 
   project.backupFiles();
 
