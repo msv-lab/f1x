@@ -17,6 +17,7 @@
 */
 
 #include <sstream>
+#include <iostream>
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "ApplyTransformer.h"
@@ -72,14 +73,36 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
           endColumn == globalEndColumn) {
 
         std::stringstream replacement;
-
+        
+        unsigned origLength = Rewrite.getRangeSize(expandedLoc);
+        bool addBrackets = shouldAddBrackets(stmt, Result.Context);
+        if(addBrackets)
+    	    replacement << "{\n\t";
+    	    
         replacement << "if (" << globalPatch << ") " << toString(stmt);
 
         llvm::errs() << beginLine << " " << beginColumn << " " << endLine << " " << endColumn << "\n"
           << "<   " << toString(stmt) << "\n"
           << ">   " << replacement.str() << "\n";
         
-        Rewrite.ReplaceText(expandedLoc, replacement.str());
+        if(addBrackets)
+        {
+        	replacement << ";\n}";
+        	const char *followingData = srcMgr.getCharacterData(expandedLoc.getBegin());
+        	int followingDataSize = strlen(followingData);
+          for(int i=origLength; i<followingDataSize; i++)
+          {
+            origLength++;
+            char curChar = *(followingData+i);
+            if(curChar == ';')
+              break;
+            else if(curChar == ' ' || curChar == '\t' || curChar == '\n')
+                    continue;
+            else return;
+          }
+        }
+
+        Rewrite.ReplaceText(expandedLoc.getBegin(), origLength, replacement.str());
       }
   }
 }
