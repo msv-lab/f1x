@@ -25,7 +25,6 @@
 #include <rapidjson/writer.h>
 
 #include "Config.h"
-#include "F1XID.h"
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "InstrumentTransformer.h"
@@ -39,6 +38,22 @@ using std::vector;
 using std::string;
 
 json::Document candidateLocations;
+
+
+const uint F1XLOC_WIDTH = 32;
+const uint F1XLOC_VALUE_BITS = 10;
+
+/*
+  __f1x_loc is a F1XID_WIDTH bit transparent location ID. The left F1XID_VALUE_BITS bits of this id is the file ID.
+ */
+
+uint f1xloc(uint baseId, uint fileId) {
+  assert(baseId < (1 << (F1XLOC_WIDTH - F1XLOC_VALUE_BITS)));
+  uint result = fileId;
+  result <<= (F1XLOC_WIDTH - F1XLOC_VALUE_BITS);
+  result += baseId;
+  return result;
+}
 
 
 bool inRange(uint line) {

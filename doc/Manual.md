@@ -17,19 +17,7 @@ The search space of f1x is the following:
 3. Modification of return arguments (integer and pointer types)
 4. Inserting if-guards for break, continue, function calls
 
-f1x expression synthesizer is bit-precise. The following integer types are supported:
-
-* char
-* unsinged char
-* unsigned short
-* unsigned int
-* unsigned long
-* signed char
-* short
-* int
-* long
-
-All other integer types are currently casted to long.
+f1x expression synthesizer is bit-precise; it supports all signed and unsigned builtin (C99) integer types.
 
 ### Prioritization ###
 

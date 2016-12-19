@@ -29,6 +29,13 @@ using std::shared_ptr;
 using std::unordered_map;
 
 
+std::string f1xArgNameFromType(const std::string &typeName) {
+  std::string result = typeName;
+  std::replace(result.begin(), result.end(), ' ', '_');
+  return result + "_vals";
+}
+
+
 void addRuntimeLoader(std::ostream &OH) {
   OH << "unsigned long __f1x_id;" << "\n"
      << "unsigned long __f1x_loc;" << "\n"

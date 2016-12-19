@@ -16,10 +16,13 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <algorithm>
+#include <map>
 #include <stack>
 #include <sstream>
 
 #include "clang/Lex/Preprocessor.h"
+#include "clang/AST/Type.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include "TransformationUtil.h"
@@ -33,6 +36,10 @@ using std::string;
 using std::pair;
 using std::stack;
 using std::vector;
+using std::map;
+
+
+const BuiltinType::Kind DEFAULT_NUMERIC_TYPE = BuiltinType::Long;
 
 
 uint globalFileId;
@@ -180,7 +187,55 @@ bool shouldAddBrackets(const Stmt *stmt, ASTContext *context)
     return true;
   }
   return false;
-} 
+}
+
+BuiltinType::Kind getBuiltinKind(const QualType &type) {
+  QualType canon = type.getCanonicalType();
+  assert(canon.getTypePtr());
+  if (const BuiltinType *bt = canon.getTypePtr()->getAs<BuiltinType>()) {
+    return bt->getKind();
+  } else {
+    llvm::errs() << "error: non-builtin type " << type.getAsString() << "\n";
+    return DEFAULT_NUMERIC_TYPE;
+  }
+}
+
+// TODO: support C++ types, compiler extensions
+string kindToString(const BuiltinType::Kind kind) {
+  switch (kind) {
+  case BuiltinType::Char_U:
+    return "char";
+  case BuiltinType::UChar:
+    return "unsigned char";
+  case BuiltinType::WChar_U:
+    return "wchar_t";
+  case BuiltinType::UShort:
+    return "unsigned short";
+  case BuiltinType::UInt:
+    return "unsigned int";
+  case BuiltinType::ULong:
+    return "unsigned long";
+  case BuiltinType::ULongLong:
+    return "unsigned long long";
+  case BuiltinType::Char_S:
+    return "char";
+  case BuiltinType::SChar:
+    return "char";
+  case BuiltinType::WChar_S:
+    return "wchar_t";
+  case BuiltinType::Short:
+    return "short";
+  case BuiltinType::Int:
+    return "int";
+  case BuiltinType::Long:
+    return "long";
+  case BuiltinType::LongLong:
+    return "long long";
+  default:
+    llvm::errs() << "warning: unsupported builtin type " << kind << "\n";
+    return kindToString(DEFAULT_NUMERIC_TYPE);
+  }
+}
 
 class StmtToJSON : public StmtVisitor<StmtToJSON> {
   json::Document::AllocatorType *allocator;
@@ -206,9 +261,8 @@ public:
     json::Value node(json::kObjectType);
     
     node.AddMember("kind", json::Value().SetString("operator"), *allocator);
-    // FIXME: should set real type
-    // possibly from Expr::getType()
-    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    string t = kindToString(getBuiltinKind(Node->getType()));
+    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
     string opcode_str = BinaryOperator::getOpcodeStr(Node->getOpcode()).lower();
     repr.SetString(opcode_str.c_str(), *allocator);
@@ -233,8 +287,8 @@ public:
     json::Value node(json::kObjectType);
 
     node.AddMember("kind", json::Value().SetString("operator"), *allocator);
-    // FIXME: should set real type
-    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    string t = kindToString(getBuiltinKind(Node->getType()));
+    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
     string opcode_str = UnaryOperator::getOpcodeStr(Node->getOpcode());
     repr.SetString(opcode_str.c_str(), *allocator);
@@ -269,8 +323,8 @@ public:
     json::Value node(json::kObjectType);
 
     node.AddMember("kind", json::Value().SetString("variable"), *allocator);
-    // FIXME: should set real type
-    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    string t = kindToString(getBuiltinKind(Node->getType()));
+    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
@@ -282,8 +336,8 @@ public:
     json::Value node(json::kObjectType);
 
     node.AddMember("kind", json::Value().SetString("constant"), *allocator);
-    // FIXME: should set real type
-    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    string t = kindToString(getBuiltinKind(Node->getType()));
+    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
@@ -295,7 +349,7 @@ public:
     json::Value node(json::kObjectType);
 
     node.AddMember("kind", json::Value().SetString("constant"), *allocator);
-    // FIXME: should set real type
+    string t = kindToString(getBuiltinKind(Node->getType()));
     node.AddMember("type", json::Value().SetString("char"), *allocator);
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
@@ -308,8 +362,8 @@ public:
     json::Value node(json::kObjectType);
 
     node.AddMember("kind", json::Value().SetString("variable"), *allocator);
-    // FIXME: should set real type
-    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    string t = kindToString(getBuiltinKind(Node->getType()));
+    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
@@ -321,8 +375,8 @@ public:
     json::Value node(json::kObjectType);
 
     node.AddMember("kind", json::Value().SetString("constant"), *allocator);
-    // FIXME: should set real type
-    node.AddMember("type", json::Value().SetString("int"), *allocator);
+    string t = kindToString(getBuiltinKind(Node->getType()));
+    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
@@ -426,8 +480,8 @@ bool suitableVarDecl(VarDecl *vd) {
 json::Value varDeclToJSON(VarDecl *vd, json::Document::AllocatorType &allocator) {
   json::Value node(json::kObjectType);
   node.AddMember("kind", json::Value().SetString("variable"), allocator);
-  // FIXME: should set real type
-  node.AddMember("type", json::Value().SetString("int"), allocator);
+  string t = kindToString(getBuiltinKind(vd->getType()));
+  node.AddMember("type", json::Value().SetString(t.c_str(), allocator), allocator);
   json::Value repr;
   string name = vd->getName();
   repr.SetString(name.c_str(), allocator);
@@ -586,20 +640,43 @@ vector<json::Value> collectComponents(const Stmt *stmt,
 }
 
 
-string makeArgumentList(const vector<json::Value> &components) {
+string makeArgumentList(vector<json::Value> &components) {
   std::ostringstream result;
 
-  result << "(int[]){";
-  bool first = true;
+  map<string, vector<json::Value*>> typesToValues;
+  vector<string> types;
   for (auto &c : components) {
-    if (first) {
-      first = false;
+    string type = c["type"].GetString();
+    if(std::find(types.begin(), types.end(), type) == types.end()) {
+      types.push_back(type);
+    }
+    if (typesToValues.find(type) == typesToValues.end()) {
+      typesToValues.insert(std::make_pair(type, vector<json::Value*>()));
+    }
+    typesToValues[type].push_back(&c);
+  }
+  
+  std::stable_sort(types.begin(), types.end());
+
+  bool firstArray = true;
+  for (auto &type : types) {
+    if (firstArray) {
+      firstArray = false;
     } else {
       result << ", ";
     }
-    result << c["repr"].GetString();
+    result << "(" << type << "[]){";
+    bool firstElement = true;
+    for (auto c : typesToValues[type]) {
+      if (firstElement) {
+        firstElement = false;
+      } else {
+        result << ", ";
+      }
+      result << (*c)["repr"].GetString();
+    }
+    result << "}";
   }
-  result << "}";
 
   return result.str();
 }
