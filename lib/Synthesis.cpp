@@ -36,20 +36,6 @@ std::string f1xArgNameFromType(const std::string &typeName) {
 }
 
 
-void addRuntimeLoader(std::ostream &OH) {
-  OH << "unsigned long __f1x_id;" << "\n"
-     << "unsigned long __f1x_loc;" << "\n"
-     << "class F1XRuntimeLoader {" << "\n"
-     << "public:" << "\n"
-     << "F1XRuntimeLoader() {" << "\n"
-     << "__f1x_id = strtoul(getenv(\"F1X_ID\"), (char **)NULL, 10);" << "\n"
-     << "__f1x_loc = strtoul(getenv(\"F1X_LOC\"), (char **)NULL, 10);" << "\n"
-     << "}" << "\n"
-     << "};" << "\n"
-     << "static F1XRuntimeLoader __loader;" << "\n";
-}
-
-
 vector<Operator> mutateOperator(Operator op) {
   switch (op) {
   case Operator::EQ:
@@ -186,6 +172,20 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
 }
 
 
+void addRuntimeLoader(std::ostream &OH) {
+  OH << "unsigned long __f1x_id;" << "\n"
+     << "unsigned long __f1x_loc;" << "\n"
+     << "class F1XRuntimeLoader {" << "\n"
+     << "public:" << "\n"
+     << "F1XRuntimeLoader() {" << "\n"
+     << "__f1x_id = strtoul(getenv(\"F1X_ID\"), (char **)NULL, 10);" << "\n"
+     << "__f1x_loc = strtoul(getenv(\"F1X_LOC\"), (char **)NULL, 10);" << "\n"
+     << "}" << "\n"
+     << "};" << "\n"
+     << "static F1XRuntimeLoader __loader;" << "\n";
+}
+
+
 vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH) {
   
   // header
@@ -196,7 +196,7 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
      << "extern unsigned long __f1x_id;" << "\n";
 
   for (auto cl : candidateLocations) {
-    OH << "int __f1x_" 
+    OH << cl->original.rawType << " __f1x_" 
        << cl->location.fileId << "_"
        << cl->location.beginLine << "_"
        << cl->location.beginColumn << "_"

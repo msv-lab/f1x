@@ -27,8 +27,10 @@
 bool search(const std::vector<SearchSpaceElement> &searchSpace,
             const std::vector<std::string> tests,
             TestingFramework &tester,
+            Runtime &runtime,
             SearchSpaceElement &patch) {
   BOOST_LOG_TRIVIAL(info) << "searching space consisting of " << searchSpace.size() << " candidates";
+  setenv("F1X_WORKDIR", runtime.getWorkDir().string().c_str(), true);
   for (auto &elem : searchSpace) {
     setenv("F1X_ID", std::to_string(elem.id).c_str(), true);
     setenv("F1X_LOC", std::to_string(elem.buggy->location.locId).c_str(), true);

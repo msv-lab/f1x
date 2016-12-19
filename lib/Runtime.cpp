@@ -16,15 +16,38 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include <string>
 
-#include "RepairUtil.h"
-#include "Project.h"
+#include <boost/filesystem/fstream.hpp>
+
 #include "Runtime.h"
 
+namespace fs = boost::filesystem;
+using std::vector;
 
-bool search(const std::vector<SearchSpaceElement> &searchSpace,
-            const std::vector<std::string> tests,
-            TestingFramework &tester,
-            Runtime &runtime,
-            SearchSpaceElement &patch);
+
+Runtime::Runtime(const fs::path &workDir): 
+  workDir(workDir) {};
+
+void Runtime::setPartiotion(uint locId, uint candidateId, vector<uint> space) {
+  fs::ofstream out(workDir / std::to_string(locId));
+  out << candidateId;
+  for (auto &el : space) {
+    out << " " << el;
+  }
+}
+
+vector<uint> Runtime::getPartiotion(uint locId) {
+  vector<uint> result;
+  fs::ifstream in(workDir / std::to_string(locId));
+  uint id;
+  in >> id;
+while (in >> id) {
+    result.push_back(id);
+  }
+  return result;
+}
+
+fs::path Runtime::getWorkDir() {
+  return workDir;
+}

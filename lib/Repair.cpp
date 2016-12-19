@@ -27,6 +27,7 @@
 #include "Repair.h"
 #include "RepairUtil.h"
 #include "Project.h"
+#include "Runtime.h"
 #include "Synthesis.h"
 #include "SearchEngine.h"
 
@@ -39,7 +40,6 @@ using std::shared_ptr;
 const string CANDADATE_LOCATIONS_FILE_NAME = "cl.json";
 const string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
 const string RUNTIME_HEADER_FILE_NAME = "rt.h";
-
 
 bool repair(Project &project,
             TestingFramework &tester,
@@ -106,7 +106,10 @@ bool repair(Project &project,
   {
     FromDirectory dir(workDir);
     std::stringstream cmd;
-    cmd << RUNTIME_COMPILER << " -O2 -fPIC rt.cpp -shared -o libf1xrt.so";
+    cmd << RUNTIME_COMPILER << " -O2 -fPIC"
+        << " " << RUNTIME_SOURCE_FILE_NAME 
+        << " -shared"
+        << " -o libf1xrt.so";
     if (verbose) {
       cmd << " >&2";
     } else {
@@ -126,8 +129,9 @@ bool repair(Project &project,
   }
 
   SearchSpaceElement patch;
+  Runtime runtime(workDir);
 
-  bool found = search(searchSpace, tests, tester, patch);
+  bool found = search(searchSpace, tests, tester, runtime, patch);
 
   if (found) {
     project.restoreFiles();

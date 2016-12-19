@@ -18,13 +18,18 @@
 
 #pragma once
 
-#include "RepairUtil.h"
-#include "Project.h"
-#include "Runtime.h"
+#include <boost/filesystem.hpp>
+#include "Config.h"
 
 
-bool search(const std::vector<SearchSpaceElement> &searchSpace,
-            const std::vector<std::string> tests,
-            TestingFramework &tester,
-            Runtime &runtime,
-            SearchSpaceElement &patch);
+class Runtime {
+ public:
+  Runtime(const boost::filesystem::path &workDir);
+
+  void setPartiotion(uint locId, uint candidateId, std::vector<uint> space);
+  std::vector<uint> getPartiotion(uint locId);
+  boost::filesystem::path getWorkDir();
+
+ private:
+  boost::filesystem::path workDir;
+};

@@ -121,6 +121,7 @@ void ApplicationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
       uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
       uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
+      // FIXME: do I need to cast it to the original type (because this is the type if runtime function)
       if (beginLine == globalBeginLine &&
           beginColumn == globalBeginColumn &&
           endLine == globalEndLine &&
