@@ -18,7 +18,6 @@
 
 #include <sstream>
 #include <fstream>
-#include <iostream>
 
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
@@ -145,7 +144,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     // because it can create dangling else branch.
     // wrapping it with {} will not work because break/continue are matched without semicolon
 
-	unsigned origLength = Rewrite.getRangeSize(expandedLoc);
+	  unsigned origLength = Rewrite.getRangeSize(expandedLoc);
     std::ostringstream stringStream;
     
     bool addBrackets = shouldAddBrackets(stmt, Result.Context);
@@ -159,24 +158,21 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
                  << toString(stmt);
     if(addBrackets)
     {
-    	stringStream << ";\n}";
-    	const char *followingData = srcMgr.getCharacterData(expandedLoc.getBegin());
-    	int followingDataSize = strlen(followingData);
-    	origLength = 0;
-		for(int i=0; i<followingDataSize; i++)
-		{
-			origLength++;
-			char curChar = *(followingData+i);
-			if(curChar == ';')
-				break;
-			/*else if(curChar == ' ' || curChar == '\t' || curChar == '\n')
-			{
-				continue;
-			}*/
-		}
+      stringStream << ";\n}";
+      const char *followingData = srcMgr.getCharacterData(expandedLoc.getBegin());
+      int followingDataSize = strlen(followingData);
+      for(int i=origLength; i<followingDataSize; i++)
+      {
+        origLength++;
+        char curChar = *(followingData+i);
+        if(curChar == ';')
+          break;
+        else if(curChar == ' ' || curChar == '\t' || curChar == '\n')
+          continue;
+        else return;
+      }
     }
-    
-    string replacement = stringStream.str();
+    std::string replacement = stringStream.str();
 
     Rewrite.ReplaceText(expandedLoc.getBegin(), origLength, replacement);
   }
