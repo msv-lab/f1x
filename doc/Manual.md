@@ -50,26 +50,16 @@ Note that when executing tests f1x appends a path to its runtime library (libf1x
 
 f1x command-line tool accepts user options, executes the repair algorithm and saves the generated patch into a patch file in unidiff format. f1x prints log messages on the standard error output and terminates with zero exit code if and only if it finds a patch.
 
-<style>
-table:nth-of-type(1) {
-  display:table;
-  width:100%;
-}
-table:nth-of-type(1) th:nth-of-type(2) {
-  width:30%;
-}
-</style>
-
 f1x accepts one positional argument:
 
 Argument | Description
--------- | -----------
+:------- | ----------:
 `PATH` | The source directory of your buggy program.
 
 f1x accepts the following options:
 
 Argument | Description
--------- | -----------
+:------- | ----------:
 `-f [ --files ] RELPATH...` | The list of buggy files. The paths should be relative to the root of the source directory.
 `-t [ --tests ] ID...` | The list of unique test identifiers.
 `-T [ --test-timeout ] MS` | The test execution timeout in milliseconds.
