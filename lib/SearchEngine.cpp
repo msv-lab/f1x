@@ -29,22 +29,36 @@ bool search(const std::vector<SearchSpaceElement> &searchSpace,
             TestingFramework &tester,
             Runtime &runtime,
             SearchSpaceElement &patch) {
-  BOOST_LOG_TRIVIAL(info) << "searching space consisting of " << searchSpace.size() << " candidates";
+  BOOST_LOG_TRIVIAL(info) << "search space: " << searchSpace.size();
+
+  uint candidateCounter = 0;
+  uint testCounter = 0;
+  bool found = false;
+  
   setenv("F1X_WORKDIR", runtime.getWorkDir().string().c_str(), true);
   for (auto &elem : searchSpace) {
+    candidateCounter++;
     setenv("F1X_ID", std::to_string(elem.id).c_str(), true);
     setenv("F1X_LOC", std::to_string(elem.buggy->location.locId).c_str(), true);
     bool passAll = true;
     for (auto &test : tests) {
       BOOST_LOG_TRIVIAL(debug) << "executing candidate " << elem.id << " with test " << test;
-      passAll = passAll && tester.isPassing(test);
+      if (passAll) {
+        testCounter++;
+        passAll = tester.isPassing(test);
+      }
       if (!passAll)
         break;
     }
     if (passAll) {
       patch = elem;
-      return true;
+      found = true;
+      break;
     }
   }
-  return false;
+
+  BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << candidateCounter;
+  BOOST_LOG_TRIVIAL(info) << "tests executed: " << testCounter;
+
+  return found;
 }

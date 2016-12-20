@@ -100,7 +100,7 @@ Operator binaryOperatorByString(const string &repr) {
     return Operator::LE;
   } else if (repr == ">") {
     return Operator::GT;
-  } else if (repr == "<=") {
+  } else if (repr == ">=") {
     return Operator::GE;
   } else if (repr == "||") {
     return Operator::OR;
