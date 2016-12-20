@@ -60,7 +60,7 @@ f1x accepts the following options:
 
 Argument | Description
 :------- | ----------:
-`-f [ --files ] RELPATH...` | The list of buggy files. The paths should be relative to the root of the source directory.
+`-f [ --files ] RELPATH...`<nobr/> | The list of buggy files. The paths should be relative to the root of the source directory.
 `-t [ --tests ] ID...` | The list of unique test identifiers.
 `-T [ --test-timeout ] MS` | The test execution timeout in milliseconds.
 `-d [ --driver ] PATH` | The path to the test driver. The test driver is executed from the root of the source directory.
