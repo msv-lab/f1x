@@ -24,6 +24,7 @@
 #include "Synthesis.h"
 
 using std::pair;
+using std::make_pair;
 using std::vector;
 using std::string;
 using std::shared_ptr;
@@ -104,33 +105,41 @@ Expression makeRightSubs(const Expression &expr, const Expression &subs) {
 }
 
 
-vector<Expression> mutate(const Expression &expr, const vector<Expression> &components) {
-  vector<Expression> result;
+vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<Expression> &components) {
+  vector<pair<Expression, PatchMeta>> result;
   if (expr.args.size() == 0) {
-    result = components;
+    if (expr.kind == Kind::CONSTANT) {
+      for (auto &c : components) {
+        result.push_back(make_pair(c, PatchMeta{Transformation::GENERALIZATION, 1}));
+      }
+    } else {
+      for (auto &c : components) {
+        result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, 1}));
+      }
+    }
   } else {
     vector<Operator> oms = mutateOperator(expr.op);
     for (auto &m : oms) {
       Expression e = expr;
       e.op = m;
       e.repr = operatorToString(m);
-      result.push_back(std::move(e));
+      result.push_back(make_pair(std::move(e), PatchMeta{Transformation::ALTERNATIVE, 1}));
     }
 
     // FIXME: need to avoid division by zero
     if (expr.args.size() == 1) {
-      vector<Expression> argMutants = mutate(expr.args[0], components);
+      vector<pair<Expression, PatchMeta>> argMutants = mutate(expr.args[0], components);
       for (auto &m : argMutants) {
-        result.push_back(makeArgSubs(expr, m));
+        result.push_back(make_pair(makeArgSubs(expr, m.first), m.second));
       }
     } else if (expr.args.size() == 2) {
-      vector<Expression> leftMutants = mutate(expr.args[0], components);
+      vector<pair<Expression, PatchMeta>> leftMutants = mutate(expr.args[0], components);
       for (auto &m : leftMutants) {
-        result.push_back(makeLeftSubs(expr, m));
+        result.push_back(make_pair(makeLeftSubs(expr, m.first), m.second));
       }
-      vector<Expression> rightMutants = mutate(expr.args[1], components);
+      vector<pair<Expression, PatchMeta>> rightMutants = mutate(expr.args[1], components);
       for (auto &m : rightMutants) {
-        result.push_back(makeRightSubs(expr, m));
+        result.push_back(make_pair(makeRightSubs(expr, m.first), m.second));
       }
     }
   }
@@ -180,16 +189,15 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
     }
   }
 
-  vector<Expression> mutants = mutate(cl->original, cl->components);
+  vector<pair<Expression, PatchMeta>> mutants = mutate(cl->original, cl->components);
   
   for (auto &candidate : mutants) {
     uint currentId = ++id;
-    Expression runtimeRepr = candidate;
+    Expression runtimeRepr = candidate.first;
     substituteRealNames(runtimeRepr, accessByName);
     OS << "case " << currentId << ":" << "\n"
        << "return " << expressionToString(runtimeRepr) << ";" << "\n";
-    PatchMeta meta{Transformation::NONE, 0};
-    ss.push_back(SearchSpaceElement{cl, currentId, candidate, meta});
+    ss.push_back(SearchSpaceElement{cl, currentId, candidate.first, candidate.second});
   }
 }
 

@@ -22,6 +22,16 @@
 
 
 /*
+
+  Currently, we compute distance in the following way:
+  
+  var -> var = 1
+  var -> tree2 = 2
+  tree2 -> tree2 = 3
+  node -> node && tree3 = 3
+  
+  Some calculation regadring the size of search space:
+  
   n - number of variables
   p - max parameter value
 

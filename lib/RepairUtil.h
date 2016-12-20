@@ -28,7 +28,8 @@
 
 
 enum class Kind {
-  OPERATOR, VARIABLE, CONSTANT, PARAMETER
+  OPERATOR, VARIABLE, CONSTANT, PARAMETER, 
+  BV2, INT2, BOOL2, BOOL3 // auxiliary kinds
 };
 
 
@@ -133,7 +134,7 @@ struct SearchSpaceElement {
 };
 
 
-std::string visualizeElement(const SearchSpaceElement &el);
+std::string visualizeElement(const SearchSpaceElement &el, const boost::filesystem::path &file);
 
 
 class FromDirectory {

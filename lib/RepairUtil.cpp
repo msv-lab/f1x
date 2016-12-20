@@ -265,32 +265,37 @@ std::string expressionToString(const Expression &expression) {
 std::string metaToString(const PatchMeta &meta) {
   switch (meta.transformation) {
   case Transformation::ALTERNATIVE:
-    return "operator replacement";
+    return "replace operator";
   case Transformation::SWAPING:
-    return "swaping arguments";
+    return "swap argument";
   case Transformation::SIMPLIFICATION:
-    return "simplification";
+    return "simplify";
   case Transformation::GENERALIZATION:
+    return "generalize";
   case Transformation::CONCRETIZATION:
+    return "concretize";
   case Transformation::SUBSTITUTION:
-    return "substitution";
+    return "substitute";
   case Transformation::WIDENING:
-    return "widening";
+    return "widen";
   case Transformation::NARROWING:
-    return "narrowing";
+    return "narrow";
   default:
     return "change";
   }
 }
 
 
-std::string visualizeElement(const SearchSpaceElement &el) {
+std::string visualizeElement(const SearchSpaceElement &el,
+                             const boost::filesystem::path &file) {
   std::stringstream result;
   result << metaToString(el.meta)
          << " "
          << expressionToString(el.buggy->original)
-         << " ---> "
-         << expressionToString(el.patch);
+         << " to "
+         << expressionToString(el.patch)
+         << " in " << file.string()
+         << ":" << el.buggy->location.beginLine;
   return result.str();
 }                                                          
 

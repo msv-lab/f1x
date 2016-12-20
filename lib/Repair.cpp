@@ -19,6 +19,8 @@
 #include <memory>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
+#include <iomanip>
 
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
@@ -37,6 +39,58 @@ using std::pair;
 using std::shared_ptr;
 
 const string CANDADATE_LOCATIONS_FILE_NAME = "cl.json";
+
+
+double score(const SearchSpaceElement &el) {
+  double result = (double) el.meta.distance;
+  const double GOOD = 0.3;
+  const double OK = 0.2;
+  const double BAD = 0.1;
+  switch (el.meta.transformation) {
+  case Transformation::ALTERNATIVE:
+    result -= OK;
+    break;
+  case Transformation::SWAPING:
+    result -= GOOD;
+    break;
+  case Transformation::SIMPLIFICATION:
+    result -= GOOD;
+    break;
+  case Transformation::GENERALIZATION:
+    result -= GOOD;
+    break;
+  case Transformation::SUBSTITUTION:
+    result -= BAD;
+    break;
+  case Transformation::WIDENING:
+    result -= BAD;
+    break;
+  case Transformation::NARROWING:
+    result -= BAD;
+    break;
+  default:
+    break; // everything else is very bad
+  }
+  return result;
+}
+
+
+bool comparePatches(const SearchSpaceElement &a, const SearchSpaceElement &b) {
+  return score(a) < score(b);
+}
+
+
+void prioritize(std::vector<SearchSpaceElement> &searchSpace) {
+  std::stable_sort(searchSpace.begin(), searchSpace.end(), comparePatches);
+}
+
+
+void dumpSearchSpace(std::vector<SearchSpaceElement> &searchSpace, const fs::path &file, const vector<ProjectFile> &files) {
+  fs::ofstream os(file);
+  for (auto &el : searchSpace) {
+    os << std::setprecision(3) << score(el) << " " << visualizeElement(el, files[el.buggy->location.fileId].relpath) << "\n";
+  }
+}
 
 
 bool repair(Project &project,
@@ -96,7 +150,12 @@ bool repair(Project &project,
     BOOST_LOG_TRIVIAL(warning) << "compilation with runtime returned non-zero exit code";
   }
 
-  BOOST_LOG_TRIVIAL(info) << "search space: " << searchSpace.size();
+  BOOST_LOG_TRIVIAL(info) << "prioritizing search space";
+  prioritize(searchSpace);
+
+  //dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
+
+  BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();
   
   SearchEngine engine(tests, tester, runtime);
 
@@ -108,7 +167,8 @@ bool repair(Project &project,
 
     if (last < searchSpace.size()) {
 
-      BOOST_LOG_TRIVIAL(info) << "found patch: " << visualizeElement(searchSpace[last]);
+      fs::path relpath = project.getFiles()[searchSpace[last].buggy->location.fileId].relpath;
+      BOOST_LOG_TRIVIAL(info) << "found patch: " << visualizeElement(searchSpace[last], relpath);
 
       project.restoreOriginalFiles();
       
