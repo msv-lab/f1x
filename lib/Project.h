@@ -20,6 +20,7 @@
 
 #include <boost/filesystem.hpp>
 #include "Config.h"
+#include "RepairUtil.h"
 
 
 // (!fromLine && !toLine) means no restriction
@@ -39,12 +40,17 @@ class Project {
           bool verbose);
 
   bool initialBuild();
+  bool build();
   bool buildWithRuntime(const boost::filesystem::path &header);
-  void backupFiles();
-  void restoreFiles();
-  void saveFilesWithPrefix(const std::string &prefix);
+  void backupOriginalFiles();
+  void backupInstrumentedFiles();
+  void restoreOriginalFiles();
+  void restoreInstrumentedFiles();
   void computeDiff(const ProjectFile &file,
                    const boost::filesystem::path &outputFile);
+  bool instrumentFile(const ProjectFile &file,
+                      const boost::filesystem::path &outputFile);
+  bool applyPatch(const SearchSpaceElement &patch);
   boost::filesystem::path getRoot() const;
   std::vector<ProjectFile> getFiles() const;
 
@@ -54,6 +60,11 @@ class Project {
   std::string buildCmd;
   boost::filesystem::path workDir;
   bool verbose;
+
+  void backupFilesWithPrefix(const std::string &prefix);
+  void restoreFilesWithPrefix(const std::string &prefix);
+  bool buildInEnvironment(const std::map<std::string, std::string> &env, const std::string &baseCmd);
+  uint getFileId(const ProjectFile &file);
 };
 
 
@@ -72,3 +83,6 @@ class TestingFramework {
   uint testTimeout;
   bool verbose;
 };
+
+
+std::vector<std::string> getFailing(TestingFramework &tester, const std::vector<std::string> &tests);

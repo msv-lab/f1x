@@ -16,7 +16,6 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <cstdlib>
 #include <memory>
 #include <iostream>
 #include <sstream>
@@ -38,8 +37,6 @@ using std::pair;
 using std::shared_ptr;
 
 const string CANDADATE_LOCATIONS_FILE_NAME = "cl.json";
-const string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
-const string RUNTIME_HEADER_FILE_NAME = "rt.h";
 
 bool repair(Project &project,
             TestingFramework &tester,
@@ -55,117 +52,64 @@ bool repair(Project &project,
     BOOST_LOG_TRIVIAL(warning) << "compilation returned non-zero exit code";
   }
 
-  project.backupFiles();
+  project.backupOriginalFiles();
 
   fs::path clFile = workDir / fs::path(CANDADATE_LOCATIONS_FILE_NAME);
 
-  BOOST_LOG_TRIVIAL(info) << "instrumenting source files";
-  {
-    FromDirectory dir(project.getRoot());
-    std::stringstream cmd;
-    cmd << "f1x-transform " << project.getFiles()[0].relpath.string() << " --instrument"
-        << " --from-line " << project.getFiles()[0].fromLine
-        << " --to-line " << project.getFiles()[0].toLine
-        << " --file-id 0"
-        << " --output " + clFile.string();
-    if (verbose) {
-      cmd << " >&2";
-    } else {
-      cmd << " >/dev/null 2>&1";
-    }
-    BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-    uint status = std::system(cmd.str().c_str());
-    if (status != 0) {
-      BOOST_LOG_TRIVIAL(warning) << "transformation failed";
-    }
-    if (! fs::exists(clFile)) {
-      BOOST_LOG_TRIVIAL(error) << "failed to extract candidate locations";
-      project.restoreFiles();
-      return false;
-    }
+  bool instrSuccess = project.instrumentFile(project.getFiles()[0], clFile);
+  if (! instrSuccess) {
+    BOOST_LOG_TRIVIAL(warning) << "transformation returned non-zero exit code";
+  }
+  if (! fs::exists(clFile)) {
+    BOOST_LOG_TRIVIAL(error) << "failed to extract candidate locations";
+    project.restoreOriginalFiles();
+    return false;
   }
 
-  project.saveFilesWithPrefix("instrumented");
+  project.backupInstrumentedFiles();
 
   BOOST_LOG_TRIVIAL(debug) << "loading candidate locations";
   vector<shared_ptr<CandidateLocation>> cls = loadCandidateLocations(clFile);
 
-  fs::path runtimeSourceFile = workDir / fs::path(RUNTIME_SOURCE_FILE_NAME);
-  fs::path runtimeHeaderFile = workDir / fs::path(RUNTIME_HEADER_FILE_NAME);
-
   vector<SearchSpaceElement> searchSpace;
+
+  Runtime runtime(workDir, verbose);
 
   BOOST_LOG_TRIVIAL(info) << "generating search space";
   {
-    fs::ofstream os(runtimeSourceFile);
-    fs::ofstream oh(runtimeHeaderFile);
+    fs::ofstream os(runtime.getSource());
+    fs::ofstream oh(runtime.getHeader());
     searchSpace = generateSearchSpace(cls, os, oh);
   }
 
-  BOOST_LOG_TRIVIAL(info) << "compiling search space";
-  {
-    FromDirectory dir(workDir);
-    std::stringstream cmd;
-    cmd << RUNTIME_COMPILER << " -O2 -fPIC"
-        << " " << RUNTIME_SOURCE_FILE_NAME 
-        << " -shared"
-        << " -o libf1xrt.so";
-    if (verbose) {
-      cmd << " >&2";
-    } else {
-      cmd << " >/dev/null 2>&1";
-    }
-    BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-    uint status = std::system(cmd.str().c_str());
-    if (status != 0) {
-      BOOST_LOG_TRIVIAL(warning) << "runtime compilation failed";
-    }
+  bool runtimeSuccess = runtime.compile();
+
+  if (! runtimeSuccess) {
+    BOOST_LOG_TRIVIAL(warning) << "runtime compilation failed";
   }
 
-  bool rebuildSucceeded = project.buildWithRuntime(runtimeHeaderFile);
+  bool rebuildSucceeded = project.buildWithRuntime(runtime.getHeader());
 
   if (! rebuildSucceeded) {
     BOOST_LOG_TRIVIAL(warning) << "compilation with runtime returned non-zero exit code";
   }
 
   SearchSpaceElement patch;
-  Runtime runtime(workDir);
 
   bool found = search(searchSpace, tests, tester, runtime, patch);
 
   if (found) {
-    project.restoreFiles();
+    project.restoreOriginalFiles();
 
-    BOOST_LOG_TRIVIAL(debug) << "applying patch";
-    {
-      FromDirectory dir(project.getRoot());
-      uint beginLine = patch.buggy->location.beginLine;
-      uint beginColumn = patch.buggy->location.beginColumn;
-      uint endLine = patch.buggy->location.endLine;
-      uint endColumn = patch.buggy->location.endColumn;
-      std::stringstream cmd;
-      cmd << "f1x-transform " << project.getFiles()[0].relpath.string() << " --apply"
-          << " --bl " << beginLine
-          << " --bc " << beginColumn
-          << " --el " << endLine
-          << " --ec " << endColumn
-          << " --patch " << "\"" << expressionToString(patch.patch) << "\"";
-      if (verbose) {
-        cmd << " >&2";
-      } else {
-        cmd << " >/dev/null 2>&1";
-      }
-      BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-      uint status = std::system(cmd.str().c_str());
-      if (status != 0) {
-        BOOST_LOG_TRIVIAL(warning) << "patch application failed";
-      }
+    bool appSuccess = project.applyPatch(patch);
+    if (! appSuccess) {
+      BOOST_LOG_TRIVIAL(warning) << "patch application failed";
     }
 
     project.computeDiff(project.getFiles()[0], patchFile);
   }
 
-  project.restoreFiles();
+  project.restoreOriginalFiles();
 
   return found;
 }

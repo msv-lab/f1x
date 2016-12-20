@@ -43,10 +43,8 @@ bool search(const std::vector<SearchSpaceElement> &searchSpace,
     bool passAll = true;
     for (auto &test : tests) {
       BOOST_LOG_TRIVIAL(debug) << "executing candidate " << elem.id << " with test " << test;
-      if (passAll) {
-        testCounter++;
-        passAll = tester.isPassing(test);
-      }
+      testCounter++;
+      passAll = tester.isPassing(test);
       if (!passAll)
         break;
     }

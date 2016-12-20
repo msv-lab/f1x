@@ -17,17 +17,26 @@
 */
 
 #include <string>
+#include <sstream>
+#include <cstdlib>
 
 #include <boost/filesystem/fstream.hpp>
 
+#include <boost/log/trivial.hpp>
+
+#include "RepairUtil.h"
 #include "Runtime.h"
 
 namespace fs = boost::filesystem;
 using std::vector;
 
+const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
+const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
 
-Runtime::Runtime(const fs::path &workDir): 
-  workDir(workDir) {};
+
+Runtime::Runtime(const fs::path &workDir, bool verbose): 
+  workDir(workDir),
+  verbose(verbose) {};
 
 void Runtime::setPartiotion(uint locId, uint candidateId, vector<uint> space) {
   fs::ofstream out(workDir / std::to_string(locId));
@@ -50,4 +59,30 @@ while (in >> id) {
 
 fs::path Runtime::getWorkDir() {
   return workDir;
+}
+
+boost::filesystem::path Runtime::getHeader() {
+  return workDir / RUNTIME_HEADER_FILE_NAME;
+}
+
+boost::filesystem::path Runtime::getSource() {
+  return workDir / RUNTIME_SOURCE_FILE_NAME;
+}
+
+bool Runtime::compile() {
+  BOOST_LOG_TRIVIAL(info) << "compiling meta program runtime";
+  FromDirectory dir(workDir);
+  std::stringstream cmd;
+  cmd << RUNTIME_COMPILER << " -O2 -fPIC"
+      << " " << RUNTIME_SOURCE_FILE_NAME 
+      << " -shared"
+      << " -o libf1xrt.so";
+  if (verbose) {
+    cmd << " >&2";
+  } else {
+    cmd << " >/dev/null 2>&1";
+  }
+  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
+  uint status = std::system(cmd.str().c_str());
+  return status == 0;
 }

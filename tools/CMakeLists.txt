@@ -24,17 +24,6 @@ target_link_libraries(f1x
   ${Boost_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT})
 
-
-## f1x-validate target:
-
-add_executable(f1x-validate F1XValidate.cpp)
-
-target_link_libraries(f1x-validate
-  f1xRepair
-  ${Boost_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT})
-
-
 ## f1x-transform target:
 
 # Find the libraries that correspond to the LLVM components

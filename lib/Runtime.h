@@ -21,15 +21,18 @@
 #include <boost/filesystem.hpp>
 #include "Config.h"
 
-
 class Runtime {
  public:
-  Runtime(const boost::filesystem::path &workDir);
+  Runtime(const boost::filesystem::path &workDir, bool verbose);
 
   void setPartiotion(uint locId, uint candidateId, std::vector<uint> space);
   std::vector<uint> getPartiotion(uint locId);
   boost::filesystem::path getWorkDir();
+  boost::filesystem::path getSource();
+  boost::filesystem::path getHeader();
+  bool compile();
 
  private:
   boost::filesystem::path workDir;
+  bool verbose;
 };

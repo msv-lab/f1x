@@ -19,21 +19,84 @@
 #include <iostream>
 #include <ctime>
 #include <sstream>
+#include <string>
+
+#include <boost/filesystem.hpp>
 
 #include <boost/program_options.hpp>
 
 #include <boost/log/trivial.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
 
 #include "Config.h"
-#include "ToolsCommon.h"
 #include "Repair.h"
 #include "RepairUtil.h"
+
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 using std::vector;
 using std::string;
+
+
+void initializeTrivialLogger(bool verbose) {
+  boost::log::add_common_attributes();
+  boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
+  boost::log::add_console_log(std::cerr, boost::log::keywords::format = "[%TimeStamp%] [%Severity%]\t%Message%");
+  if (verbose) {
+    boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);    
+  } else {
+    boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
+  }
+}
+
+
+std::vector<ProjectFile> parseFilesArg(const boost::filesystem::path &root,
+                                       const std::vector<std::string> &args) {
+  std::vector<ProjectFile> files;
+  for (auto &arg : args) {
+    boost::filesystem::path file;
+    uint fromLine = 0;
+    uint toLine = 0;
+    auto colonIndex = arg.find(":");
+    if (colonIndex == std::string::npos) {
+      file = boost::filesystem::path(arg);
+    } else {
+      std::string pathStr = arg.substr(0, colonIndex);
+      file = boost::filesystem::path(pathStr);
+      std::string rangeStr = arg.substr(colonIndex + 1);
+      auto dashIndex = rangeStr.find("-");
+      if (dashIndex == std::string::npos) {
+        try {
+          fromLine = std::stoi(rangeStr);
+          toLine = fromLine;
+        } catch (...) {
+          throw parse_error("wrong range format: " + rangeStr);
+        }
+      } else {
+        std::string fromStr = rangeStr.substr(0, dashIndex);
+        std::string toStr = rangeStr.substr(dashIndex + 1);
+        try {
+          fromLine = std::stoi(fromStr);
+          toLine = std::stoi(toStr);
+        } catch (...) {
+          throw parse_error("wrong range format: " + rangeStr);
+        }
+      }
+    }
+    boost::filesystem::path fullPath = root / file;
+    if (! boost::filesystem::exists(fullPath)) {
+      throw parse_error("source file does not exist: " + fullPath.string());
+    }
+    files.push_back(ProjectFile{file, fromLine, toLine});    
+  }
+  return files;
+}
 
 
 int main (int argc, char *argv[])

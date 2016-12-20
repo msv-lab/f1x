@@ -38,8 +38,6 @@ using std::string;
 using std::vector;
 using std::map;
 
-const string BACKUP_PREFIX = "backup";
-
 
 void addClangHeadersToCompileDB(fs::path projectRoot) {
   fs::path compileDB("compile_commands.json");
@@ -91,11 +89,27 @@ vector<ProjectFile> Project::getFiles() const {
   return files;
 }
 
-bool Project::initialBuild() {
-  BOOST_LOG_TRIVIAL(info) << "building project using \"" << buildCmd << "\"";
-
+bool Project::buildInEnvironment(const std::map<std::string, std::string> &environment,
+                                 const std::string &baseCmd) {
   FromDirectory dir(root);
-  InEnvironment env(map<string, string> { {"CC", "f1x-cc"} });
+  InEnvironment env(environment);
+
+  std::stringstream cmd;
+  cmd << baseCmd;
+  if (verbose) {
+    cmd << " >&2";
+  } else {
+    cmd << " >/dev/null 2>&1";
+  }
+
+  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
+  uint status = std::system(cmd.str().c_str());
+
+  return (status == 0);
+}
+
+bool Project::initialBuild() {
+  BOOST_LOG_TRIVIAL(info) << "building project and inferring compilation commands";
 
   std::stringstream cmd;
   if (fs::exists(root / "compile_commands.json")) {
@@ -104,56 +118,63 @@ bool Project::initialBuild() {
   } else {
     cmd << "f1x-bear " << buildCmd;
   }
-  if (verbose) {
-    cmd << " >&2";
-  } else {
-    cmd << " >/dev/null 2>&1";
-  }
-  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  uint status = std::system(cmd.str().c_str());
+  bool success = buildInEnvironment({ {"CC", "f1x-cc"} }, cmd.str());
 
   // FIXME: check that project files are in the compilation database
   addClangHeadersToCompileDB(root);
 
-  return (status == 0);
+  return success;
+}
+
+bool Project::build() {
+  BOOST_LOG_TRIVIAL(info) << "building project";
+
+  bool success = buildInEnvironment({ {"CC", "f1x-cc"} }, buildCmd);
+
+  return success;
 }
 
 bool Project::buildWithRuntime(const fs::path &header) {
-  BOOST_LOG_TRIVIAL(info) << "rebuilding project with f1x runtime";
-  FromDirectory dir(root);
-  // FIXME: I need to append LD_LIBRARY_PATH
-  InEnvironment env({ {"F1X_RUNTIME_H", header.string()},
-                      {"F1X_RUNTIME_LIB", workDir.string()},
-                      {"LD_LIBRARY_PATH", workDir.string()} });
-  std::stringstream cmd;
-  cmd << buildCmd;
-  if (verbose) {
-    cmd << " >&2";
-  } else {
-    cmd << " >/dev/null 2>&1";
-  }
-  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  uint status = std::system(cmd.str().c_str());
-  return (status == 0);
+  BOOST_LOG_TRIVIAL(info) << "building project with f1x runtime";
+
+  bool success = buildInEnvironment({ {"CC", "f1x-cc"},
+                                      {"F1X_RUNTIME_H", header.string()},
+                                      {"F1X_RUNTIME_LIB", workDir.string()},
+                                      {"LD_LIBRARY_PATH", workDir.string()} },
+                                    buildCmd);
+
+  return success;
 }
 
-void Project::saveFilesWithPrefix(const string &prefix) {
+void Project::backupFilesWithPrefix(const string &prefix) {
   for (int i = 0; i < files.size(); i++) {
     fs::copy(root / files[i].relpath, workDir / fs::path(prefix + std::to_string(i) + ".c"));
   }
 }
 
-void Project::backupFiles() {
-  saveFilesWithPrefix(BACKUP_PREFIX);
-}
-
-void Project::restoreFiles() {
+void Project::restoreFilesWithPrefix(const string &prefix) {
   for (int i = 0; i < files.size(); i++) {
     if(fs::exists(root / files[i].relpath)) {
       fs::remove(root / files[i].relpath);
     }
-    fs::copy(workDir / fs::path(BACKUP_PREFIX + std::to_string(i) + ".c"), root / files[i].relpath);
+    fs::copy(workDir / fs::path(prefix + std::to_string(i) + ".c"), root / files[i].relpath);
   }
+}
+
+void Project::backupOriginalFiles() {
+  backupFilesWithPrefix("original");
+}
+
+void Project::backupInstrumentedFiles() {
+  backupFilesWithPrefix("instrumented");
+}
+
+void Project::restoreOriginalFiles() {
+  restoreFilesWithPrefix("original");
+}
+
+void Project::restoreInstrumentedFiles() {
+  restoreFilesWithPrefix("instrumented");
 }
 
 void Project::computeDiff(const ProjectFile &file,
@@ -165,18 +186,70 @@ void Project::computeDiff(const ProjectFile &file,
     ofs << "--- " << a.string() << "\n"
         << "+++ " << b.string() << "\n";
   }
+  uint id = getFileId(file);
+  
+  fs::path fromFile = workDir / fs::path("original" + std::to_string(id) + ".c");
+  fs::path toFile = root / file.relpath;
+  string cmd = "diff " + fromFile.string() + " " + toFile.string() + " >> " + output.string();
+  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd;
+  std::system(cmd.c_str());
+}
+
+bool Project::instrumentFile(const ProjectFile &file,
+                             const boost::filesystem::path &outputFile) {
+  BOOST_LOG_TRIVIAL(info) << "instrumenting source files";
+  
+  uint id = getFileId(file);
+
+  FromDirectory dir(root);
+  std::stringstream cmd;
+  cmd << "f1x-transform " << file.relpath.string() << " --instrument"
+      << " --from-line " << file.fromLine
+      << " --to-line " << file.toLine
+      << " --file-id " << id
+      << " --output " + outputFile.string();
+  if (verbose) {
+    cmd << " >&2";
+  } else {
+    cmd << " >/dev/null 2>&1";
+  }
+  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
+  uint status = std::system(cmd.str().c_str());
+  return status == 0;
+}
+
+uint Project::getFileId(const ProjectFile &file) {
   uint id = 0;
   for (auto &f : files) {
     if (file.relpath != f.relpath)
       id++;
   }
   assert(id < files.size());
-  
-  fs::path fromFile = workDir / fs::path(BACKUP_PREFIX + std::to_string(id) + ".c");
-  fs::path toFile = root / file.relpath;
-  string cmd = "diff " + fromFile.string() + " " + toFile.string() + " >> " + output.string();
-  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd;
-  std::system(cmd.c_str());
+  return id;
+}
+
+bool Project::applyPatch(const SearchSpaceElement &patch) {
+  BOOST_LOG_TRIVIAL(debug) << "applying patch";
+  FromDirectory dir(root);
+  uint beginLine = patch.buggy->location.beginLine;
+  uint beginColumn = patch.buggy->location.beginColumn;
+  uint endLine = patch.buggy->location.endLine;
+  uint endColumn = patch.buggy->location.endColumn;
+  std::stringstream cmd;
+  cmd << "f1x-transform " << files[patch.buggy->location.fileId].relpath.string() << " --apply"
+      << " --bl " << beginLine
+      << " --bc " << beginColumn
+      << " --el " << endLine
+      << " --ec " << endColumn
+      << " --patch " << "\"" << expressionToString(patch.patch) << "\"";
+  if (verbose) {
+    cmd << " >&2";
+  } else {
+    cmd << " >/dev/null 2>&1";
+  }
+  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
+  uint status = std::system(cmd.str().c_str());
+  return status == 0;
 }
 
 
@@ -202,4 +275,18 @@ bool TestingFramework::isPassing(const std::string &testId) {
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   uint status = std::system(cmd.str().c_str());
   return (status == 0);
+}
+
+
+vector<string> getFailing(TestingFramework &tester, const vector<string> &tests) {
+
+  vector<string> failingTests;
+
+  for (auto &test : tests) {
+    if (! tester.isPassing(test)) {
+      failingTests.push_back(test);
+    }
+  }
+
+  return failingTests;
 }
