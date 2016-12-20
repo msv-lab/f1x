@@ -52,24 +52,24 @@ f1x command-line tool accepts user options, executes the repair algorithm and sa
 
 f1x accepts one positional argument:
 
-Positional argument | Description
+Argument | Description
 -------- | -----------
-**PATH** | The source directory of your buggy program.
+`PATH` | The source directory of your buggy program.
 
 f1x accepts the following options:
 
-Optional argument | Description
+Argument | Description
 -------- | -----------
-**-f [ --files ] RELPATH...** | The list of buggy files. The paths should be relative to the root of the source directory.
-**-t [ --tests ] ID...** | The list of unique test identifiers.
-**-T [ --test-timeout ] MS** | The test execution timeout in milliseconds.
-**-d [ --driver ] PATH** | The path to the test driver. The test driver is executed from the root of the source directory.
-**-b [ --build ] CMD** | The build command. If omitted, `make -e` is used. The build command is executed from the root of the source directory.
-**-o [ --output ] PATH** | The path to the output patch (or directory when used with **--all**). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the direcotry `<SRC>-<TIME>` when used with **--all**)
-**-a [ --all ]** | Enables generation of all patches
-**-v [ --verbose ]** | Enables extended output for troubleshooting
-**-h [ --help ]** | Prints help message and exits
-**--version** | Prints version and exits
+`-f [ --files ] RELPATH...` | The list of buggy files. The paths should be relative to the root of the source directory.
+`-t [ --tests ] ID...` | The list of unique test identifiers.
+`-T [ --test-timeout ] MS` | The test execution timeout in milliseconds.
+`-d [ --driver ] PATH` | The path to the test driver. The test driver is executed from the root of the source directory.
+`-b [ --build ] CMD` | The build command. If omitted, `make -e` is used. The build command is executed from the root of the source directory.
+`-o [ --output ] PATH` | The path to the output patch (or directory when used with `--all`). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the direcotry `<SRC>-<TIME>` when used with `--all`)
+`-a [ --all ]` | Enables generation of all patches
+`-v [ --verbose ]` | Enables extended output for troubleshooting
+`-h [ --help ]` | Prints help message and exits
+`--version` | Prints version and exits
 
 ### Advanced configuration ###
 
