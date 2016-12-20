@@ -72,7 +72,7 @@ The list of unique test identifiers.
 
 The test execution timeout in milliseconds.
 
-#### -d [ --driver ] PATH #### 
+#### -d [ --driver ] PATH ####
 
 The path to the test driver. The test driver is executed from the root of the source directory.
 
