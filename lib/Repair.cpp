@@ -54,7 +54,7 @@ bool repair(Project &project,
     BOOST_LOG_TRIVIAL(warning) << "compilation returned non-zero exit code";
   }
 
-  project.backupOriginalFiles();
+  project.saveOriginalFiles();
 
   fs::path clFile = workDir / fs::path(CANDADATE_LOCATIONS_FILE_NAME);
 
@@ -68,7 +68,7 @@ bool repair(Project &project,
     return false;
   }
 
-  project.backupInstrumentedFiles();
+  project.saveInstrumentedFiles();
 
   BOOST_LOG_TRIVIAL(debug) << "loading candidate locations";
   vector<shared_ptr<CandidateLocation>> cls = loadCandidateLocations(clFile);
@@ -107,20 +107,53 @@ bool repair(Project &project,
     last = engine.findNext(searchSpace, last);
 
     if (last < searchSpace.size()) {
-      patchCount++;
-      fs::path patchFile = patchOutput;
-      if (all) {
-        if (! fs::exists(patchFile)) {
-          fs::create_directory(patchFile);
-        }
-        patchFile = patchFile / (std::to_string(patchCount) + ".patch");
-      }
+
+      BOOST_LOG_TRIVIAL(info) << "found patch: " << visualizeElement(searchSpace[last]);
 
       project.restoreOriginalFiles();
       
       bool appSuccess = project.applyPatch(searchSpace[last]);
       if (! appSuccess) {
         BOOST_LOG_TRIVIAL(warning) << "patch application failed";
+      }
+
+      project.savePatchedFiles();
+
+      bool valid = true;
+
+      if (VALIDATE_PATCHES) {
+        BOOST_LOG_TRIVIAL(info) << "validating patch";
+
+        bool rebuildSuccess = project.build();
+        if (! rebuildSuccess) {
+          BOOST_LOG_TRIVIAL(warning) << "compilation with patch returned non-zero exit code";
+        }
+
+        vector<string> failing = getFailing(tester, tests);
+
+        if (!failing.empty()) {
+          valid = false;
+          BOOST_LOG_TRIVIAL(warning) << "generated patch failed validation";
+          for (auto &t : failing) {
+            BOOST_LOG_TRIVIAL(debug) << "failed test: " << t;
+          }
+        }
+        
+        project.restoreInstrumentedFiles();
+        project.buildWithRuntime(runtime.getHeader());
+      }
+
+      if (!valid)
+        continue;
+
+      patchCount++;
+
+      fs::path patchFile = patchOutput;
+      if (all) {
+        if (! fs::exists(patchFile)) {
+          fs::create_directory(patchFile);
+        }
+        patchFile = patchFile / (std::to_string(patchCount) + ".patch");
       }
 
       project.computeDiff(project.getFiles()[0], patchFile);

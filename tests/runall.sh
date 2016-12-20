@@ -35,40 +35,22 @@ for test in $TESTS; do
     echo -n "* testing $test... "
     case "$test" in
         if-condition)
-            subject_files="program.c"
-            subject_driver="$PWD/$test/test.sh"
-            subject_tests="n1 p1 p2"
-            subject_args="--test-timeout 1000"
+            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         assign-in-condition)
-            subject_files="program.c"
-            subject_driver="$PWD/$test/test.sh"
-            subject_tests="n1 p1 p2"
-            subject_args="--test-timeout 1000"
+            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         guarded-assignment)
-            subject_files="program.c"
-            subject_driver="$PWD/$test/test.sh"
-            subject_tests="n1 p1 p2"
-            subject_args="--test-timeout 1000"
+            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         int-assignment)
-            subject_files="program.c"
-            subject_driver="$PWD/$test/test.sh"
-            subject_tests="n1 p1 p2"
-            subject_args="--test-timeout 1000"
+            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         dangling-else)
-            subject_files="program.c"
-            subject_driver="$PWD/$test/test.sh"
-            subject_tests="n1 p1 p2"
-            subject_args="--test-timeout 1000"
+            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         return-continue)
-            subject_files="program.c"
-            subject_driver="$PWD/$test/test.sh"
-            subject_tests="n1 p1 p2"
-            subject_args="--test-timeout 1000"
+            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         *)
             echo "command for test $test is not defined"
@@ -76,7 +58,7 @@ for test in $TESTS; do
             ;;
     esac
 
-    repair_cmd="f1x $test --files $subject_files --tests $subject_tests --driver $subject_driver --output output.patch $subject_args"
+    repair_cmd="f1x $test $args --output output.patch"
 
     repair_dir=`mktemp -d`
     cp -r "$test" "$repair_dir"
@@ -98,60 +80,7 @@ for test in $TESTS; do
         exit 1
     fi
 
-    validation_dir=`mktemp -d`
-    cp -r "$test" "$validation_dir"
-    (
-        cd $validation_dir
-        cd $test
-
-        patch -p1 < $repair_dir/output.patch &> /dev/null
-        application_status=$?
-        if [[ $application_status != 0 ]]; then
-            echo 'FAIL'
-            echo "----------------------------------------"
-            echo "repair directory: $repair_dir"
-            echo "repair command: $repair_cmd"
-            echo "validation directory: $validation_dir"
-            echo "failed command: patch -p0 < $repair_dir/output.patch"
-            echo "----------------------------------------"
-            exit 1
-        fi
-
-        make &> /dev/null
-        compilation_status=$?
-        if [[ $compilation_status != 0 ]]; then
-            echo 'FAIL'
-            echo "----------------------------------------"
-            echo "repair directory: $repair_dir"
-            echo "repair command: $repair_cmd"
-            echo "validation directory: $validation_dir"
-            echo "failed command: make"
-            echo "----------------------------------------"
-            exit 1
-        fi
-
-        for current_id in $subject_tests; do
-            $subject_driver $current_id &> /dev/null
-            validation_status=$?
-            if [[ ($validation_status != 0) ]]; then
-                echo 'FAIL'
-                echo "----------------------------------------"
-                echo "repair directory: $repair_dir"
-                echo "repair command: $repair_cmd"
-                echo "validation directory: $validation_dir"
-                echo "failed command: $subject_driver $current_id"
-                echo "----------------------------------------"
-                exit 1
-            fi
-        done
-    )
-    validation_subshell=$?
-    if [[ ($validation_subshell != 0) ]]; then
-        exit 1
-    fi
-
     rm -rf "$repair_dir"
-    rm -rf "$validation_dir"
 
     echo 'PASS'
 done

@@ -42,8 +42,9 @@ class Project {
   bool initialBuild();
   bool build();
   bool buildWithRuntime(const boost::filesystem::path &header);
-  void backupOriginalFiles();
-  void backupInstrumentedFiles();
+  void saveOriginalFiles();
+  void saveInstrumentedFiles();
+  void savePatchedFiles();
   void restoreOriginalFiles();
   void restoreInstrumentedFiles();
   void computeDiff(const ProjectFile &file,
@@ -61,7 +62,7 @@ class Project {
   boost::filesystem::path workDir;
   bool verbose;
 
-  void backupFilesWithPrefix(const std::string &prefix);
+  void saveFilesWithPrefix(const std::string &prefix);
   void restoreFilesWithPrefix(const std::string &prefix);
   bool buildInEnvironment(const std::map<std::string, std::string> &env, const std::string &baseCmd);
   uint getFileId(const ProjectFile &file);

@@ -291,6 +291,7 @@ std::string visualizeElement(const SearchSpaceElement &el) {
          << expressionToString(el.buggy->original)
          << " ---> "
          << expressionToString(el.patch);
+  return result.str();
 }                                                          
 
 

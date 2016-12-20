@@ -146,7 +146,7 @@ bool Project::buildWithRuntime(const fs::path &header) {
   return success;
 }
 
-void Project::backupFilesWithPrefix(const string &prefix) {
+void Project::saveFilesWithPrefix(const string &prefix) {
   for (int i = 0; i < files.size(); i++) {
     fs::copy(root / files[i].relpath, workDir / fs::path(prefix + std::to_string(i) + ".c"));
   }
@@ -161,12 +161,16 @@ void Project::restoreFilesWithPrefix(const string &prefix) {
   }
 }
 
-void Project::backupOriginalFiles() {
-  backupFilesWithPrefix("original");
+void Project::saveOriginalFiles() {
+  saveFilesWithPrefix("original");
 }
 
-void Project::backupInstrumentedFiles() {
-  backupFilesWithPrefix("instrumented");
+void Project::saveInstrumentedFiles() {
+  saveFilesWithPrefix("instrumented");
+}
+
+void Project::savePatchedFiles() {
+  saveFilesWithPrefix("patched");
 }
 
 void Project::restoreOriginalFiles() {
@@ -189,7 +193,7 @@ void Project::computeDiff(const ProjectFile &file,
   uint id = getFileId(file);
   
   fs::path fromFile = workDir / fs::path("original" + std::to_string(id) + ".c");
-  fs::path toFile = root / file.relpath;
+  fs::path toFile = workDir / fs::path("patched" + std::to_string(id) + ".c");
   string cmd = "diff " + fromFile.string() + " " + toFile.string() + " >> " + output.string();
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd;
   std::system(cmd.c_str());
