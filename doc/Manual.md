@@ -48,9 +48,9 @@ Note that when executing tests f1x appends a path to its runtime library (libf1x
 
 ### Command-line interface ###
 
-f1x command-line tool accepts user options, executes the repair algorithm and saves the generated patch into a patch file in unidiff format. f1x prints log messages on the standard error output and terminates with zero exit code if and only if it finds a patch.
+f1x command-line tool accepts user options, executes the repair algorithm and saves the generated patches into patch files in unidiff format. f1x prints log messages on the standard error output and terminates with zero exit code if and only if it finds a patch.
 
-f1x support the following arguments:
+f1x accepts the following arguments:
 
 #### PATH ####
 
@@ -102,7 +102,7 @@ Prints version and exits.
 
 ### Advanced configuration ###
 
-Various algorithm parameters can be modified in the `Config.h.in` file (requires reconfiguration and recompilation).
+Various algorithm parameters can be set in the `Config.h.in` file (requires reconfiguration and recompilation).
     
 ## Related publications ##
 
