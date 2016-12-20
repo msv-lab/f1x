@@ -59,6 +59,8 @@ const std::string F1X_CLANG_INCLUDE = "@F1X_CLANG_INCLUDE@";
 
 const bool USE_GLOBAL_VARIABLES = false;
 
+const bool VALIDATE_PATCHES = true;
+
 // 0 means disabled:
 const uint MAX_LOCALIZED_FILES = 0; /* UNSUPPORTED */
 const uint MAX_LOCATIONS = 0; /* UNSUPPORTED */

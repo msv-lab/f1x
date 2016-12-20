@@ -38,12 +38,14 @@ using std::shared_ptr;
 
 const string CANDADATE_LOCATIONS_FILE_NAME = "cl.json";
 
+
 bool repair(Project &project,
             TestingFramework &tester,
             const std::vector<std::string> &tests,
             const boost::filesystem::path &workDir,
-            const boost::filesystem::path &patchFile,
-            bool verbose) {
+            const boost::filesystem::path &patchOutput,
+            bool verbose,
+            bool all) {
 
   BOOST_LOG_TRIVIAL(info) << "repairing project " << project.getRoot();
 
@@ -94,22 +96,46 @@ bool repair(Project &project,
     BOOST_LOG_TRIVIAL(warning) << "compilation with runtime returned non-zero exit code";
   }
 
-  SearchSpaceElement patch;
+  BOOST_LOG_TRIVIAL(info) << "search space: " << searchSpace.size();
+  
+  SearchEngine engine(tests, tester, runtime);
 
-  bool found = search(searchSpace, tests, tester, runtime, patch);
+  uint last = 0;
+  uint patchCount = 0;
 
-  if (found) {
-    project.restoreOriginalFiles();
+  while (last < searchSpace.size()) {
+    last = engine.findNext(searchSpace, last);
 
-    bool appSuccess = project.applyPatch(patch);
-    if (! appSuccess) {
-      BOOST_LOG_TRIVIAL(warning) << "patch application failed";
+    if (last < searchSpace.size()) {
+      patchCount++;
+      fs::path patchFile = patchOutput;
+      if (all) {
+        if (! fs::exists(patchFile)) {
+          fs::create_directory(patchFile);
+        }
+        patchFile = patchFile / (std::to_string(patchCount) + ".patch");
+      }
+
+      project.restoreOriginalFiles();
+      
+      bool appSuccess = project.applyPatch(searchSpace[last]);
+      if (! appSuccess) {
+        BOOST_LOG_TRIVIAL(warning) << "patch application failed";
+      }
+
+      project.computeDiff(project.getFiles()[0], patchFile);
+      
+      if (!all)
+        break;
     }
 
-    project.computeDiff(project.getFiles()[0], patchFile);
+    last++;
   }
+
+  BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << engine.getCandidateCount();
+  BOOST_LOG_TRIVIAL(info) << "tests executed: " << engine.getTestCount();
 
   project.restoreOriginalFiles();
 
-  return found;
+  return patchCount > 0;
 }

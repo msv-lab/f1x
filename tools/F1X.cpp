@@ -112,7 +112,8 @@ int main (int argc, char *argv[])
     ("test-timeout,T", po::value<uint>()->value_name("MS"), "test execution timeout (default: none)")
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
-    ("output,o", po::value<string>()->value_name("PATH"), "output patch file (default: SRC-TIME.patch)")
+    ("output,o", po::value<string>()->value_name("PATH"), "output patch file or directory (default: SRC-TIME)")
+    ("all,a", "generate all patches")
     ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
@@ -123,11 +124,11 @@ int main (int argc, char *argv[])
     ("source", po::value<string>(), "source directory")
     ;
 
-  po::options_description all("All options");
-  all.add(general).add(hidden);
+  po::options_description allOptions("All options");
+  allOptions.add(general).add(hidden);
 
   po::variables_map vm;
-  po::store(po::command_line_parser(argc, argv).options(all).positional(positional).run(), vm);
+  po::store(po::command_line_parser(argc, argv).options(allOptions).positional(positional).run(), vm);
   po::notify(vm);
 
   if (vm.count("help")) {
@@ -149,6 +150,13 @@ int main (int argc, char *argv[])
     verbose = false;
   }
   initializeTrivialLogger(verbose);
+
+  bool all;
+  if(vm.count("all")){
+    all = true;
+  } else {
+    all = false;
+  }
 
   if (!vm.count("source")) {
     BOOST_LOG_TRIVIAL(error) << "source directory is not specified (use --help)";
@@ -218,7 +226,9 @@ int main (int argc, char *argv[])
       if (e.string() != ".")
         dirname = e.string();
     std::stringstream name;
-    name << dirname << "-" << timeRepr << ".patch";
+    name << dirname << "-" << timeRepr;
+    if (!all)
+      name << ".patch";
     output = fs::path(name.str());
   } else {
     output = fs::path(vm["output"].as<string>());
@@ -232,10 +242,14 @@ int main (int argc, char *argv[])
   Project project(root, files, buildCmd, workDir, verbose);
   TestingFramework tester(project, driver, testTimeout, verbose);
 
-  bool found = repair(project, tester, tests, workDir, output, verbose);
+  bool found = repair(project, tester, tests, workDir, output, verbose, all);
 
   if (found) {
-    BOOST_LOG_TRIVIAL(info) << "patch successfully generated: " << output;
+    if (all) {
+      BOOST_LOG_TRIVIAL(info) << "patches successfully generated: " << output;
+    } else {
+      BOOST_LOG_TRIVIAL(info) << "patch successfully generated: " << output;
+    }
     return 0;
   } else {
     BOOST_LOG_TRIVIAL(info) << "failed to generated a patch";

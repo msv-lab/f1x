@@ -22,9 +22,20 @@
 #include "Project.h"
 #include "Runtime.h"
 
+class SearchEngine {
+ public:
+  SearchEngine(const std::vector<std::string> &tests,
+               TestingFramework &tester,
+               Runtime &runtime);
 
-bool search(const std::vector<SearchSpaceElement> &searchSpace,
-            const std::vector<std::string> tests,
-            TestingFramework &tester,
-            Runtime &runtime,
-            SearchSpaceElement &patch);
+  uint findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom);
+  uint getCandidateCount();
+  uint getTestCount();
+
+ private:
+  std::vector<std::string> tests;
+  TestingFramework tester;
+  Runtime runtime;
+  uint candidateCounter;
+  uint testCounter;
+};

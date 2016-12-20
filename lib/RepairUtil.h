@@ -110,6 +110,7 @@ enum class Transformation {
   NONE,
   ALTERNATIVE,    // alternative operator e.g. > --> >=
   SWAPING,        // swaping arguments
+  SIMPLIFICATION, // simplifying expression
   GENERALIZATION, // e.g. 1 --> x
   CONCRETIZATION, // e.g. x --> 1
   SUBSTITUTION,   // (generic) substution of subnode
@@ -130,6 +131,9 @@ struct SearchSpaceElement {
   Expression patch;
   PatchMeta meta;
 };
+
+
+std::string visualizeElement(const SearchSpaceElement &el);
 
 
 class FromDirectory {

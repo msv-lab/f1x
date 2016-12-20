@@ -65,12 +65,13 @@ Argument | Description
 **-T [ --test-timeout ] MS** | The test execution timeout in milliseconds.
 **-d [ --driver ] PATH** | The path to the test driver. The test driver is executed from the root of the source directory.
 **-b [ --build ] CMD** | The build command. If omitted, `make -e` is used. The build command is executed from the root of the source directory.
-**-o [ --output ] PATH** | The path to the generated patch. If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch`
+**-o [ --output ] PATH** | The path to the output patch (or directory when used with **--all**). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the direcotry `<SRC>-<TIME>` when used with **--all** 
+**-a [ --all ]** | Enables generation of all patches
 **-v [ --verbose ]** | Enables extended output for troubleshooting
 **-h [ --help ]** | Prints help message and exits
 **--version** | Prints version and exits
 
-#### Advanced configuration ####
+### Advanced configuration ###
 
 f1x allows to restrict the search space to certain parts of the source code files. In the following example, the candidate locations will be restricted to the line 20 of `main.c` and from the line 5 to the line 45 (inclusive) of `lib.c`:
 

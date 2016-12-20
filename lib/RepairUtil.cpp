@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <string>
 #include <sys/stat.h>
+#include <sstream>
 
 #include <boost/filesystem/fstream.hpp>
 
@@ -259,6 +260,38 @@ std::string expressionToString(const Expression &expression) {
   }
   return "<unsupported>";
 }
+
+
+std::string metaToString(const PatchMeta &meta) {
+  switch (meta.transformation) {
+  case Transformation::ALTERNATIVE:
+    return "operator replacement";
+  case Transformation::SWAPING:
+    return "swaping arguments";
+  case Transformation::SIMPLIFICATION:
+    return "simplification";
+  case Transformation::GENERALIZATION:
+  case Transformation::CONCRETIZATION:
+  case Transformation::SUBSTITUTION:
+    return "substitution";
+  case Transformation::WIDENING:
+    return "widening";
+  case Transformation::NARROWING:
+    return "narrowing";
+  default:
+    return "change";
+  }
+}
+
+
+std::string visualizeElement(const SearchSpaceElement &el) {
+  std::stringstream result;
+  result << metaToString(el.meta)
+         << " "
+         << expressionToString(el.buggy->original)
+         << " ---> "
+         << expressionToString(el.patch);
+}                                                          
 
 
 Expression convertExpression(const json::Value &json) {
