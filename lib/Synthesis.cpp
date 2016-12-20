@@ -17,6 +17,7 @@
 */
 
 #include <string>
+#include <algorithm>
 #include <sstream>
 #include <unordered_map>
 
@@ -138,12 +139,12 @@ vector<Expression> mutate(const Expression &expr, const vector<Expression> &comp
 
 
 void substituteRealNames(Expression &expression,
-                         unordered_map<string, unsigned> &indexByName) {
+                         unordered_map<string, string> &accessByName) {
   if (expression.args.size() == 0 && expression.kind == Kind::VARIABLE) {
-    expression.repr = "i[" + std::to_string(indexByName[expression.repr]) + "]";
+    expression.repr = accessByName[expression.repr];
   } else {
     for (auto &arg : expression.args) {
-      substituteRealNames(arg, indexByName);
+      substituteRealNames(arg, accessByName);
     }
   }
 }
@@ -153,9 +154,30 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
                          uint &id,
                          std::ostream &OS,
                          vector<SearchSpaceElement> &ss) {
-  unordered_map<string, unsigned> indexByName;
-  for (int index = 0; index < cl->components.size(); index++) {
-    indexByName[cl->components[index].repr] = index;
+  vector<string> types;
+  for (auto &c : cl->components) {
+    if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
+      types.push_back(c.rawType);
+    }
+  }
+
+  std::stable_sort(types.begin(), types.end());
+
+  unordered_map<string, vector<string>> namesByType;
+  for (auto &type : types) {
+    namesByType[type] = vector<string>();
+  }
+
+  for (auto &c : cl->components) {
+    namesByType[c.rawType].push_back(c.repr);
+  }
+
+  unordered_map<string, string> accessByName;
+  for (auto &type : types) {
+    auto names = namesByType[type];
+    for (int index = 0; index < names.size(); index++) {
+      accessByName[names[index]] = f1xArgNameFromType(type) + "[" + std::to_string(index) + "]";
+    }
   }
 
   vector<Expression> mutants = mutate(cl->original, cl->components);
@@ -163,7 +185,7 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
   for (auto &candidate : mutants) {
     uint currentId = ++id;
     Expression runtimeRepr = candidate;
-    substituteRealNames(runtimeRepr, indexByName);
+    substituteRealNames(runtimeRepr, accessByName);
     OS << "case " << currentId << ":" << "\n"
        << "return " << expressionToString(runtimeRepr) << ";" << "\n";
     PatchMeta meta{Transformation::NONE, 0};
@@ -185,6 +207,31 @@ void addRuntimeLoader(std::ostream &OH) {
      << "static F1XRuntimeLoader __loader;" << "\n";
 }
 
+string makeParameterList(shared_ptr<CandidateLocation> cl) {
+  std::ostringstream result;
+
+  vector<string> types;
+  for (auto &c : cl->components) {
+    if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
+      types.push_back(c.rawType);
+    }
+  }
+
+  std::stable_sort(types.begin(), types.end());
+
+  bool firstArray = true;
+  for (auto &type : types) {
+    if (firstArray) {
+      firstArray = false;
+    } else {
+      result << ", ";
+    }
+    result << type << " " << f1xArgNameFromType(type) << "[]";
+  }
+  
+  return result.str();
+}
+
 
 vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH) {
   
@@ -202,7 +249,7 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
        << cl->location.beginColumn << "_"
        << cl->location.endLine << "_"
        << cl->location.endColumn
-       << "(int i[])"
+       << "(" << makeParameterList(cl) << ")"
        << ";" << "\n";
   }
 
@@ -227,7 +274,7 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
        << cl->location.beginColumn << "_"
        << cl->location.endLine << "_"
        << cl->location.endColumn
-       << "(int i[])"
+       << "(" << makeParameterList(cl) << ")"
        << "{" << "\n";
 
     OS << "switch (__f1x_id) {" << "\n";

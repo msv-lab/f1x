@@ -153,12 +153,6 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     candidateLoc.AddMember("components", componentsJSON, candidateLocations.GetAllocator());
     candidateLocations.PushBack(candidateLoc, candidateLocations.GetAllocator());
 
-    // FIXME: this instrumentation is incorrect for cases
-    // if (condition)
-    //   statement;
-    // because it can create dangling else branch.
-    // wrapping it with {} will not work because break/continue are matched without semicolon
-
 	  unsigned origLength = Rewrite.getRangeSize(expandedLoc);
     std::ostringstream stringStream;
     
