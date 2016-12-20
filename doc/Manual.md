@@ -50,32 +50,55 @@ Note that when executing tests f1x appends a path to its runtime library (libf1x
 
 f1x command-line tool accepts user options, executes the repair algorithm and saves the generated patch into a patch file in unidiff format. f1x prints log messages on the standard error output and terminates with zero exit code if and only if it finds a patch.
 
-f1x accepts one positional argument:
+#### PATH ####
 
-Argument | Description
-:------- | ----------:
-`PATH` | The source directory of your buggy program.
+The source directory of your buggy program (positional argument).
 
-f1x accepts the following options:
+#### -f [ --files ] RELPATH...` ####
 
-Argument | Description
-:------- | ----------:
-`-f [ --files ] RELPATH...`<nobr/> | The list of buggy files. The paths should be relative to the root of the source directory.
-`-t [ --tests ] ID...` | The list of unique test identifiers.
-`-T [ --test-timeout ] MS` | The test execution timeout in milliseconds.
-`-d [ --driver ] PATH` | The path to the test driver. The test driver is executed from the root of the source directory.
-`-b [ --build ] CMD` | The build command. If omitted, `make -e` is used. The build command is executed from the root of the source directory.
-`-o [ --output ] PATH` | The path to the output patch (or directory when used with `--all`). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the direcotry `<SRC>-<TIME>` when used with `--all`)
-`-a [ --all ]` | Enables generation of all patches
-`-v [ --verbose ]` | Enables extended output for troubleshooting
-`-h [ --help ]` | Prints help message and exits
-`--version` | Prints version and exits
-
-### Advanced configuration ###
+The list of buggy files. The paths should be relative to the root of the source directory.
 
 f1x allows to restrict the search space to certain parts of the source code files. In the following example, the candidate locations will be restricted to the line 20 of `main.c` and from the line 5 to the line 45 (inclusive) of `lib.c`:
 
     --files main.c:20 lib.c:5-45
+
+#### -t [ --tests ] ID... ####
+
+The list of unique test identifiers.
+
+#### -T [ --test-timeout ] MS ####
+
+The test execution timeout in milliseconds.
+
+#### -d [ --driver ] PATH #### 
+
+The path to the test driver. The test driver is executed from the root of the source directory.
+
+#### -b [ --build ] CMD ####
+
+The build command. If omitted, `make -e` is used. The build command is executed from the root of the source directory.
+
+#### -o [ --output ] PATH ####
+
+The path to the output patch (or directory when used with `--all`). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the direcotry `<SRC>-<TIME>` when used with `--all`)
+
+#### -a [ --all ] ####
+
+Enables generation of all patches in the search space.
+
+#### -v [ --verbose ] ####
+
+Enables extended output for troubleshooting.
+
+#### -h [ --help ] ####
+
+Prints help message and exits.
+
+#### --version ####
+
+Prints version and exits.
+
+### Advanced configuration ###
 
 Various algorithm parameters can be modified in the `Config.h.in` file (requires reconfiguration and recompilation).
     
