@@ -148,7 +148,11 @@ bool Project::buildWithRuntime(const fs::path &header) {
 
 void Project::saveFilesWithPrefix(const string &prefix) {
   for (int i = 0; i < files.size(); i++) {
-    fs::copy(root / files[i].relpath, workDir / fs::path(prefix + std::to_string(i) + ".c"));
+    auto destination = workDir / fs::path(prefix + std::to_string(i) + ".c");
+    if(fs::exists(destination)) {
+      fs::remove(destination);
+    }
+    fs::copy(root / files[i].relpath, destination);
   }
 }
 

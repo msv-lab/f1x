@@ -104,6 +104,29 @@ Expression makeRightSubs(const Expression &expr, const Expression &subs) {
   return Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {expr.args[0], subs}};
 }
 
+// simplifiable are those that have arguments of the same type as the result
+bool simplifiable(const Expression &expr) {
+  switch (expr.op) {
+  case Operator::OR:
+  case Operator::AND:
+  case Operator::ADD:
+  case Operator::SUB:
+  case Operator::MUL:
+  case Operator::DIV:
+  case Operator::MOD:
+  case Operator::NEG:
+  case Operator::NOT:
+  case Operator::BV_AND:
+  case Operator::BV_OR:
+  case Operator::BV_XOR:
+  case Operator::BV_SHL:
+  case Operator::BV_SHR:
+  case Operator::BV_NOT:
+    return true;
+  default:
+    return false;
+  }
+}
 
 vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<Expression> &components) {
   vector<pair<Expression, PatchMeta>> result;
@@ -132,6 +155,11 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
       for (auto &m : argMutants) {
         result.push_back(make_pair(makeArgSubs(expr, m.first), m.second));
       }
+      if (simplifiable(expr)) {
+        Expression argCopy = expr.args[0];
+        // assume simplification is always distance 1
+        result.push_back(make_pair(argCopy, PatchMeta{Transformation::SIMPLIFICATION, 1}));
+      }
     } else if (expr.args.size() == 2) {
       vector<pair<Expression, PatchMeta>> leftMutants = mutate(expr.args[0], components);
       for (auto &m : leftMutants) {
@@ -140,6 +168,13 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
       vector<pair<Expression, PatchMeta>> rightMutants = mutate(expr.args[1], components);
       for (auto &m : rightMutants) {
         result.push_back(make_pair(makeRightSubs(expr, m.first), m.second));
+      }
+      if (simplifiable(expr)) {
+        Expression leftCopy = expr.args[0];
+        Expression rightCopy = expr.args[1];
+        // assume simplification is always distance 1
+        result.push_back(make_pair(leftCopy, PatchMeta{Transformation::SIMPLIFICATION, 1}));
+        result.push_back(make_pair(rightCopy, PatchMeta{Transformation::SIMPLIFICATION, 1}));
       }
     }
   }
