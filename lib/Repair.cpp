@@ -202,9 +202,11 @@ bool repair(Project &project,
             BOOST_LOG_TRIVIAL(debug) << "failed test: " << t;
           }
         }
-        
-        project.restoreInstrumentedFiles();
-        project.buildWithRuntime(runtime.getHeader());
+
+        if (all) {
+          project.restoreInstrumentedFiles();
+          project.buildWithRuntime(runtime.getHeader());
+        }
       }
 
       if (!valid)
