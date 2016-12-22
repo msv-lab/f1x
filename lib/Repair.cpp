@@ -103,9 +103,13 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "repairing project " << project.getRoot();
 
-  bool buildSucceeded = project.initialBuild();
-  if (! buildSucceeded) {
+  pair<bool, bool> initialStatus = project.initialBuild();
+  if (! initialStatus.first) {
     BOOST_LOG_TRIVIAL(warning) << "compilation returned non-zero exit code";
+  }
+  if (! initialStatus.second) {
+    BOOST_LOG_TRIVIAL(error) << "failed to infer compile commands";
+    return false;
   }
 
   project.saveOriginalFiles();

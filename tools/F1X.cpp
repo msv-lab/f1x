@@ -237,7 +237,7 @@ int main (int argc, char *argv[])
 
   fs::path workDir = fs::temp_directory_path() / fs::unique_path();
   fs::create_directory(workDir);
-  BOOST_LOG_TRIVIAL(debug) << "working directory: " + workDir.string();
+  BOOST_LOG_TRIVIAL(info) << "working directory: " << workDir;
 
   Project project(root, files, buildCmd, workDir, verbose);
   TestingFramework tester(project, driver, testTimeout, verbose);

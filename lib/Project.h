@@ -39,7 +39,7 @@ class Project {
           const boost::filesystem::path &workDir,
           bool verbose);
 
-  bool initialBuild();
+  std::pair<bool, bool> initialBuild();
   bool build();
   bool buildWithRuntime(const boost::filesystem::path &header);
   void saveOriginalFiles();

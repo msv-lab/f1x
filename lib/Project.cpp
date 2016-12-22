@@ -39,6 +39,37 @@ using std::vector;
 using std::map;
 
 
+bool projectFilesInCompileDB(fs::path root, vector<ProjectFile> files) {
+  FromDirectory dir(root);
+  
+  fs::path compileDB("compile_commands.json");
+  json::Document db;
+  {
+    fs::ifstream ifs(compileDB);
+    json::IStreamWrapper isw(ifs);
+    db.ParseStream(isw);
+  }
+
+  for (auto &file : files) {
+    bool present = false;
+
+    for (auto& entry : db.GetArray()) {
+      string dbFile = entry.GetObject()["file"].GetString();
+      if (fs::equivalent(fs::path(dbFile), file.relpath)) {
+        present = true;
+      }
+    }
+
+    if (! present) {
+      BOOST_LOG_TRIVIAL(warning) << "file " << file.relpath
+                                 << " is not in compilation database";
+      return false;
+    }
+  }
+
+  return true; 
+}
+
 void addClangHeadersToCompileDB(fs::path projectRoot) {
   fs::path compileDB("compile_commands.json");
   fs::path path = projectRoot / compileDB;
@@ -108,22 +139,29 @@ bool Project::buildInEnvironment(const std::map<std::string, std::string> &envir
   return (status == 0);
 }
 
-bool Project::initialBuild() {
-  BOOST_LOG_TRIVIAL(info) << "building project and inferring compilation commands";
+std::pair<bool, bool> Project::initialBuild() {
+  BOOST_LOG_TRIVIAL(info) << "building project and inferring compile commands";
 
   std::stringstream cmd;
   if (fs::exists(root / "compile_commands.json")) {
-    BOOST_LOG_TRIVIAL(debug) << "using existing compilation database";
+    BOOST_LOG_TRIVIAL(info) << "using existing compilation database (compile_commands.json)";
     cmd << buildCmd;
   } else {
     cmd << "f1x-bear " << buildCmd;
   }
-  bool success = buildInEnvironment({ {"CC", "f1x-cc"} }, cmd.str());
+  bool compilationSuccess = buildInEnvironment({ {"CC", "f1x-cc"} }, cmd.str());
 
-  // FIXME: check that project files are in the compilation database
-  addClangHeadersToCompileDB(root);
+  bool inferenceSuccess = fs::exists(root / "compile_commands.json");
 
-  return success;
+  if (inferenceSuccess) {
+    if (projectFilesInCompileDB(root, files)) {
+      addClangHeadersToCompileDB(root);
+    } else {
+      inferenceSuccess = false;
+    }
+  }
+
+  return std::make_pair(compilationSuccess, inferenceSuccess);
 }
 
 bool Project::build() {
