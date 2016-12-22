@@ -220,13 +220,13 @@ int main (int argc, char *argv[])
     struct std::tm tstruct;
     char timeRepr[80];
     tstruct = *localtime(&now);
-    strftime(timeRepr, sizeof(timeRepr), "%y%m%d_%H%M%S", &tstruct);
+    strftime(timeRepr, sizeof(timeRepr), "-%Y_%m_%d-%H_%M_%S", &tstruct);
     string dirname;
     for(auto& e : root)
       if (e.string() != ".")
         dirname = e.string();
     std::stringstream name;
-    name << dirname << "-" << timeRepr;
+    name << dirname << timeRepr;
     if (!all)
       name << ".patch";
     output = fs::path(name.str());
