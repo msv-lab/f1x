@@ -422,12 +422,15 @@ json::Value locToJSON(uint fileId, uint locId, uint bl, uint bc, uint el, uint e
 
 
 class CollectComponents : public StmtVisitor<CollectComponents> {
+private:
   json::Document::AllocatorType *allocator;
+  bool ignoreCasts;
   vector<json::Value> collected;
 
 public:
-  CollectComponents(json::Document::AllocatorType *allocator):
-    allocator(allocator) {}
+  CollectComponents(json::Document::AllocatorType *allocator, bool ignoreCasts):
+    allocator(allocator),
+    ignoreCasts(ignoreCasts) {}
 
   vector<json::Value> getCollected() {
     return std::move(collected);
@@ -451,7 +454,8 @@ public:
   }
 
   void VisitCastExpr(CastExpr *Node) {
-    collected.push_back(stmtToJSON(Node, *allocator));
+    if (! ignoreCasts)
+      collected.push_back(stmtToJSON(Node, *allocator));
   }
 
   void VisitParenExpr(ParenExpr *Node) {
@@ -478,8 +482,9 @@ public:
 
 
 vector<json::Value> collectFromExpression(const Stmt *stmt,
-                                          json::Document::AllocatorType &allocator) {
-  CollectComponents T(&allocator);
+                                          json::Document::AllocatorType &allocator,
+                                          bool ignoreCasts) {
+  CollectComponents T(&allocator, ignoreCasts);
   T.Visit(const_cast<Stmt*>(stmt));
   return T.getCollected();
 }
@@ -582,7 +587,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
         SourceRange expandedLoc = getExpandedLoc(stmt, context->getSourceManager());
         unsigned beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
         if (line > beginLine) {
-          vector<json::Value> fromExpr = collectFromExpression(*it, allocator);
+          vector<json::Value> fromExpr = collectFromExpression(*it, allocator, true);
           for (auto &c : fromExpr) {
             result.push_back(std::move(c));
           }
@@ -595,7 +600,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
               CallExpr* callExpr = cast<CallExpr>(thenStmt);
               for (auto a = callExpr->arg_begin(); a != callExpr->arg_end(); ++a) {
                 auto e = cast<Expr>(*a);
-                vector<json::Value> fromParamExpr = collectFromExpression(e, allocator);
+                vector<json::Value> fromParamExpr = collectFromExpression(e, allocator, true);
                 for (auto &c : fromParamExpr) {
                   result.push_back(std::move(c));
                 }
@@ -625,7 +630,7 @@ vector<json::Value> collectComponents(const Stmt *stmt,
                                       uint line,
                                       ASTContext *context,
                                       json::Document::AllocatorType &allocator) {
-  vector<json::Value> fromExpr = collectFromExpression(stmt, allocator);
+  vector<json::Value> fromExpr = collectFromExpression(stmt, allocator, false);
 
   const ast_type_traits::DynTypedNode node = ast_type_traits::DynTypedNode::create(*stmt);
   vector<json::Value> visible = collectVisible(node, line, context, allocator);

@@ -60,7 +60,8 @@ StatementMatcher RepairableAtom =
         integerLiteral().bind(BOUND),
         characterLiteral().bind(BOUND),
         memberExpr().bind(BOUND), // TODO: I need to make sure that base is a variable here?
-        cStyleCastExpr(hasSourceExpression(implicitCastExpr(hasSourceExpression(anyOf(integerLiteral(),
+        cStyleCastExpr(hasType(isInteger()), // TODO: for now only integer
+                       hasSourceExpression(implicitCastExpr(hasSourceExpression(anyOf(integerLiteral(),
                                                                                       declRefExpr(),
                                                                                       memberExpr()))))).bind(BOUND),
         castExpr(hasType(asString("void *")), hasDescendant(integerLiteral(equals(0)))).bind(BOUND)); // NULL, redundant?
