@@ -421,16 +421,23 @@ json::Value locToJSON(uint fileId, uint locId, uint bl, uint bc, uint el, uint e
 }
 
 
+bool isSuitableComponentType(const QualType &type) {
+  return type.getTypePtr()->isIntegerType() || type.getTypePtr()->isCharType();
+}
+
+
 class CollectComponents : public StmtVisitor<CollectComponents> {
 private:
   json::Document::AllocatorType *allocator;
   bool ignoreCasts;
+  bool suitableTypes;
   vector<json::Value> collected;
 
 public:
-  CollectComponents(json::Document::AllocatorType *allocator, bool ignoreCasts):
+  CollectComponents(json::Document::AllocatorType *allocator, bool ignoreCasts, bool suitableTypes):
     allocator(allocator),
-    ignoreCasts(ignoreCasts) {}
+    ignoreCasts(ignoreCasts),
+    suitableTypes(suitableTypes) {}
 
   vector<json::Value> getCollected() {
     return std::move(collected);
@@ -467,15 +474,18 @@ public:
   void VisitCharacterLiteral(CharacterLiteral *Node) {}
 
   void VisitMemberExpr(MemberExpr *Node) {
-    collected.push_back(stmtToJSON(Node, *allocator));
+    if (!suitableTypes || isSuitableComponentType(Node->getType()))
+      collected.push_back(stmtToJSON(Node, *allocator));
   }
 
   void VisitDeclRefExpr(DeclRefExpr *Node) {
-    collected.push_back(stmtToJSON(Node, *allocator));
+    if (!suitableTypes || isSuitableComponentType(Node->getType()))
+      collected.push_back(stmtToJSON(Node, *allocator));
   }
 
   void VisitArraySubscriptExpr(ArraySubscriptExpr *Node) {
-    collected.push_back(stmtToJSON(Node, *allocator));
+    if (!suitableTypes || isSuitableComponentType(Node->getType()))
+      collected.push_back(stmtToJSON(Node, *allocator));
   }
 
 };
@@ -483,18 +493,11 @@ public:
 
 vector<json::Value> collectFromExpression(const Stmt *stmt,
                                           json::Document::AllocatorType &allocator,
-                                          bool ignoreCasts) {
-  CollectComponents T(&allocator, ignoreCasts);
+                                          bool ignoreCasts,
+                                          bool suitableTypes) {
+  CollectComponents T(&allocator, ignoreCasts, suitableTypes);
   T.Visit(const_cast<Stmt*>(stmt));
   return T.getCollected();
-}
-
-
-//TODO: these functions are taken from Angelix and need to be refactored
-bool suitableVarDecl(VarDecl *vd) {
-  return (vd->getType().getTypePtr()->isIntegerType() ||
-          vd->getType().getTypePtr()->isCharType());
-  // vd->getType().getTypePtr()->isPointerType();
 }
 
 
@@ -523,7 +526,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
     // adding function parameters
     for (auto it = fd->param_begin(); it != fd->param_end(); ++it) {
       auto vd = cast<VarDecl>(*it);
-      if (suitableVarDecl(vd)) {
+      if (isSuitableComponentType(vd->getType())) {
         result.push_back(varDeclToJSON(vd, allocator));
       }
     }
@@ -538,7 +541,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
             if (isa<VarDecl>(*it)) {
               VarDecl* vd = cast<VarDecl>(*it);
               unsigned beginLine = getDeclExpandedLine(vd, context->getSourceManager());
-              if (line > beginLine && suitableVarDecl(vd)) {
+              if (line > beginLine && isSuitableComponentType(vd->getType())) {
                 result.push_back(varDeclToJSON(vd, allocator));
               }
             }
@@ -557,12 +560,14 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
           BinaryOperator* op = cast<BinaryOperator>(*it);
           SourceRange expandedLoc = getExpandedLoc(op, context->getSourceManager());
           uint beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
+          // FIXME: support augmented assignments:
+          // FIXME: is it redundant if we use collect funnction on whole statement
           if (line > beginLine &&
               BinaryOperator::getOpcodeStr(op->getOpcode()).lower() == "=" &&
               isa<DeclRefExpr>(op->getLHS())) {
             DeclRefExpr* dref = cast<DeclRefExpr>(op->getLHS());
             VarDecl* vd;
-            if ((vd = cast<VarDecl>(dref->getDecl())) != NULL && suitableVarDecl(vd)) {
+            if ((vd = cast<VarDecl>(dref->getDecl())) != NULL && isSuitableComponentType(vd->getType())) {
               result.push_back(varDeclToJSON(vd, allocator));
             }
           }
@@ -576,7 +581,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
             Decl* d = dstmt->getSingleDecl();
             if (isa<VarDecl>(d)) {
               VarDecl* vd = cast<VarDecl>(d);
-              if (line > beginLine && vd->hasInit() && suitableVarDecl(vd)) {
+              if (line > beginLine && vd->hasInit() && isSuitableComponentType(vd->getType())) {
                 result.push_back(varDeclToJSON(vd, allocator));
               }
             }
@@ -587,12 +592,13 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
         SourceRange expandedLoc = getExpandedLoc(stmt, context->getSourceManager());
         unsigned beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
         if (line > beginLine) {
-          vector<json::Value> fromExpr = collectFromExpression(*it, allocator, true);
+          vector<json::Value> fromExpr = collectFromExpression(*it, allocator, true, true);
           for (auto &c : fromExpr) {
             result.push_back(std::move(c));
           }
           
-          //TODO: should be generalized for other cases:
+          // FIXME: is it redundant?
+          // TODO: should be generalized for other cases:
           if (isa<IfStmt>(*it)) {
             IfStmt* ifStmt = cast<IfStmt>(*it);
             Stmt* thenStmt = ifStmt->getThen();
@@ -600,7 +606,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
               CallExpr* callExpr = cast<CallExpr>(thenStmt);
               for (auto a = callExpr->arg_begin(); a != callExpr->arg_end(); ++a) {
                 auto e = cast<Expr>(*a);
-                vector<json::Value> fromParamExpr = collectFromExpression(e, allocator, true);
+                vector<json::Value> fromParamExpr = collectFromExpression(e, allocator, true, true);
                 for (auto &c : fromParamExpr) {
                   result.push_back(std::move(c));
                 }
@@ -630,7 +636,7 @@ vector<json::Value> collectComponents(const Stmt *stmt,
                                       uint line,
                                       ASTContext *context,
                                       json::Document::AllocatorType &allocator) {
-  vector<json::Value> fromExpr = collectFromExpression(stmt, allocator, false);
+  vector<json::Value> fromExpr = collectFromExpression(stmt, allocator, false, false);
 
   const ast_type_traits::DynTypedNode node = ast_type_traits::DynTypedNode::create(*stmt);
   vector<json::Value> visible = collectVisible(node, line, context, allocator);
