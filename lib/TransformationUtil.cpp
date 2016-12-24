@@ -311,8 +311,20 @@ public:
   }
 
   void VisitCastExpr(CastExpr *Node) {
-    // FIXME: this may not always work, and I need to save explicit cast as operator
-    Visit(Node->getSubExpr());
+    // NOTE: currently, two types of cases are supported: 
+    // *  casts of atoms (variables and memeber exprs)
+    // *  special case for NULL
+    // I need to save the cast, since it affect the semantics, but without side effects
+   json::Value node(json::kObjectType);
+
+   node.AddMember("kind", json::Value().SetString("variable"), *allocator);
+   string t = kindToString(getBuiltinKind(Node->getType()));
+   node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+   json::Value repr;
+   repr.SetString(toString(Node).c_str(), *allocator);
+   node.AddMember("repr", repr, *allocator);
+   
+   path.push(std::move(node));
   }
 
   void VisitParenExpr(ParenExpr *Node) {
@@ -436,6 +448,10 @@ public:
 
   void VisitImplicitCastExpr(ImplicitCastExpr *Node) {
     Visit(Node->getSubExpr());
+  }
+
+  void VisitCastExpr(CastExpr *Node) {
+    collected.push_back(stmtToJSON(Node, *allocator));
   }
 
   void VisitParenExpr(ParenExpr *Node) {
