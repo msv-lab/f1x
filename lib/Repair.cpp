@@ -112,8 +112,6 @@ bool repair(Project &project,
     return false;
   }
 
-  project.saveOriginalFiles();
-
   fs::path clFile = workDir / fs::path(CANDADATE_LOCATIONS_FILE_NAME);
 
   bool instrSuccess = project.instrumentFile(project.getFiles()[0], clFile);
@@ -122,7 +120,6 @@ bool repair(Project &project,
   }
   if (! fs::exists(clFile)) {
     BOOST_LOG_TRIVIAL(error) << "failed to extract candidate locations";
-    project.restoreOriginalFiles();
     return false;
   }
 
@@ -145,7 +142,8 @@ bool repair(Project &project,
   bool runtimeSuccess = runtime.compile();
 
   if (! runtimeSuccess) {
-    BOOST_LOG_TRIVIAL(warning) << "runtime compilation failed";
+    BOOST_LOG_TRIVIAL(error) << "runtime compilation failed";
+    return false;
   }
 
   bool rebuildSucceeded = project.buildWithRuntime(runtime.getHeader());
@@ -153,6 +151,8 @@ bool repair(Project &project,
   if (! rebuildSucceeded) {
     BOOST_LOG_TRIVIAL(warning) << "compilation with runtime returned non-zero exit code";
   }
+
+  project.restoreOriginalFiles();
 
   BOOST_LOG_TRIVIAL(info) << "prioritizing search space";
   prioritize(searchSpace);
@@ -173,8 +173,6 @@ bool repair(Project &project,
 
       fs::path relpath = project.getFiles()[searchSpace[last].buggy->location.fileId].relpath;
       BOOST_LOG_TRIVIAL(info) << "found patch: " << visualizeElement(searchSpace[last], relpath);
-
-      project.restoreOriginalFiles();
       
       bool appSuccess = project.applyPatch(searchSpace[last]);
       if (! appSuccess) {
@@ -207,6 +205,8 @@ bool repair(Project &project,
           project.restoreInstrumentedFiles();
           project.buildWithRuntime(runtime.getHeader());
         }
+        
+        project.restoreOriginalFiles();
       }
 
       if (!valid)
@@ -233,8 +233,6 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << engine.getCandidateCount();
   BOOST_LOG_TRIVIAL(info) << "tests executed: " << engine.getTestCount();
-
-  project.restoreOriginalFiles();
 
   return patchCount > 0;
 }

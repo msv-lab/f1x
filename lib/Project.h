@@ -33,11 +33,16 @@ struct ProjectFile {
 
 class Project {
  public:
+  /* project saves original files on creation
+     the conventioned is to restore original after every modification */
   Project(const boost::filesystem::path &root,
           const std::vector<ProjectFile> &files,
           const std::string &buildCmd,          
           const boost::filesystem::path &workDir,
           bool verbose);
+
+  /* restores original files on destruction, just in case of exception */
+  ~Project();
 
   std::pair<bool, bool> initialBuild();
   bool build();

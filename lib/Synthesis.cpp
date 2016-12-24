@@ -311,7 +311,7 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
   uint id = 0;
 
   for (auto cl : candidateLocations) {
-    OS << "int __f1x_" 
+    OS << cl->original.rawType << " __f1x_"
        << cl->location.fileId << "_"
        << cl->location.beginLine << "_"
        << cl->location.beginColumn << "_"

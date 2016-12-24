@@ -110,7 +110,13 @@ Project::Project(const boost::filesystem::path &root,
   files(files),
   buildCmd(buildCmd),
   workDir(workDir),
-  verbose(verbose) {}
+  verbose(verbose) {
+  saveOriginalFiles();
+  }
+
+Project::~Project() {
+  restoreOriginalFiles();
+}
 
 fs::path Project::getRoot() const {
   return root;

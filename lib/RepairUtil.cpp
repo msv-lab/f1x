@@ -111,6 +111,8 @@ Operator binaryOperatorByString(const string &repr) {
     return Operator::ADD;
   } else if (repr == "-") {
     return Operator::SUB;
+  } else if (repr == "*") {
+    return Operator::MUL;
   } else if (repr == "/") {
     return Operator::DIV;
   } else if (repr == "%") {

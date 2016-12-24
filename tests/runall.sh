@@ -52,6 +52,9 @@ for test in $TESTS; do
         return-continue)
             args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
+        array-subscripts)
+            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
         *)
             echo "command for test $test is not defined"
             exit 1

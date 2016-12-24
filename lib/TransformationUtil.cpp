@@ -374,7 +374,7 @@ public:
   void VisitArraySubscriptExpr(ArraySubscriptExpr *Node) {
     json::Value node(json::kObjectType);
 
-    node.AddMember("kind", json::Value().SetString("constant"), *allocator);
+    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
     string t = kindToString(getBuiltinKind(Node->getType()));
     node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
