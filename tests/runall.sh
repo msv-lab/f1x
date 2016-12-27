@@ -49,7 +49,7 @@ for test in $TESTS; do
         dangling-else)
             args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
-        return-continue)
+        break)
             args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         array-subscripts)
@@ -57,6 +57,9 @@ for test in $TESTS; do
             ;;
         cast-expr)
             args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        return)
+            args="--files program.c --driver $test/test.sh --tests n1 --test-timeout 1000"
             ;;
         *)
             echo "command for test $test is not defined"

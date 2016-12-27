@@ -157,7 +157,7 @@ bool repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "prioritizing search space";
   prioritize(searchSpace);
 
-  //dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
+  dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
 
   BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();
   

@@ -117,9 +117,13 @@ StatementMatcher RepairableAssignment =
                        hasLHS(ignoringParenImpCasts(arraySubscriptExpr()))),
                  hasRHS(ignoringParenImpCasts(BaseRepairableExpression)));
 
+StatementMatcher RepairableReturn =
+  returnStmt(has(expr(ignoringParenImpCasts(BaseRepairableExpression))));
+
 StatementMatcher RepairableExpression =
   anyOf(RepairableCondition,
-        RepairableAssignment);
+        RepairableAssignment,
+        RepairableReturn);
 
 StatementMatcher RepairableStatement =
   anyOf(callExpr().bind(BOUND),
