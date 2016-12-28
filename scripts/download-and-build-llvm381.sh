@@ -38,7 +38,7 @@ COMPILER_RT_ARCHIVE="compiler-rt-3.8.1.src.tar.xz"
 CLANG_TOOLS_EXTRA_URL="http://llvm.org/releases/3.8.1/clang-tools-extra-3.8.1.src.tar.xz"
 CLANG_TOOLS_EXTRA_ARCHIVE="clang-tools-extra-3.8.1.src.tar.xz"
 
-INSTALL_DIR="$PWD/install"
+INSTALL_DIR="$PWD"
 
 download "$LLVM_URL"
 download "$CLANG_URL"
@@ -58,7 +58,6 @@ mkdir -p "src/tools/clang/tools/extra"
 tar xf "$CLANG_TOOLS_EXTRA_ARCHIVE" --directory "src/tools/clang/tools/extra" --strip-components=1
 
 mkdir -p "build"
-mkdir -p "install"
 
 (
     cd "build"

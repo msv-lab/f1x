@@ -15,9 +15,15 @@ Install dependencies (GCC, G++, Make, Boost.Filesystem, Boost.Program_options, B
     # Ubuntu:
     sudo apt-get install build-essential libboost-filesystem-dev libboost-program-options-dev libboost-log-dev
     
-Install a new version of `cmake` (3.4.3 or higher).
+Install a new version of `cmake` (3.4.3 or higher, version is important).
 
-Install LLVM and Clang 3.8.1. You can use the provided installation script to download, build and install it locally:
+Download LLVM and Clang 3.8.1 (version is important):
+
+    # Ubuntu 14.04 x86_64:
+    wget http://releases.llvm.org/3.8.1/clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+    tar xf clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+    
+Alternatively, you can use the provided installation script to download, build and install it locally:
 
     cd <my-llvm-dir>
     /path/to/f1x/scripts/download-and-build-llvm381.sh
@@ -26,7 +32,7 @@ To compile f1x, create `build` directory and execute:
     
     mkdir build
     cd build
-    cmake -DF1X_LLVM=<my-llvm-dir>/install/ ..
+    cmake -DF1X_LLVM=<my-llvm-dir> ..
     make
     
 To install f1x, add the `build/tools` directory into your `PATH`:
