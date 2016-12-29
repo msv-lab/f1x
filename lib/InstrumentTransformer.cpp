@@ -127,6 +127,11 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
 
     if (!inRange(beginLine))
       return;
+
+    // NOTE: to avoid extracting locations from headers:
+    std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+    if (srcMgr.getMainFileID() != decLoc.first)
+      return;
                  
     llvm::errs() << beginLine << " "
                  << beginColumn << " "
@@ -209,6 +214,11 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
     if (!inRange(beginLine))
+      return;
+
+    // NOTE: to avoid extracting locations from headers:
+    std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+    if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
     llvm::errs() << beginLine << " "
