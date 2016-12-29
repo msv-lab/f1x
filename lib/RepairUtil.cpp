@@ -29,7 +29,7 @@
 #include <rapidjson/istreamwrapper.h>
 
 #include "RepairUtil.h"
-#include "Config.h"
+#include "F1XConfig.h"
 
 namespace fs = boost::filesystem;
 namespace json = rapidjson;

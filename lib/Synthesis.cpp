@@ -276,7 +276,7 @@ string makeParameterList(shared_ptr<CandidateLocation> cl) {
 }
 
 
-vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH) {
+vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH, const Config &cfg) {
   
   // header
   OH << "#ifdef __cplusplus" << "\n"

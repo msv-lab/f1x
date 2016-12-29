@@ -19,11 +19,11 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
-#include "Config.h"
+#include "F1XConfig.h"
 
 class Runtime {
  public:
-  Runtime(const boost::filesystem::path &workDir, bool verbose);
+  Runtime(const boost::filesystem::path &workDir, const Config &cfg);
 
   void setPartiotion(uint locId, uint candidateId, std::vector<uint> space);
   std::vector<uint> getPartiotion(uint locId);
@@ -34,5 +34,5 @@ class Runtime {
 
  private:
   boost::filesystem::path workDir;
-  bool verbose;
+  Config cfg;
 };

@@ -70,4 +70,4 @@
  */
 
 
-std::vector<SearchSpaceElement> generateSearchSpace(const std::vector<std::shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH);
+std::vector<SearchSpaceElement> generateSearchSpace(const std::vector<std::shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH, const Config &cfg);

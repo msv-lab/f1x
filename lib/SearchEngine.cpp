@@ -21,16 +21,18 @@
 
 #include <boost/log/trivial.hpp>
 
-#include "Config.h"
+#include "F1XConfig.h"
 #include "SearchEngine.h"
 
 
 SearchEngine::SearchEngine(const std::vector<std::string> &tests,
                            TestingFramework &tester,
-                           Runtime &runtime):
+                           Runtime &runtime,
+                           const Config &cfg):
   tests(tests),
   tester(tester),
   runtime(runtime),
+  cfg(cfg),
   candidateCounter(0),
   testCounter(0) {}
 

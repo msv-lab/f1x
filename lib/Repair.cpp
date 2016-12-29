@@ -38,7 +38,7 @@ using std::string;
 using std::pair;
 using std::shared_ptr;
 
-const string CANDADATE_LOCATIONS_FILE_NAME = "cl.json";
+const string CANDADATE_LOCATIONS_FILE_NAME = "extracted.json";
 
 
 double score(const SearchSpaceElement &el) {
@@ -98,8 +98,7 @@ bool repair(Project &project,
             const std::vector<std::string> &tests,
             const boost::filesystem::path &workDir,
             const boost::filesystem::path &patchOutput,
-            bool verbose,
-            bool all) {
+            const Config &cfg) {
 
   BOOST_LOG_TRIVIAL(info) << "repairing project " << project.getRoot();
 
@@ -130,13 +129,13 @@ bool repair(Project &project,
 
   vector<SearchSpaceElement> searchSpace;
 
-  Runtime runtime(workDir, verbose);
+  Runtime runtime(workDir, cfg);
 
   BOOST_LOG_TRIVIAL(info) << "generating search space";
   {
     fs::ofstream os(runtime.getSource());
     fs::ofstream oh(runtime.getHeader());
-    searchSpace = generateSearchSpace(cls, os, oh);
+    searchSpace = generateSearchSpace(cls, os, oh, cfg);
   }
 
   bool runtimeSuccess = runtime.compile();
@@ -157,11 +156,14 @@ bool repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "prioritizing search space";
   prioritize(searchSpace);
 
-  dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
+  if (cfg.dumpSearchSpace) {
+    BOOST_LOG_TRIVIAL(info) << "dumping search space: " << (workDir / "searchspace.txt");
+    dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
+  }
 
   BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();
   
-  SearchEngine engine(tests, tester, runtime);
+  SearchEngine engine(tests, tester, runtime, cfg);
 
   uint last = 0;
   uint patchCount = 0;
@@ -183,7 +185,7 @@ bool repair(Project &project,
 
       bool valid = true;
 
-      if (VALIDATE_PATCHES) {
+      if (cfg.validatePatches) {
         BOOST_LOG_TRIVIAL(info) << "validating patch";
 
         bool rebuildSuccess = project.build();
@@ -201,7 +203,7 @@ bool repair(Project &project,
           }
         }
 
-        if (all) {
+        if (cfg.generateAll) {
           project.restoreInstrumentedFiles();
           project.buildWithRuntime(runtime.getHeader());
         }
@@ -215,7 +217,7 @@ bool repair(Project &project,
       patchCount++;
 
       fs::path patchFile = patchOutput;
-      if (all) {
+      if (cfg.generateAll) {
         if (! fs::exists(patchFile)) {
           fs::create_directory(patchFile);
         }
@@ -224,7 +226,7 @@ bool repair(Project &project,
 
       project.computeDiff(project.getFiles()[0], patchFile);
       
-      if (!all)
+      if (!cfg.generateAll)
         break;
     }
 

@@ -26,7 +26,8 @@ class SearchEngine {
  public:
   SearchEngine(const std::vector<std::string> &tests,
                TestingFramework &tester,
-               Runtime &runtime);
+               Runtime &runtime,
+               const Config &cfg);
 
   uint findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom);
   uint getCandidateCount();
@@ -38,4 +39,5 @@ class SearchEngine {
   Runtime runtime;
   uint candidateCounter;
   uint testCounter;
+  Config cfg;
 };

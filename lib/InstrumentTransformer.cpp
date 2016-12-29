@@ -24,7 +24,7 @@
 #include <rapidjson/ostreamwrapper.h>
 #include <rapidjson/writer.h>
 
-#include "Config.h"
+#include "F1XConfig.h"
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "InstrumentTransformer.h"
@@ -158,7 +158,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     
     bool addBrackets = shouldAddBrackets(stmt, Result.Context);
     if(addBrackets)
-    	stringStream << "{\n\t";
+    	stringStream << "{ ";
     stringStream << "if ("
                  << "!(__f1x_loc == " << locId << "ul) || "
                  << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
@@ -167,7 +167,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
                  << toString(stmt);
     if(addBrackets)
     {
-      stringStream << ";\n}";
+      stringStream << "; }";
       const char *followingData = srcMgr.getCharacterData(expandedLoc.getBegin());
       int followingDataSize = strlen(followingData);
       for(int i=origLength; i<followingDataSize; i++)

@@ -26,7 +26,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include "TransformationUtil.h"
-#include "Config.h"
+#include "F1XConfig.h"
 
 namespace json = rapidjson;
 

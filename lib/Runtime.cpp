@@ -34,9 +34,9 @@ const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
 const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
 
 
-Runtime::Runtime(const fs::path &workDir, bool verbose): 
+Runtime::Runtime(const fs::path &workDir, const Config &cfg): 
   workDir(workDir),
-  verbose(verbose) {};
+  cfg(cfg) {};
 
 void Runtime::setPartiotion(uint locId, uint candidateId, vector<uint> space) {
   fs::ofstream out(workDir / std::to_string(locId));
@@ -73,11 +73,11 @@ bool Runtime::compile() {
   BOOST_LOG_TRIVIAL(info) << "compiling meta program runtime";
   FromDirectory dir(workDir);
   std::stringstream cmd;
-  cmd << RUNTIME_COMPILER << " -O2 -fPIC"
+  cmd << cfg.runtimeCompiler << " -O2 -fPIC"
       << " " << RUNTIME_SOURCE_FILE_NAME 
       << " -shared"
       << " -o libf1xrt.so";
-  if (verbose) {
+  if (cfg.verbose) {
     cmd << " >&2";
   } else {
     cmd << " >/dev/null 2>&1";

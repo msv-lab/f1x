@@ -32,7 +32,8 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 
-#include "Config.h"
+#include "F1XConfig.h"
+#include "SystemConfig.h"
 #include "Repair.h"
 #include "RepairUtil.h"
 
@@ -117,6 +118,11 @@ int main (int argc, char *argv[])
     ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
+    ("disable-validation", "don't validate generated patches")
+    ("disable-analysis", "don't partition search space")
+    ("disable-init", "don't perform initialization")
+    ("enable-metadata", "output patch metadata")
+    ("enable-dump", "dump search space")
     ;
 
   po::options_description hidden("Hidden options");
@@ -143,19 +149,35 @@ int main (int argc, char *argv[])
     return 1;
   }
 
-  bool verbose;
-  if(vm.count("verbose")){
-    verbose = true;
-  } else {
-    verbose = false;
-  }
-  initializeTrivialLogger(verbose);
+  Config cfg = DEFAULT_CONFIG;
 
-  bool all;
+  if(vm.count("verbose")){
+    cfg.verbose = true;
+  }
+  initializeTrivialLogger(cfg.verbose);
+
   if(vm.count("all")){
-    all = true;
-  } else {
-    all = false;
+    cfg.generateAll = true;
+  }
+
+  if(vm.count("disable-validation")){
+    cfg.validatePatches = false;
+  }
+
+  if(vm.count("disable-analysis")){
+    cfg.exploration = Exploration::GENERATE_AND_VALIDATE;
+  }
+
+  if(vm.count("disable-init")){
+    /* UNSUPPORTED */
+  }
+
+  if(vm.count("enable-metadata")){
+    /* UNSUPPORTED */
+  }
+
+  if(vm.count("enable-dump")){
+    cfg.dumpSearchSpace = true;
   }
 
   if (!vm.count("source")) {
@@ -227,7 +249,7 @@ int main (int argc, char *argv[])
         dirname = e.string();
     std::stringstream name;
     name << dirname << timeRepr;
-    if (!all)
+    if (!cfg.generateAll)
       name << ".patch";
     output = fs::path(name.str());
   } else {
@@ -239,13 +261,13 @@ int main (int argc, char *argv[])
   fs::create_directory(workDir);
   BOOST_LOG_TRIVIAL(info) << "working directory: " << workDir;
 
-  Project project(root, files, buildCmd, workDir, verbose);
-  TestingFramework tester(project, driver, testTimeout, verbose);
+  Project project(root, files, buildCmd, workDir, cfg);
+  TestingFramework tester(project, driver, testTimeout, cfg);
 
-  bool found = repair(project, tester, tests, workDir, output, verbose, all);
+  bool found = repair(project, tester, tests, workDir, output, cfg);
 
   if (found) {
-    if (all) {
+    if (cfg.generateAll) {
       BOOST_LOG_TRIVIAL(info) << "patches successfully generated: " << output;
     } else {
       BOOST_LOG_TRIVIAL(info) << "patch successfully generated: " << output;

@@ -19,7 +19,7 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
-#include "Config.h"
+#include "F1XConfig.h"
 #include "RepairUtil.h"
 
 
@@ -39,7 +39,7 @@ class Project {
           const std::vector<ProjectFile> &files,
           const std::string &buildCmd,          
           const boost::filesystem::path &workDir,
-          bool verbose);
+          const Config &cfg);
 
   /* restores original files on destruction, just in case of exception */
   ~Project();
@@ -65,7 +65,7 @@ class Project {
   std::vector<ProjectFile> files;
   std::string buildCmd;
   boost::filesystem::path workDir;
-  bool verbose;
+  Config cfg;
 
   void saveFilesWithPrefix(const std::string &prefix);
   void restoreFilesWithPrefix(const std::string &prefix);
@@ -79,7 +79,7 @@ class TestingFramework {
   TestingFramework(const Project &project,
                    const boost::filesystem::path &driver,
                    const uint testTimeout,
-                   bool verbose);
+                   const Config &cfg);
   
   bool isPassing(const std::string &testId);
 
@@ -87,7 +87,7 @@ class TestingFramework {
   Project project;
   boost::filesystem::path driver;
   uint testTimeout;
-  bool verbose;
+  Config cfg;
 };
 
 

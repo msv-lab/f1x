@@ -24,7 +24,7 @@
 #include "TransformationUtil.h"
 #include "InstrumentTransformer.h"
 #include "ApplyTransformer.h"
-#include "Config.h"
+#include "F1XConfig.h"
 
 using namespace clang::tooling;
 using namespace llvm;

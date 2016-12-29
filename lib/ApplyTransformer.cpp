@@ -21,7 +21,7 @@
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "ApplyTransformer.h"
-#include "Config.h"
+#include "F1XConfig.h"
 
 using namespace clang;
 using namespace ast_matchers;
@@ -77,7 +77,7 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
         unsigned origLength = Rewrite.getRangeSize(expandedLoc);
         bool addBrackets = shouldAddBrackets(stmt, Result.Context);
         if(addBrackets)
-    	    replacement << "{\n\t";
+    	    replacement << "{ ";
     	    
         replacement << "if (" << globalPatch << ") " << toString(stmt);
 
@@ -87,7 +87,7 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
         
         if(addBrackets)
         {
-        	replacement << ";\n}";
+        	replacement << "; }";
         	const char *followingData = srcMgr.getCharacterData(expandedLoc.getBegin());
         	int followingDataSize = strlen(followingData);
           for(int i=origLength; i<followingDataSize; i++)

@@ -18,18 +18,8 @@
 
 #pragma once
 
-#include <boost/filesystem.hpp>
+const uint F1X_VERSION_MAJOR = @F1X_VERSION_MAJOR@;
+const uint F1X_VERSION_MINOR = @F1X_VERSION_MINOR@;
+const uint F1X_VERSION_PATCH = @F1X_VERSION_PATCH@;
 
-#include "F1XConfig.h"
-#include "Project.h"
-
-
-/*
-  Initializes the repair process, performs search, returns patch of found.
- */
-bool repair(Project &project,
-            TestingFramework &tester,
-            const std::vector<std::string> &tests,
-            const boost::filesystem::path &workDir,
-            const boost::filesystem::path &patchOutput,
-            const Config &cfg);
+const std::string F1X_CLANG_INCLUDE = "@F1X_CLANG_INCLUDE@";

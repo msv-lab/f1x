@@ -102,7 +102,7 @@ Prints version and exits.
 
 ### Advanced configuration ###
 
-Various algorithm parameters can be set in the `Config.h.in` file (requires reconfiguration and recompilation).
+TODO
     
 ## Related publications ##
 

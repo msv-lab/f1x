@@ -27,9 +27,10 @@
 #include <rapidjson/ostreamwrapper.h>
 #include <rapidjson/writer.h>
 
+#include "SystemConfig.h"
+#include "F1XConfig.h"
 #include "Project.h"
 #include "RepairUtil.h"
-#include "Config.h"
 
 namespace fs = boost::filesystem;
 namespace json = rapidjson;
@@ -105,12 +106,12 @@ Project::Project(const boost::filesystem::path &root,
                  const std::vector<ProjectFile> &files,
                  const std::string &buildCmd,
                  const boost::filesystem::path &workDir,
-                 bool verbose):
+                 const Config &cfg):
   root(root),
   files(files),
   buildCmd(buildCmd),
   workDir(workDir),
-  verbose(verbose) {
+  cfg(cfg) {
   saveOriginalFiles();
   }
 
@@ -133,7 +134,7 @@ bool Project::buildInEnvironment(const std::map<std::string, std::string> &envir
 
   std::stringstream cmd;
   cmd << baseCmd;
-  if (verbose) {
+  if (cfg.verbose) {
     cmd << " >&2";
   } else {
     cmd << " >/dev/null 2>&1";
@@ -260,7 +261,7 @@ bool Project::instrumentFile(const ProjectFile &file,
       << " --to-line " << file.toLine
       << " --file-id " << id
       << " --output " + outputFile.string();
-  if (verbose) {
+  if (cfg.verbose) {
     cmd << " >&2";
   } else {
     cmd << " >/dev/null 2>&1";
@@ -294,7 +295,7 @@ bool Project::applyPatch(const SearchSpaceElement &patch) {
       << " --el " << endLine
       << " --ec " << endColumn
       << " --patch " << "\"" << expressionToString(patch.patch) << "\"";
-  if (verbose) {
+  if (cfg.verbose) {
     cmd << " >&2";
   } else {
     cmd << " >/dev/null 2>&1";
@@ -308,18 +309,18 @@ bool Project::applyPatch(const SearchSpaceElement &patch) {
 TestingFramework::TestingFramework(const Project &project,
                                    const boost::filesystem::path &driver,
                                    const uint testTimeout,
-                                   bool verbose):
+                                   const Config &cfg):
   project(project),
   driver(driver),
   testTimeout(testTimeout),
-  verbose(verbose) {}
+  cfg(cfg) {}
 
 bool TestingFramework::isPassing(const std::string &testId) {
   FromDirectory dir(project.getRoot());
   std::stringstream cmd;
   cmd << "timeout " << std::setprecision(3) << ((double) testTimeout) / 1000.0 << "s"
       << " " << driver.string() << " " << testId;
-  if (verbose) {
+  if (cfg.verbose) {
     cmd << " >&2";
   } else {
     cmd << " >/dev/null 2>&1";

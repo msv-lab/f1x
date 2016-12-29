@@ -24,7 +24,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "Config.h"
+#include "F1XConfig.h"
 
 
 enum class Kind {
