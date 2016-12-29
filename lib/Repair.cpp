@@ -214,8 +214,6 @@ bool repair(Project &project,
       if (!valid)
         continue;
 
-      patchCount++;
-
       fs::path patchFile = patchOutput;
       if (cfg.generateAll) {
         if (! fs::exists(patchFile)) {
@@ -223,6 +221,8 @@ bool repair(Project &project,
         }
         patchFile = patchFile / (std::to_string(patchCount) + ".patch");
       }
+
+      patchCount++;
 
       project.computeDiff(project.getFiles()[0], patchFile);
       
