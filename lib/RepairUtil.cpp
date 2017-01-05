@@ -264,6 +264,11 @@ std::string expressionToString(const Expression &expression) {
 }
 
 
+Expression getIntegerExpression(int n) {
+  return Expression{Kind::CONSTANT, Type::INTEGER, Operator::NONE, "int", std::to_string(n), {}};
+}
+
+
 std::string metaToString(const PatchMeta &meta) {
   switch (meta.transformation) {
   case Transformation::ALTERNATIVE:

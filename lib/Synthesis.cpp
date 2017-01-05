@@ -30,6 +30,9 @@ using std::string;
 using std::shared_ptr;
 using std::unordered_map;
 
+// size of simple (atomic) modification
+const uint ATOMIC_EDIT = 1;
+
 
 std::string f1xArgNameFromType(const std::string &typeName) {
   std::string result = typeName;
@@ -133,12 +136,20 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
   if (expr.args.size() == 0) {
     if (expr.kind == Kind::CONSTANT) {
       for (auto &c : components) {
-        result.push_back(make_pair(c, PatchMeta{Transformation::GENERALIZATION, 1}));
+        result.push_back(make_pair(c, PatchMeta{Transformation::GENERALIZATION, ATOMIC_EDIT}));
       }
+      result.push_back(make_pair(getIntegerExpression(0),
+                                 PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+      result.push_back(make_pair(getIntegerExpression(1),
+                                 PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
     } else {
       for (auto &c : components) {
-        result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, 1}));
+        result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
       }
+      result.push_back(make_pair(getIntegerExpression(0),
+                                 PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
+      result.push_back(make_pair(getIntegerExpression(1),
+                                 PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
     }
   } else {
     vector<Operator> oms = mutateOperator(expr.op);
@@ -146,7 +157,7 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
       Expression e = expr;
       e.op = m;
       e.repr = operatorToString(m);
-      result.push_back(make_pair(std::move(e), PatchMeta{Transformation::ALTERNATIVE, 1}));
+      result.push_back(make_pair(std::move(e), PatchMeta{Transformation::ALTERNATIVE, ATOMIC_EDIT}));
     }
 
     // FIXME: need to avoid division by zero
@@ -157,8 +168,8 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
       }
       if (simplifiable(expr)) {
         Expression argCopy = expr.args[0];
-        // assume simplification is always distance 1
-        result.push_back(make_pair(argCopy, PatchMeta{Transformation::SIMPLIFICATION, 1}));
+        // FIXME: instead of ATOMIC_EDIT simplification should depend on the size of deleted subexpression
+        result.push_back(make_pair(argCopy, PatchMeta{Transformation::SIMPLIFICATION, ATOMIC_EDIT}));
       }
     } else if (expr.args.size() == 2) {
       vector<pair<Expression, PatchMeta>> leftMutants = mutate(expr.args[0], components);
@@ -172,9 +183,9 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
       if (simplifiable(expr)) {
         Expression leftCopy = expr.args[0];
         Expression rightCopy = expr.args[1];
-        // assume simplification is always distance 1
-        result.push_back(make_pair(leftCopy, PatchMeta{Transformation::SIMPLIFICATION, 1}));
-        result.push_back(make_pair(rightCopy, PatchMeta{Transformation::SIMPLIFICATION, 1}));
+        // FIXME: instead of ATOMIC_EDIT simplification should depend on the size of deleted subexpression
+        result.push_back(make_pair(leftCopy, PatchMeta{Transformation::SIMPLIFICATION, ATOMIC_EDIT}));
+        result.push_back(make_pair(rightCopy, PatchMeta{Transformation::SIMPLIFICATION, ATOMIC_EDIT}));
       }
     }
   }
