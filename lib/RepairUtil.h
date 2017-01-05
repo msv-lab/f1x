@@ -28,7 +28,7 @@
 
 
 enum class Kind {
-  OPERATOR, VARIABLE, CONSTANT, PARAMETER, 
+  OPERATOR, VARIABLE, CONSTANT, PARAMETER,
   BV2, INT2, BOOL2, BOOL3 // auxiliary kinds
 };
 
@@ -82,6 +82,8 @@ struct Expression {
 std::string expressionToString(const Expression &expression);
 
 Expression getIntegerExpression(int n);
+
+Expression getNullPointer();
 
 
 enum class DefectClass {

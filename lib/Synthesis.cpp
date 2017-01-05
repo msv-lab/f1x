@@ -32,16 +32,17 @@ using std::unordered_map;
 
 // size of simple (atomic) modification
 const uint ATOMIC_EDIT = 1;
+const string POINTER_ARG_NAME = "__ptr_vals";
 
 
-std::string f1xArgNameFromType(const std::string &typeName) {
+string argNameByType(const std::string &typeName) {
   std::string result = typeName;
   std::replace(result.begin(), result.end(), ' ', '_');
-  return result + "_vals";
+  return "__" + result + "_vals";
 }
 
 
-vector<Operator> mutateOperator(Operator op) {
+vector<Operator> mutateNumericOperator(Operator op) {
   switch (op) {
   case Operator::EQ:
     return { Operator::NEQ, Operator::LT, Operator::LE, Operator::GT, Operator::GE };
@@ -85,12 +86,20 @@ vector<Operator> mutateOperator(Operator op) {
     return { Operator::BV_SHL };
   case Operator::BV_NOT:
     return {};
-  case Operator::BV_TO_INT:
-    return {};
-  case Operator::INT_TO_BV:
-    return {};
   }
+  return {};
 }
+
+vector<Operator> mutatePointerOperator(Operator op) {
+  switch (op) {
+  case Operator::EQ:
+    return { Operator::NEQ };
+  case Operator::NEQ:
+    return { Operator::EQ };
+  }
+  return {};
+}
+
 
 
 Expression makeArgSubs(const Expression &expr, const Expression &subs) {
@@ -135,24 +144,44 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
   vector<pair<Expression, PatchMeta>> result;
   if (expr.args.size() == 0) {
     if (expr.kind == Kind::CONSTANT) {
-      for (auto &c : components) {
-        result.push_back(make_pair(c, PatchMeta{Transformation::GENERALIZATION, ATOMIC_EDIT}));
+      if (expr.type == Type::INTEGER) {
+        for (auto &c : components) {
+          if (c.type == Type::INTEGER)
+            result.push_back(make_pair(c, PatchMeta{Transformation::GENERALIZATION, ATOMIC_EDIT}));
+        }
+        result.push_back(make_pair(getIntegerExpression(0),
+                                   PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+        result.push_back(make_pair(getIntegerExpression(1),
+                                   PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
       }
-      result.push_back(make_pair(getIntegerExpression(0),
-                                 PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
-      result.push_back(make_pair(getIntegerExpression(1),
-                                 PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
-    } else {
-      for (auto &c : components) {
-        result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+    }
+    if (expr.kind == Kind::VARIABLE) {
+      if (expr.type == Type::INTEGER) {
+        for (auto &c : components) {
+          if (c.type == Type::INTEGER)
+            result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+        }
+        result.push_back(make_pair(getIntegerExpression(0),
+                                   PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
+        result.push_back(make_pair(getIntegerExpression(1),
+                                   PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
       }
-      result.push_back(make_pair(getIntegerExpression(0),
-                                 PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
-      result.push_back(make_pair(getIntegerExpression(1),
-                                 PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
+      if (expr.type == Type::POINTER) {
+        for (auto &c : components) {
+          if (c.type == Type::POINTER && expr.rawType == c.rawType)
+            result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+        }
+        result.push_back(make_pair(getNullPointer(),
+                                   PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
+      }
     }
   } else {
-    vector<Operator> oms = mutateOperator(expr.op);
+    vector<Operator> oms;
+    if (expr.args[0].type == Type::POINTER) {
+      oms = mutatePointerOperator(expr.op);
+    } else {
+      oms = mutateNumericOperator(expr.op);
+    }
     for (auto &m : oms) {
       Expression e = expr;
       e.op = m;
@@ -210,9 +239,14 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
                          std::ostream &OS,
                          vector<SearchSpaceElement> &ss) {
   vector<string> types;
+  vector<Expression> pointers;
   for (auto &c : cl->components) {
-    if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
-      types.push_back(c.rawType);
+    if (c.type == Type::INTEGER) {
+      if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
+        types.push_back(c.rawType);
+      }
+    } else {
+      pointers.push_back(c);
     }
   }
 
@@ -224,15 +258,21 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
   }
 
   for (auto &c : cl->components) {
-    namesByType[c.rawType].push_back(c.repr);
+    if (c.type == Type::INTEGER) {
+      namesByType[c.rawType].push_back(c.repr);
+    }
   }
 
   unordered_map<string, string> accessByName;
   for (auto &type : types) {
     auto names = namesByType[type];
     for (int index = 0; index < names.size(); index++) {
-      accessByName[names[index]] = f1xArgNameFromType(type) + "[" + std::to_string(index) + "]";
+      accessByName[names[index]] = argNameByType(type) + "[" + std::to_string(index) + "]";
     }
+  }
+
+  for (int index = 0; index < pointers.size(); index++) {
+    accessByName[pointers[index].repr] = POINTER_ARG_NAME + "[" + std::to_string(index) + "]";
   }
 
   vector<pair<Expression, PatchMeta>> mutants = mutate(cl->original, cl->components);
@@ -265,9 +305,14 @@ string makeParameterList(shared_ptr<CandidateLocation> cl) {
   std::ostringstream result;
 
   vector<string> types;
+  bool hasPointers = false;
   for (auto &c : cl->components) {
-    if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
-      types.push_back(c.rawType);
+    if (c.type == Type::INTEGER) {
+      if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
+        types.push_back(c.rawType);
+      }
+    } else {
+      hasPointers = true;
     }
   }
 
@@ -280,12 +325,19 @@ string makeParameterList(shared_ptr<CandidateLocation> cl) {
     } else {
       result << ", ";
     }
-    result << type << " " << f1xArgNameFromType(type) << "[]";
+    result << type << " " << argNameByType(type) << "[]";
+  }
+  if (hasPointers) {
+    if (firstArray) {
+      firstArray = false;
+    } else {
+      result << ", ";
+    }
+    result << "void *" << POINTER_ARG_NAME << "[]";
   }
   
   return result.str();
 }
-
 
 vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH, const Config &cfg) {
   

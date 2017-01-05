@@ -68,7 +68,9 @@ InEnvironment::~InEnvironment() {
 Kind kindByString(const string &kindStr) {
   if (kindStr == "operator") {
     return Kind::OPERATOR;
-  } else if (kindStr == "variable") {
+  } else if (kindStr == "object") {
+    return Kind::VARIABLE;
+  } else if (kindStr == "pointer") {
     return Kind::VARIABLE;
   } else if (kindStr == "constant") {
     return Kind::CONSTANT;
@@ -268,6 +270,10 @@ Expression getIntegerExpression(int n) {
   return Expression{Kind::CONSTANT, Type::INTEGER, Operator::NONE, "int", std::to_string(n), {}};
 }
 
+Expression getNullPointer() {
+  return Expression{Kind::CONSTANT, Type::POINTER, Operator::NONE, "void", "0", {}};
+}
+
 
 std::string metaToString(const PatchMeta &meta) {
   switch (meta.transformation) {
@@ -308,7 +314,8 @@ std::string visualizeElement(const SearchSpaceElement &el,
 
 
 Expression convertExpression(const json::Value &json) {
-  Kind kind = kindByString(json["kind"].GetString());
+  string kindStr = json["kind"].GetString();
+  Kind kind = kindByString(kindStr);
   Type type;
   string rawType = json["type"].GetString();
   Operator op;
@@ -330,7 +337,11 @@ Expression convertExpression(const json::Value &json) {
       args.push_back(convertExpression(arg));
     }
   } else {
-    type = Type::INTEGER;
+    if (kindStr == "pointer") {
+      type = Type::POINTER;
+    } else {
+      type = Type::INTEGER;
+    }
   }
   
   return Expression{kind, type, op, rawType, repr, args};
