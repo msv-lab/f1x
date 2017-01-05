@@ -64,6 +64,9 @@ for test in $TESTS; do
         deletion)
             args="--files program.c:11 --driver $test/test.sh --tests n1 n2 n3 --test-timeout 1000"
             ;;
+        loop-condition)
+            args="--files program.c:7 --driver $test/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            ;;
         *)
             echo "command for test $test is not defined"
             exit 1
