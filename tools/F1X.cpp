@@ -124,8 +124,8 @@ int main (int argc, char *argv[])
     ("disable-analysis", "don't partition search space")
     ("disable-condext", "disable condition search space extension")
     ("disable-init", "don't perform initialization")
-    ("disable-profiling", "don't perform profiling")
     ("disable-validation", "don't validate generated patches")
+    ("disable-testprior", "don't prioritize tests")
     ;
 
   po::options_description hidden("Hidden options");
@@ -154,34 +154,51 @@ int main (int argc, char *argv[])
 
   Config cfg = DEFAULT_CONFIG;
 
-  if(vm.count("verbose")){
+  if (vm.count("verbose")) {
     cfg.verbose = true;
   }
   initializeTrivialLogger(cfg.verbose);
 
-  if(vm.count("all")){
+  if (vm.count("all")) {
     cfg.generateAll = true;
   }
 
-  if(vm.count("disable-validation")){
+  if (vm.count("enable-metadata")) {
+    cfg.outputPatchMetadata = true;
+  }
+
+  if (vm.count("enable-dump")) {
+    cfg.dumpSearchSpace = true;
+  }
+
+  if (vm.count("enable-cleanup")) {
+    cfg.removeIntermediateData = true;
+  }
+
+  if (vm.count("disable-validation")) {
     cfg.validatePatches = false;
   }
 
-  if(vm.count("disable-analysis")){
+  if (vm.count("disable-analysis")) {
     cfg.exploration = Exploration::GENERATE_AND_VALIDATE;
   }
 
-  if(vm.count("disable-init")){
-    /* UNSUPPORTED */
+  if (vm.count("disable-init")) {
+    cfg.initializePartitions = false;
   }
 
-  if(vm.count("enable-metadata")){
-    /* UNSUPPORTED */
+  if (vm.count("disable-condext")) {
+    cfg.conditionExtension = false;
   }
 
-  if(vm.count("enable-dump")){
-    cfg.dumpSearchSpace = true;
+  if (vm.count("disable-analysis")) {
+    cfg.exploration = Exploration::GENERATE_AND_VALIDATE;
   }
+
+  if (vm.count("disable-testprior")) {
+    cfg.testPrioritization = TestPrioritization::FIXED_ORDER;
+  }
+
 
   if (!vm.count("source")) {
     BOOST_LOG_TRIVIAL(error) << "source directory is not specified (use --help)";
@@ -264,10 +281,18 @@ int main (int argc, char *argv[])
   fs::create_directory(workDir);
   BOOST_LOG_TRIVIAL(info) << "working directory: " << workDir;
 
-  Project project(root, files, buildCmd, workDir, cfg);
-  TestingFramework tester(project, driver, testTimeout, cfg);
+  bool found = false;
+  {
+    Project project(root, files, buildCmd, workDir, cfg);
+    TestingFramework tester(project, driver, testTimeout, cfg);
+    
+    found = repair(project, tester, tests, workDir, output, cfg);
+  }
 
-  bool found = repair(project, tester, tests, workDir, output, cfg);
+  // NOTE: project is already destroyed here
+  if (cfg.removeIntermediateData) {
+    fs::remove_all(workDir);
+  }
 
   if (found) {
     if (cfg.generateAll) {

@@ -36,10 +36,9 @@ enum class LocalizationFormula {
 };
 
 
-enum class TestSelection {
+enum class TestPrioritization {
   FIXED_ORDER,      // failing, then passing
-  MAX_FAILING,      // prioritize tests that failed maximum number of times
-  LARGEST_PARTITION // prioritize tests with largest average partition size
+  MAX_FAILING       // prioritize tests that failed maximum number of times
 };
 
 
@@ -51,14 +50,17 @@ struct Config {
   bool validatePatches;
   bool generateAll;
   bool dumpSearchSpace;
+  bool outputPatchMetadata;         /* UNSUPPORTED */
+  bool removeIntermediateData;
+  bool conditionExtension;          /* UNSUPPORTED */
+  bool initializePartitions;        /* UNSUPPORTED */
   uint maxConditionParameter;       /* UNSUPPORTED */
   uint maxExpressionParameter;      /* UNSUPPORTED */
   uint maxCandidatesPerLocation;    /* UNSUPPORTED */
   uint maxExecutionsPerLocation;    /* UNSUPPORTED */
   uint maxLocations;                /* UNSUPPORTED */
-  Exploration exploration;          /* UNSUPPORTED */
-  LocalizationFormula localization; /* UNSUPPORTED */
-  TestSelection testSelection;      /* UNSUPPORTED */
+  Exploration exploration;
+  TestPrioritization testPrioritization;      /* UNSUPPORTED */
   std::string runtimeCompiler;
 };
 
@@ -68,13 +70,16 @@ static Config DEFAULT_CONFIG = {
   true,    /* validatePatches */
   false,   /* generateAll */
   false,   /* dumpSearchSpace */
+  false,   /* outputPatchMetadata */
+  false,   /* removeIntermediateData */
+  true,    /* conditionExtension */
+  true,    /* initializePartitions */
   0,       /* maxConditionParameter */
   0,       /* maxExpressionParameter */
   0,       /* maxCandidatesPerLocation */
   0,       /* maxExecutionsPerLocation */
   0,       /* maxLocations */
   Exploration::SEMANTIC_PARTITIONING,
-  LocalizationFormula::JACCARD,
-  TestSelection::FIXED_ORDER,
+  TestPrioritization::MAX_FAILING,
   "g++" /* runtimeCompiler */
 };

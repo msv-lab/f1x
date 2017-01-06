@@ -24,6 +24,9 @@
 #include "F1XConfig.h"
 #include "SearchEngine.h"
 
+using std::unordered_set;
+using std::unordered_map;
+
 
 SearchEngine::SearchEngine(const std::vector<std::string> &tests,
                            TestingFramework &tester,
@@ -34,11 +37,16 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   runtime(runtime),
   cfg(cfg),
   candidateCounter(0),
-  testCounter(0) {}
+  testCounter(0) {
+
+  failing = {};
+  passing = {};
+  for (auto &test : tests) {
+    passing[test] = {};
+  }
+}
 
 uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom) {
-
-  setenv("F1X_WORKDIR", runtime.getWorkDir().string().c_str(), true);
 
   uint index = indexFrom;
 
