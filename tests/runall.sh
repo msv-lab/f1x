@@ -67,7 +67,7 @@ for test in $TESTS; do
             ;;
     esac
 
-    repair_cmd="f1x $test $args --output output.patch"
+    repair_cmd="f1x $test $args --output output.patch -v"
 
     repair_dir=`mktemp -d`
     cp -r "$test" "$repair_dir"

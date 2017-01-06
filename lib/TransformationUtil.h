@@ -58,7 +58,6 @@ bool overwriteMainChangedFile(clang::Rewriter &TheRewriter);
 bool isTopLevelStatement(const clang::Stmt *stmt, clang::ASTContext *context);
 bool shouldAddBrackets(const clang::Stmt *stmt, clang::ASTContext *context);
 
-
 rapidjson::Value stmtToJSON(const clang::Stmt *stmt,
                             rapidjson::Document::AllocatorType &allocator);
 
@@ -74,3 +73,6 @@ std::vector<rapidjson::Value> collectComponents(const clang::Stmt *stmt,
 
 
 std::string makeArgumentList(std::vector<rapidjson::Value> &components);
+
+uint f1xloc(uint baseId, uint fileId);
+bool inRange(uint line);

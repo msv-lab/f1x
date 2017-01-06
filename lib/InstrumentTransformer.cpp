@@ -23,6 +23,7 @@
 #include <rapidjson/istreamwrapper.h>
 #include <rapidjson/ostreamwrapper.h>
 #include <rapidjson/writer.h>
+#include <map>
 
 #include "F1XConfig.h"
 #include "TransformationUtil.h"
@@ -39,34 +40,33 @@ using std::string;
 
 json::Document candidateLocations;
 
+std::map<std::string, int> GlobalInterestedLine;
+void initInterestingLocation()
+{
+  std::string interestLocFile = globalOutputFile;
+  std::size_t found = interestLocFile.find_last_of("/");
+  if (found!=std::string::npos)
+    interestLocFile.erase(found+1);
+  interestLocFile.append("Recoder");
 
-const uint F1XLOC_WIDTH = 32;
-const uint F1XLOC_VALUE_BITS = 10;
-
-/*
-  __f1x_loc is a F1XID_WIDTH bit transparent location ID. The left F1XID_VALUE_BITS bits of this id is the file ID.
- */
-
-uint f1xloc(uint baseId, uint fileId) {
-  assert(baseId < (1 << (F1XLOC_WIDTH - F1XLOC_VALUE_BITS)));
-  uint result = fileId;
-  result <<= (F1XLOC_WIDTH - F1XLOC_VALUE_BITS);
-  result += baseId;
-  return result;
-}
-
-
-bool inRange(uint line) {
-  if (globalFromLine || globalToLine) {
-    return globalFromLine <= line && line <= globalToLine;
-  } else {
-    return true;
+  std::ifstream infile(interestLocFile.c_str());
+  std::string line;
+  while(std::getline(infile, line))
+  {
+    GlobalInterestedLine[line] = 1;
   }
 }
 
+bool isInterestingLocation(std::string location)
+{
+  if(GlobalInterestedLine.find(location) == GlobalInterestedLine.end())
+    return false;
+  return true;
+}
 
 bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
   candidateLocations.SetArray();
+  initInterestingLocation();
   return true;
 }
 
@@ -125,9 +125,13 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-    if (!inRange(beginLine))
+    std::ostringstream location;
+    location << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn 
+             << "_" << globalFileId;
+                 
+    if (!inRange(beginLine) || !isInterestingLocation(location.str()))
       return;
-
+    
     // NOTE: to avoid extracting locations from headers:
     std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
@@ -213,9 +217,12 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-    if (!inRange(beginLine))
+    std::ostringstream location;
+    location << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn 
+             << "_" << globalFileId;
+                 
+    if (!inRange(beginLine) || !isInterestingLocation(location.str()))
       return;
-
     // NOTE: to avoid extracting locations from headers:
     std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
@@ -253,4 +260,5 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
 
     Rewrite.ReplaceText(expandedLoc, replacement);
   }
+  
 }

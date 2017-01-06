@@ -218,6 +218,10 @@ void Project::saveInstrumentedFiles() {
   saveFilesWithPrefix("instrumented");
 }
 
+void Project::saveProfileInstFiles() {
+  saveFilesWithPrefix("profileInstr");
+}
+
 void Project::savePatchedFiles() {
   saveFilesWithPrefix("patched");
 }
@@ -249,15 +253,21 @@ void Project::computeDiff(const ProjectFile &file,
 }
 
 bool Project::instrumentFile(const ProjectFile &file,
-                             const boost::filesystem::path &outputFile) {
+                             const boost::filesystem::path &outputFile, const bool isProfile) {
   BOOST_LOG_TRIVIAL(info) << "instrumenting source files";
   
   uint id = getFileId(file);
 
   FromDirectory dir(root);
   std::stringstream cmd;
-  cmd << "f1x-transform " << file.relpath.string() << " --instrument"
-      << " --from-line " << file.fromLine
+  cmd << "f1x-transform " << file.relpath.string();
+  
+  if(isProfile)
+    cmd << " --profile";
+  else
+    cmd << " --instrument";
+
+  cmd << " --from-line " << file.fromLine
       << " --to-line " << file.toLine
       << " --file-id " << id
       << " --output " + outputFile.string();

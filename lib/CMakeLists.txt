@@ -18,7 +18,8 @@ add_library (f1xTransform
   TransformationUtil.cpp
   SearchSpaceMatchers.cpp
   InstrumentTransformer.cpp
-  ApplyTransformer.cpp  
+  ApplyTransformer.cpp
+  ProfileTransformer.cpp
   )
 
 # Make sure the compiler can find include files for our Hello library

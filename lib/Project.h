@@ -49,13 +49,14 @@ class Project {
   bool buildWithRuntime(const boost::filesystem::path &header);
   void saveOriginalFiles();
   void saveInstrumentedFiles();
+  void saveProfileInstFiles();
   void savePatchedFiles();
   void restoreOriginalFiles();
   void restoreInstrumentedFiles();
   void computeDiff(const ProjectFile &file,
                    const boost::filesystem::path &outputFile);
   bool instrumentFile(const ProjectFile &file,
-                      const boost::filesystem::path &outputFile);
+                      const boost::filesystem::path &outputFile, const bool isProfile);
   bool applyPatch(const SearchSpaceElement &patch);
   boost::filesystem::path getRoot() const;
   std::vector<ProjectFile> getFiles() const;

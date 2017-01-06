@@ -19,8 +19,10 @@
 #include <memory>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <algorithm>
 #include <iomanip>
+#include <map>
 
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
@@ -40,6 +42,14 @@ using std::shared_ptr;
 
 const string CANDADATE_LOCATIONS_FILE_NAME = "extracted.json";
 
+const std::string PROFILE_FILE_NAME = "Recoder";
+const std::string PROFILE_SOURCE_FILE_NAME = "Recoder.cpp";
+const std::string PROFILE_HEADER_FILE_NAME = "Recoder.h";
+
+const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
+const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
+
+std::map<string, int> interestedLine;
 
 double score(const SearchSpaceElement &el) {
   double result = (double) el.meta.distance;
@@ -74,6 +84,29 @@ double score(const SearchSpaceElement &el) {
   return result;
 }
 
+void mergeInterestedLine(const char* tempFile)
+{
+  std::ifstream infile(tempFile);
+  std::string line;
+  BOOST_LOG_TRIVIAL(debug) << "merging profiling recode:" << tempFile << "\n";
+  while(std::getline(infile, line))
+  {
+    if(interestedLine.find(line) == interestedLine.end())
+      interestedLine[line] = 1;
+  }
+}
+
+void recordinterestedLine(const char* interestingLocationFile)
+{
+  BOOST_LOG_TRIVIAL(info) << "writing profiling data into " << interestingLocationFile << "\n";
+  std::ofstream outfile(interestingLocationFile, std::ios::app);
+  std::map<string, int>::iterator it = interestedLine.begin();
+  while(it!=interestedLine.end())
+  {
+    outfile << it->first << "\n";
+    it++;
+  }
+}
 
 bool comparePatches(const SearchSpaceElement &a, const SearchSpaceElement &b) {
   return score(a) < score(b);
@@ -111,9 +144,61 @@ bool repair(Project &project,
     return false;
   }
 
+/**********************************************/
+//this part is used to profile
+  fs::path ilFile = workDir / fs::path(PROFILE_FILE_NAME);
+  BOOST_LOG_TRIVIAL(info) << "instrumenting for profile\n";
+  //instrument candidate file to record the expressions and statements excuted by a test case
+  bool profileInstSuccess = project.instrumentFile(project.getFiles()[0], ilFile, true);
+  if (! profileInstSuccess) {
+    BOOST_LOG_TRIVIAL(warning) << "profiling instrumentation returned non-zero exit code";
+  }
+
+  project.saveProfileInstFiles();
+
+//compile and excute all tests @waiting to implement
+  Runtime profileRuntime(workDir, cfg, PROFILE_SOURCE_FILE_NAME, PROFILE_HEADER_FILE_NAME);
+  bool profileSuccess = profileRuntime.compile();
+
+  if (! profileSuccess) {
+    BOOST_LOG_TRIVIAL(error) << "profile compilation failed";
+    return false;
+  }
+
+  bool profileRebuildSucceeded = project.buildWithRuntime(profileRuntime.getHeader());
+
+  if (! profileRebuildSucceeded) {
+    BOOST_LOG_TRIVIAL(warning) << "compilation with runtime returned non-zero exit code";
+  }
+
+  bool pass = false;
+  //fs::path tempFile;//the excution path will be saved in this file
+  //tempFile  = workDir / fs::path(PROFILE_FILE_NAME);
+  BOOST_LOG_TRIVIAL(info) << "profiling all the test cases\n";
+  for (auto &test : tests) {
+  
+    pass = tester.isPassing(test);
+    if(!pass)
+    {
+      mergeInterestedLine(ilFile.c_str());
+    }
+    std::ostringstream cmd;
+    cmd << "rm " << ilFile.c_str();
+    system(cmd.str().c_str());
+  }
+  
+  //the excution path of the failing test case will be saved in this file
+  //fs::path interestiongLocationFile;
+  //interestiongLocationFile = workDir / fs::path(INTRESTING_LOCATIONS_FILE_NAME);
+  recordinterestedLine(ilFile.c_str());
+  
+  project.restoreOriginalFiles();
+
+/**********************************************/
+
   fs::path clFile = workDir / fs::path(CANDADATE_LOCATIONS_FILE_NAME);
 
-  bool instrSuccess = project.instrumentFile(project.getFiles()[0], clFile);
+  bool instrSuccess = project.instrumentFile(project.getFiles()[0], clFile, false);
   if (! instrSuccess) {
     BOOST_LOG_TRIVIAL(warning) << "transformation returned non-zero exit code";
   }
@@ -129,7 +214,7 @@ bool repair(Project &project,
 
   vector<SearchSpaceElement> searchSpace;
 
-  Runtime runtime(workDir, cfg);
+  Runtime runtime(workDir, cfg, RUNTIME_SOURCE_FILE_NAME, RUNTIME_HEADER_FILE_NAME);
 
   BOOST_LOG_TRIVIAL(info) << "generating search space";
   {

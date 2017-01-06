@@ -30,13 +30,12 @@
 namespace fs = boost::filesystem;
 using std::vector;
 
-const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
-const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
-
-
-Runtime::Runtime(const fs::path &workDir, const Config &cfg): 
+Runtime::Runtime(const fs::path &workDir, const Config &cfg, const std::string source, const std::string header): 
   workDir(workDir),
-  cfg(cfg) {};
+  cfg(cfg) {
+    RUNTIME_SOURCE_FILE_NAME = source;
+    RUNTIME_HEADER_FILE_NAME = header;
+  };
 
 void Runtime::setPartiotion(uint locId, uint candidateId, vector<uint> space) {
   fs::ofstream out(workDir / std::to_string(locId));

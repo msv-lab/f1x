@@ -20,10 +20,12 @@
 
 #include <boost/filesystem.hpp>
 #include "F1XConfig.h"
+#include <string>
+#include <sstream>
 
 class Runtime {
  public:
-  Runtime(const boost::filesystem::path &workDir, const Config &cfg);
+  Runtime(const boost::filesystem::path &workDir, const Config &cfg, const std::string source, const std::string header);
 
   void setPartiotion(uint locId, uint candidateId, std::vector<uint> space);
   std::vector<uint> getPartiotion(uint locId);
@@ -35,4 +37,7 @@ class Runtime {
  private:
   boost::filesystem::path workDir;
   Config cfg;
+  
+  std::string RUNTIME_SOURCE_FILE_NAME;
+  std::string RUNTIME_HEADER_FILE_NAME;
 };
