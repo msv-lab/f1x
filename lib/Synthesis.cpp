@@ -281,20 +281,34 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
   
   uint topId = id;
 
+  string outputType;
+  if (cl->original.type == Type::POINTER) {
+    outputType= "void*";
+  } else {
+    outputType = cl->original.rawType;
+   }
+
   for (auto &candidate : mutants) {
     uint currentId = id;
 
     Expression runtimeRepr = candidate.first;
     substituteRealNames(runtimeRepr, accessByName);
     OS << "case " << currentId << ":" << "\n"
-       << "if (! evaluated) { " << "\n"
-       << "candidate_value = " << expressionToString(runtimeRepr) << ";" << "\n"
-       << "evaluated = true;" << "\n"
+       << "if (! evaluated) { " << "\n";
+    // FIXME: this is a temporary hack
+    string castStr;
+    if (runtimeRepr.type == Type::POINTER && cl->original.type != Type::POINTER)
+      castStr = "(std::size_t)";
+    OS << "candidate_value = " << castStr << expressionToString(runtimeRepr) << ";" << "\n";
+    OS << "evaluated = true;" << "\n"
        << "next = " << topId << ";" << "\n"
        << "break;" << "\n"
        << "}" << "\n";
-    OS << "" << "\n"
-       << "if (candidate_value == " << expressionToString(runtimeRepr) << ") ofs << " << currentId << "<< ' ';" << "\n";
+    // FIXME: this is very imprecise, the comparison should depend on type
+    castStr = "";
+    if (runtimeRepr.type == Type::POINTER && cl->original.type != Type::POINTER)
+      castStr = "(std::size_t)";
+    OS << "if (candidate_value == " << castStr << expressionToString(runtimeRepr) << ") ofs << " << currentId << " << ' ';" << "\n";
     if (currentId == topId + mutants.size() - 1) {
       OS << "partitioned = true;" << "\n";
     } else {
@@ -373,7 +387,14 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
      << "extern unsigned long __f1x_id;" << "\n";
 
   for (auto cl : candidateLocations) {
-    OH << cl->original.rawType << " __f1x_" 
+    string outputType;
+    if (cl->original.type == Type::POINTER) {
+      outputType= "void*";
+    } else {
+      outputType = cl->original.rawType;
+    }
+
+    OH << outputType << " __f1x_" 
        << cl->location.fileId << "_"
        << cl->location.beginLine << "_"
        << cl->location.beginColumn << "_"
@@ -399,7 +420,14 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
   uint id = 0;
 
   for (auto cl : candidateLocations) {
-    OS << cl->original.rawType << " __f1x_"
+    string outputType;
+    if (cl->original.type == Type::POINTER) {
+      outputType= "void*";
+    } else {
+      outputType = cl->original.rawType;
+    }
+
+    OS << outputType << " __f1x_"
        << cl->location.fileId << "_"
        << cl->location.beginLine << "_"
        << cl->location.beginColumn << "_"
@@ -408,12 +436,12 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
        << "(" << makeParameterList(cl) << ")"
        << "{" << "\n";
 
-    fs::path partitionFile = workDir / ("partition" + std::to_string(cl->location.locId) + ".txt");
+    fs::path partitionFile = workDir / "partition.txt";
     
     OS << "std::ofstream ofs;" << "\n"
        << "ofs.open (" << partitionFile << ", std::ofstream::out | std::ofstream::app);" << "\n";
 
-    OS << cl->original.rawType << " candidate_value;" << "\n"
+    OS << outputType << " candidate_value;" << "\n"
        << "bool evaluated = false;" << "\n"
        << "unsigned long next = __f1x_id;" << "\n";
 

@@ -77,6 +77,9 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
       passAll = tester.isPassing(test);
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         unordered_set<uint> partition = runtime.getPartition(elem.buggy->location.locId);
+        for (auto &pel: partition) {
+          BOOST_LOG_TRIVIAL(debug) << "same partition " << pel;
+        }
         if (passAll) {
           passing[test].insert(elem.id);
           passing[test].insert(partition.begin(), partition.end());

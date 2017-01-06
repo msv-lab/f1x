@@ -40,7 +40,7 @@ Runtime::Runtime(const fs::path &workDir, const Config &cfg):
   cfg(cfg) {};
 
 void Runtime::cleanPartition(uint locId) {
-  fs::path partitionFile = workDir / ("partition" + std::to_string(locId) + ".txt");
+  fs::path partitionFile = workDir / "partition.txt";
   fs::ofstream out;
   out.open(partitionFile, std::ofstream::out | std::ofstream::trunc);
   out.close();
@@ -49,7 +49,7 @@ void Runtime::cleanPartition(uint locId) {
 unordered_set<uint> Runtime::getPartition(uint locId) {
   unordered_set<uint> result;
   unordered_set<uint> aux;
-  fs::path partitionFile = workDir / ("partition" + std::to_string(locId) + ".txt");
+  fs::path partitionFile = workDir / "partition.txt";
   if (!fs::exists(partitionFile)) {
     return result;
   }
