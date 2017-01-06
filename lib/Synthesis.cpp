@@ -23,6 +23,8 @@
 
 #include "Synthesis.h"
 
+namespace fs = boost::filesystem;
+
 using std::pair;
 using std::make_pair;
 using std::vector;
@@ -277,13 +279,31 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
 
   vector<pair<Expression, PatchMeta>> mutants = mutate(cl->original, cl->components);
   
+  uint topId = id;
+
   for (auto &candidate : mutants) {
-    uint currentId = ++id;
+    uint currentId = id;
+
     Expression runtimeRepr = candidate.first;
     substituteRealNames(runtimeRepr, accessByName);
     OS << "case " << currentId << ":" << "\n"
-       << "return " << expressionToString(runtimeRepr) << ";" << "\n";
+       << "if (! evaluated) { " << "\n"
+       << "candidate_value = " << expressionToString(runtimeRepr) << ";" << "\n"
+       << "evaluated = true;" << "\n"
+       << "next = " << topId << ";" << "\n"
+       << "break;" << "\n"
+       << "}" << "\n";
+    OS << "" << "\n"
+       << "if (candidate_value == " << expressionToString(runtimeRepr) << ") ofs << " << currentId << "<< ' ';" << "\n";
+    if (currentId == topId + mutants.size() - 1) {
+      OS << "partitioned = true;" << "\n";
+    } else {
+      OS << "next = " << (currentId + 1) << ";" << "\n";
+    }
+    OS << "break; " << "\n";
     ss.push_back(SearchSpaceElement{cl, currentId, candidate.first, candidate.second});
+
+    id++;
   }
 }
 
@@ -339,7 +359,11 @@ string makeParameterList(shared_ptr<CandidateLocation> cl) {
   return result.str();
 }
 
-vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH, const Config &cfg) {
+vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<CandidateLocation>> &candidateLocations,
+                                               const fs::path &workDir,
+                                               std::ostream &OS,
+                                               std::ostream &OH,
+                                               const Config &cfg) {
   
   // header
   OH << "#ifdef __cplusplus" << "\n"
@@ -365,7 +389,8 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
 
   // source
   OS << "#include \"rt.h\"" << "\n"
-     << "#include <stdlib.h>" << "\n";
+     << "#include <stdlib.h>" << "\n"
+     << "#include <fstream>" << "\n";
 
   addRuntimeLoader(OS);
 
@@ -383,9 +408,30 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
        << "(" << makeParameterList(cl) << ")"
        << "{" << "\n";
 
-    OS << "switch (__f1x_id) {" << "\n";
+    fs::path partitionFile = workDir / ("partition" + std::to_string(cl->location.locId) + ".txt");
+    
+    OS << "std::ofstream ofs;" << "\n"
+       << "ofs.open (" << partitionFile << ", std::ofstream::out | std::ofstream::app);" << "\n";
+
+    OS << cl->original.rawType << " candidate_value;" << "\n"
+       << "bool evaluated = false;" << "\n"
+       << "unsigned long next = __f1x_id;" << "\n";
+
+    if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+      OS << "bool partitioned = false;" << "\n";
+    } else {
+      OS << "bool partitioned = true;" << "\n";
+    }
+
+    OS << "while (!evaluated || !partitioned) {" << "\n"
+       << "switch (next) {" << "\n";
     generateExpressions(cl, id, OS, searchSpace);
     OS << "}" << "\n";
+    OS << "}" << "\n";
+
+    OS << "ofs << '\\n';" << "\n";
+    OS << "ofs.close();" << "\n";
+    OS << "return candidate_value;" << "\n";
 
     OS << "}" << "\n";
   }
