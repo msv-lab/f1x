@@ -71,7 +71,14 @@ bool projectFilesInCompileDB(fs::path root, vector<ProjectFile> files) {
   return true; 
 }
 
-void addClangHeadersToCompileDB(fs::path projectRoot) {
+/* 
+   1. Add Clang headers.
+      By default a Clang tool searches for headers in a strange place, so we add them explicitly
+   2. Add default definitions
+      Sometime if the transformed program contains undefined symbolic, transformation fails
+      (e.g. gmp-13420-13421, it may depend on compiler flags)
+ */
+void adjustCompileDB(fs::path projectRoot) {
   fs::path compileDB("compile_commands.json");
   fs::path path = projectRoot / compileDB;
   json::Document db;
@@ -88,9 +95,14 @@ void addClangHeadersToCompileDB(fs::path projectRoot) {
     string includeCmd =  "-I" + F1X_CLANG_INCLUDE;
     if (command.find(includeCmd) == std::string::npos) {
       uint index = command.find(" ");
-      string newCommand = command.substr(0, index) + " " + includeCmd + " " + command.substr(index);
-      entry.GetObject()["command"].SetString(newCommand.c_str(), db.GetAllocator());
+      command = command.substr(0, index) + " " + includeCmd + " " + command.substr(index);
     }
+    string defineCmd =  "-D__f1x_loc=0ul";
+    if (command.find(defineCmd) == std::string::npos) {
+      uint index = command.find(" ");
+      command = command.substr(0, index) + " " + defineCmd + " " + command.substr(index);
+    }
+    entry.GetObject()["command"].SetString(command.c_str(), db.GetAllocator());
   }
   
   {
@@ -162,7 +174,7 @@ std::pair<bool, bool> Project::initialBuild() {
 
   if (inferenceSuccess) {
     if (projectFilesInCompileDB(root, files)) {
-      addClangHeadersToCompileDB(root);
+      adjustCompileDB(root);
     } else {
       inferenceSuccess = false;
     }
