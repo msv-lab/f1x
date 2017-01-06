@@ -24,6 +24,9 @@
 #include "F1XConfig.h"
 #include "SearchEngine.h"
 
+using std::unordered_set;
+using std::unordered_map;
+
 
 SearchEngine::SearchEngine(const std::vector<std::string> &tests,
                            TestingFramework &tester,
@@ -34,24 +37,57 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   runtime(runtime),
   cfg(cfg),
   candidateCounter(0),
-  testCounter(0) {}
+  testCounter(0) {
+
+  failing = {};
+  passing = {};
+  for (auto &test : tests) {
+    passing[test] = {};
+  }
+}
 
 uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom) {
-
-  setenv("F1X_WORKDIR", runtime.getWorkDir().string().c_str(), true);
 
   uint index = indexFrom;
 
   for (; index < searchSpace.size(); index++) {
     candidateCounter++;
     auto elem = searchSpace[index];
+    if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+      if (failing.count(elem.id))
+        continue;
+      bool passAll = true;
+      for (auto &test : tests) {
+        if (!passing[test].count(elem.id)) {
+          passAll = false;
+        }
+      }
+      if (passAll)
+        return index;
+    }
     setenv("F1X_ID", std::to_string(elem.id).c_str(), true);
     setenv("F1X_LOC", std::to_string(elem.buggy->location.locId).c_str(), true);
     bool passAll = true;
     for (auto &test : tests) {
       BOOST_LOG_TRIVIAL(debug) << "executing candidate " << elem.id << " with test " << test;
       testCounter++;
+      if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+        runtime.cleanPartition(elem.buggy->location.locId);
+      }
       passAll = tester.isPassing(test);
+      if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+        unordered_set<uint> partition = runtime.getPartition(elem.buggy->location.locId);
+        for (auto &pel: partition) {
+          BOOST_LOG_TRIVIAL(debug) << "same partition " << pel;
+        }
+        if (passAll) {
+          passing[test].insert(elem.id);
+          passing[test].insert(partition.begin(), partition.end());
+        } else {
+          failing.insert(elem.id);
+          failing.insert(partition.begin(), partition.end());
+        }
+      }
       if (!passAll)
         break;
     }

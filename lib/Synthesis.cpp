@@ -23,6 +23,8 @@
 
 #include "Synthesis.h"
 
+namespace fs = boost::filesystem;
+
 using std::pair;
 using std::make_pair;
 using std::vector;
@@ -30,15 +32,19 @@ using std::string;
 using std::shared_ptr;
 using std::unordered_map;
 
+// size of simple (atomic) modification
+const uint ATOMIC_EDIT = 1;
+const string POINTER_ARG_NAME = "__ptr_vals";
 
-std::string f1xArgNameFromType(const std::string &typeName) {
+
+string argNameByType(const std::string &typeName) {
   std::string result = typeName;
   std::replace(result.begin(), result.end(), ' ', '_');
-  return result + "_vals";
+  return "__" + result + "_vals";
 }
 
 
-vector<Operator> mutateOperator(Operator op) {
+vector<Operator> mutateNumericOperator(Operator op) {
   switch (op) {
   case Operator::EQ:
     return { Operator::NEQ, Operator::LT, Operator::LE, Operator::GT, Operator::GE };
@@ -82,12 +88,20 @@ vector<Operator> mutateOperator(Operator op) {
     return { Operator::BV_SHL };
   case Operator::BV_NOT:
     return {};
-  case Operator::BV_TO_INT:
-    return {};
-  case Operator::INT_TO_BV:
-    return {};
   }
+  return {};
 }
+
+vector<Operator> mutatePointerOperator(Operator op) {
+  switch (op) {
+  case Operator::EQ:
+    return { Operator::NEQ };
+  case Operator::NEQ:
+    return { Operator::EQ };
+  }
+  return {};
+}
+
 
 
 Expression makeArgSubs(const Expression &expr, const Expression &subs) {
@@ -132,21 +146,49 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
   vector<pair<Expression, PatchMeta>> result;
   if (expr.args.size() == 0) {
     if (expr.kind == Kind::CONSTANT) {
-      for (auto &c : components) {
-        result.push_back(make_pair(c, PatchMeta{Transformation::GENERALIZATION, 1}));
+      if (expr.type == Type::INTEGER) {
+        for (auto &c : components) {
+          if (c.type == Type::INTEGER)
+            result.push_back(make_pair(c, PatchMeta{Transformation::GENERALIZATION, ATOMIC_EDIT}));
+        }
+        result.push_back(make_pair(getIntegerExpression(0),
+                                   PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+        result.push_back(make_pair(getIntegerExpression(1),
+                                   PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
       }
-    } else {
-      for (auto &c : components) {
-        result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, 1}));
+    }
+    if (expr.kind == Kind::VARIABLE) {
+      if (expr.type == Type::INTEGER) {
+        for (auto &c : components) {
+          if (c.type == Type::INTEGER)
+            result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+        }
+        result.push_back(make_pair(getIntegerExpression(0),
+                                   PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
+        result.push_back(make_pair(getIntegerExpression(1),
+                                   PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
+      }
+      if (expr.type == Type::POINTER) {
+        for (auto &c : components) {
+          if (c.type == Type::POINTER && expr.rawType == c.rawType)
+            result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+        }
+        result.push_back(make_pair(getNullPointer(),
+                                   PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
       }
     }
   } else {
-    vector<Operator> oms = mutateOperator(expr.op);
+    vector<Operator> oms;
+    if (expr.args[0].type == Type::POINTER) {
+      oms = mutatePointerOperator(expr.op);
+    } else {
+      oms = mutateNumericOperator(expr.op);
+    }
     for (auto &m : oms) {
       Expression e = expr;
       e.op = m;
       e.repr = operatorToString(m);
-      result.push_back(make_pair(std::move(e), PatchMeta{Transformation::ALTERNATIVE, 1}));
+      result.push_back(make_pair(std::move(e), PatchMeta{Transformation::ALTERNATIVE, ATOMIC_EDIT}));
     }
 
     // FIXME: need to avoid division by zero
@@ -157,8 +199,8 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
       }
       if (simplifiable(expr)) {
         Expression argCopy = expr.args[0];
-        // assume simplification is always distance 1
-        result.push_back(make_pair(argCopy, PatchMeta{Transformation::SIMPLIFICATION, 1}));
+        // FIXME: instead of ATOMIC_EDIT simplification should depend on the size of deleted subexpression
+        result.push_back(make_pair(argCopy, PatchMeta{Transformation::SIMPLIFICATION, ATOMIC_EDIT}));
       }
     } else if (expr.args.size() == 2) {
       vector<pair<Expression, PatchMeta>> leftMutants = mutate(expr.args[0], components);
@@ -172,9 +214,9 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
       if (simplifiable(expr)) {
         Expression leftCopy = expr.args[0];
         Expression rightCopy = expr.args[1];
-        // assume simplification is always distance 1
-        result.push_back(make_pair(leftCopy, PatchMeta{Transformation::SIMPLIFICATION, 1}));
-        result.push_back(make_pair(rightCopy, PatchMeta{Transformation::SIMPLIFICATION, 1}));
+        // FIXME: instead of ATOMIC_EDIT simplification should depend on the size of deleted subexpression
+        result.push_back(make_pair(leftCopy, PatchMeta{Transformation::SIMPLIFICATION, ATOMIC_EDIT}));
+        result.push_back(make_pair(rightCopy, PatchMeta{Transformation::SIMPLIFICATION, ATOMIC_EDIT}));
       }
     }
   }
@@ -199,9 +241,14 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
                          std::ostream &OS,
                          vector<SearchSpaceElement> &ss) {
   vector<string> types;
+  vector<Expression> pointers;
   for (auto &c : cl->components) {
-    if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
-      types.push_back(c.rawType);
+    if (c.type == Type::INTEGER) {
+      if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
+        types.push_back(c.rawType);
+      }
+    } else {
+      pointers.push_back(c);
     }
   }
 
@@ -213,26 +260,64 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
   }
 
   for (auto &c : cl->components) {
-    namesByType[c.rawType].push_back(c.repr);
+    if (c.type == Type::INTEGER) {
+      namesByType[c.rawType].push_back(c.repr);
+    }
   }
 
   unordered_map<string, string> accessByName;
   for (auto &type : types) {
     auto names = namesByType[type];
     for (int index = 0; index < names.size(); index++) {
-      accessByName[names[index]] = f1xArgNameFromType(type) + "[" + std::to_string(index) + "]";
+      accessByName[names[index]] = argNameByType(type) + "[" + std::to_string(index) + "]";
     }
+  }
+
+  for (int index = 0; index < pointers.size(); index++) {
+    accessByName[pointers[index].repr] = POINTER_ARG_NAME + "[" + std::to_string(index) + "]";
   }
 
   vector<pair<Expression, PatchMeta>> mutants = mutate(cl->original, cl->components);
   
+  uint topId = id;
+
+  string outputType;
+  if (cl->original.type == Type::POINTER) {
+    outputType= "void*";
+  } else {
+    outputType = cl->original.rawType;
+   }
+
   for (auto &candidate : mutants) {
-    uint currentId = ++id;
+    uint currentId = id;
+
     Expression runtimeRepr = candidate.first;
     substituteRealNames(runtimeRepr, accessByName);
     OS << "case " << currentId << ":" << "\n"
-       << "return " << expressionToString(runtimeRepr) << ";" << "\n";
+       << "if (! evaluated) { " << "\n";
+    // FIXME: this is a temporary hack
+    string castStr;
+    if (runtimeRepr.type == Type::POINTER && cl->original.type != Type::POINTER)
+      castStr = "(std::size_t)";
+    OS << "candidate_value = " << castStr << expressionToString(runtimeRepr) << ";" << "\n";
+    OS << "evaluated = true;" << "\n"
+       << "next = " << topId << ";" << "\n"
+       << "break;" << "\n"
+       << "}" << "\n";
+    // FIXME: this is very imprecise, the comparison should depend on type
+    castStr = "";
+    if (runtimeRepr.type == Type::POINTER && cl->original.type != Type::POINTER)
+      castStr = "(std::size_t)";
+    OS << "if (candidate_value == " << castStr << expressionToString(runtimeRepr) << ") ofs << " << currentId << " << ' ';" << "\n";
+    if (currentId == topId + mutants.size() - 1) {
+      OS << "partitioned = true;" << "\n";
+    } else {
+      OS << "next = " << (currentId + 1) << ";" << "\n";
+    }
+    OS << "break; " << "\n";
     ss.push_back(SearchSpaceElement{cl, currentId, candidate.first, candidate.second});
+
+    id++;
   }
 }
 
@@ -254,9 +339,14 @@ string makeParameterList(shared_ptr<CandidateLocation> cl) {
   std::ostringstream result;
 
   vector<string> types;
+  bool hasPointers = false;
   for (auto &c : cl->components) {
-    if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
-      types.push_back(c.rawType);
+    if (c.type == Type::INTEGER) {
+      if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
+        types.push_back(c.rawType);
+      }
+    } else {
+      hasPointers = true;
     }
   }
 
@@ -269,14 +359,25 @@ string makeParameterList(shared_ptr<CandidateLocation> cl) {
     } else {
       result << ", ";
     }
-    result << type << " " << f1xArgNameFromType(type) << "[]";
+    result << type << " " << argNameByType(type) << "[]";
+  }
+  if (hasPointers) {
+    if (firstArray) {
+      firstArray = false;
+    } else {
+      result << ", ";
+    }
+    result << "void *" << POINTER_ARG_NAME << "[]";
   }
   
   return result.str();
 }
 
-
-vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH, const Config &cfg) {
+vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<CandidateLocation>> &candidateLocations,
+                                               const fs::path &workDir,
+                                               std::ostream &OS,
+                                               std::ostream &OH,
+                                               const Config &cfg) {
   
   // header
   OH << "#ifdef __cplusplus" << "\n"
@@ -286,7 +387,14 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
      << "extern unsigned long __f1x_id;" << "\n";
 
   for (auto cl : candidateLocations) {
-    OH << cl->original.rawType << " __f1x_" 
+    string outputType;
+    if (cl->original.type == Type::POINTER) {
+      outputType= "void*";
+    } else {
+      outputType = cl->original.rawType;
+    }
+
+    OH << outputType << " __f1x_" 
        << cl->location.fileId << "_"
        << cl->location.beginLine << "_"
        << cl->location.beginColumn << "_"
@@ -302,7 +410,8 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
 
   // source
   OS << "#include \"rt.h\"" << "\n"
-     << "#include <stdlib.h>" << "\n";
+     << "#include <stdlib.h>" << "\n"
+     << "#include <fstream>" << "\n";
 
   addRuntimeLoader(OS);
 
@@ -311,7 +420,14 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
   uint id = 0;
 
   for (auto cl : candidateLocations) {
-    OS << cl->original.rawType << " __f1x_"
+    string outputType;
+    if (cl->original.type == Type::POINTER) {
+      outputType= "void*";
+    } else {
+      outputType = cl->original.rawType;
+    }
+
+    OS << outputType << " __f1x_"
        << cl->location.fileId << "_"
        << cl->location.beginLine << "_"
        << cl->location.beginColumn << "_"
@@ -320,9 +436,30 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
        << "(" << makeParameterList(cl) << ")"
        << "{" << "\n";
 
-    OS << "switch (__f1x_id) {" << "\n";
+    fs::path partitionFile = workDir / "partition.txt";
+    
+    OS << "std::ofstream ofs;" << "\n"
+       << "ofs.open (" << partitionFile << ", std::ofstream::out | std::ofstream::app);" << "\n";
+
+    OS << outputType << " candidate_value;" << "\n"
+       << "bool evaluated = false;" << "\n"
+       << "unsigned long next = __f1x_id;" << "\n";
+
+    if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+      OS << "bool partitioned = false;" << "\n";
+    } else {
+      OS << "bool partitioned = true;" << "\n";
+    }
+
+    OS << "while (!evaluated || !partitioned) {" << "\n"
+       << "switch (next) {" << "\n";
     generateExpressions(cl, id, OS, searchSpace);
     OS << "}" << "\n";
+    OS << "}" << "\n";
+
+    OS << "ofs << '\\n';" << "\n";
+    OS << "ofs.close();" << "\n";
+    OS << "return candidate_value;" << "\n";
 
     OS << "}" << "\n";
   }

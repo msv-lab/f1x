@@ -61,6 +61,18 @@ for test in $TESTS; do
         return)
             args="--files program.c --driver $test/test.sh --tests n1 --test-timeout 1000"
             ;;
+        deletion)
+            args="--files program.c:11 --driver $test/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            ;;
+        loop-condition)
+            args="--files program.c:7 --driver $test/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            ;;
+        memberexpr)
+            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        pointer)
+            args="--files program.c:25 --driver $test/test.sh --tests n1 n2 p1 --test-timeout 1000"
+            ;;
         *)
             echo "command for test $test is not defined"
             exit 1

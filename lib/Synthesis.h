@@ -18,6 +18,8 @@
 
 #include <memory>
 
+#include <boost/filesystem.hpp>
+
 #include "RepairUtil.h"
 
 
@@ -70,4 +72,8 @@
  */
 
 
-std::vector<SearchSpaceElement> generateSearchSpace(const std::vector<std::shared_ptr<CandidateLocation>> &candidateLocations, std::ostream &OS, std::ostream &OH, const Config &cfg);
+std::vector<SearchSpaceElement> generateSearchSpace(const std::vector<std::shared_ptr<CandidateLocation>> &candidateLocations,
+                                                    const boost::filesystem::path &workDir,
+                                                    std::ostream &OS,
+                                                    std::ostream &OH,
+                                                    const Config &cfg);

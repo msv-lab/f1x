@@ -40,6 +40,7 @@ using std::map;
 
 
 const BuiltinType::Kind DEFAULT_NUMERIC_TYPE = BuiltinType::Long;
+const string DEFAULT_POINTEE_TYPE = "void";
 
 
 uint globalFileId;
@@ -223,6 +224,23 @@ BuiltinType::Kind getBuiltinKind(const QualType &type) {
   }
 }
 
+bool isPointerType(const QualType &type) {
+  QualType canon = type.getCanonicalType();
+  assert(canon.getTypePtr());
+  return canon.getTypePtr()->isPointerType();
+}
+
+string getPointeeType(const QualType &type) {
+  QualType canon = type.getCanonicalType();
+  assert(canon.getTypePtr());
+  if (const PointerType *pt = canon.getTypePtr()->getAs<PointerType>()) {
+    return pt->getPointeeType().getCanonicalType().getAsString();
+  } else {
+    llvm::errs() << "error: non-pointer type " << type.getAsString() << "\n";
+    return DEFAULT_POINTEE_TYPE;
+  }
+}
+
 // TODO: support C++ types, compiler extensions
 string kindToString(const BuiltinType::Kind kind) {
   switch (kind) {
@@ -339,10 +357,15 @@ public:
     // *  special case for NULL
     // I need to save the cast, since it affect the semantics, but without side effects
    json::Value node(json::kObjectType);
-
-   node.AddMember("kind", json::Value().SetString("variable"), *allocator);
-   string t = kindToString(getBuiltinKind(Node->getType()));
-   node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+   if (isPointerType(Node->getType())) {
+     node.AddMember("kind", json::Value().SetString("pointer"), *allocator);
+     string t = getPointeeType(Node->getType());
+     node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+   } else {
+     node.AddMember("kind", json::Value().SetString("object"), *allocator);
+     string t = kindToString(getBuiltinKind(Node->getType()));
+     node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+   }
    json::Value repr;
    repr.SetString(toString(Node).c_str(), *allocator);
    node.AddMember("repr", repr, *allocator);
@@ -357,9 +380,15 @@ public:
   void VisitMemberExpr(MemberExpr *Node) {
     json::Value node(json::kObjectType);
 
-    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
-    string t = kindToString(getBuiltinKind(Node->getType()));
-    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    if (isPointerType(Node->getType())) {
+      node.AddMember("kind", json::Value().SetString("pointer"), *allocator);
+      string t = getPointeeType(Node->getType());
+      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    } else {
+      node.AddMember("kind", json::Value().SetString("object"), *allocator);
+      string t = kindToString(getBuiltinKind(Node->getType()));
+      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    }
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
@@ -396,9 +425,15 @@ public:
   void VisitDeclRefExpr(DeclRefExpr *Node) {
     json::Value node(json::kObjectType);
 
-    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
-    string t = kindToString(getBuiltinKind(Node->getType()));
-    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    if (isPointerType(Node->getType())) {
+      node.AddMember("kind", json::Value().SetString("pointer"), *allocator);
+      string t = getPointeeType(Node->getType());
+      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    } else {
+      node.AddMember("kind", json::Value().SetString("object"), *allocator);
+      string t = kindToString(getBuiltinKind(Node->getType()));
+      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    }
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
@@ -409,9 +444,15 @@ public:
   void VisitArraySubscriptExpr(ArraySubscriptExpr *Node) {
     json::Value node(json::kObjectType);
 
-    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
-    string t = kindToString(getBuiltinKind(Node->getType()));
-    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    if (isPointerType(Node->getType())) {
+      node.AddMember("kind", json::Value().SetString("pointer"), *allocator);
+      string t = getPointeeType(Node->getType());
+      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    } else {
+      node.AddMember("kind", json::Value().SetString("object"), *allocator);
+      string t = kindToString(getBuiltinKind(Node->getType()));
+      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    }
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
@@ -445,7 +486,9 @@ json::Value locToJSON(uint fileId, uint locId, uint bl, uint bc, uint el, uint e
 
 
 bool isSuitableComponentType(const QualType &type) {
-  return type.getTypePtr()->isIntegerType() || type.getTypePtr()->isCharType();
+  return type.getTypePtr()->isIntegerType()
+      || type.getTypePtr()->isCharType()
+      || type.getTypePtr()->isPointerType();
 }
 
 
@@ -526,9 +569,15 @@ vector<json::Value> collectFromExpression(const Stmt *stmt,
 
 json::Value varDeclToJSON(VarDecl *vd, json::Document::AllocatorType &allocator) {
   json::Value node(json::kObjectType);
-  node.AddMember("kind", json::Value().SetString("variable"), allocator);
-  string t = kindToString(getBuiltinKind(vd->getType()));
-  node.AddMember("type", json::Value().SetString(t.c_str(), allocator), allocator);
+  if (isPointerType(vd->getType())) {
+    node.AddMember("kind", json::Value().SetString("pointer"), allocator);
+    string t = getPointeeType(vd->getType());
+    node.AddMember("type", json::Value().SetString(t.c_str(), allocator), allocator);
+  } else {
+    node.AddMember("kind", json::Value().SetString("object"), allocator);
+    string t = kindToString(getBuiltinKind(vd->getType()));
+    node.AddMember("type", json::Value().SetString(t.c_str(), allocator), allocator);
+  }
   json::Value repr;
   string name = vd->getName();
   repr.SetString(name.c_str(), allocator);
@@ -600,10 +649,11 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
           DeclStmt* dstmt = cast<DeclStmt>(*it);
           SourceRange expandedLoc = getExpandedLoc(dstmt, context->getSourceManager());
           uint beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
-          if (dstmt->isSingleDecl()) {
-            Decl* d = dstmt->getSingleDecl();
+          for (auto it = dstmt->decl_begin(); it != dstmt->decl_end(); ++it) {
+            Decl* d = *it;
             if (isa<VarDecl>(d)) {
               VarDecl* vd = cast<VarDecl>(d);
+              // NOTE: hasInit because don't want to use garbage
               if (line > beginLine && vd->hasInit() && isSuitableComponentType(vd->getType())) {
                 result.push_back(varDeclToJSON(vd, allocator));
               }
@@ -694,16 +744,22 @@ string makeArgumentList(vector<json::Value> &components) {
   std::ostringstream result;
 
   map<string, vector<json::Value*>> typesToValues;
+  vector<json::Value*> pointers;
   vector<string> types;
   for (auto &c : components) {
-    string type = c["type"].GetString();
-    if(std::find(types.begin(), types.end(), type) == types.end()) {
-      types.push_back(type);
+    string kind = c["kind"].GetString();
+    if (kind == "pointer") {
+      pointers.push_back(&c);
+    } else {
+      string type = c["type"].GetString();
+      if (std::find(types.begin(), types.end(), type) == types.end()) {
+        types.push_back(type);
+      }
+      if (typesToValues.find(type) == typesToValues.end()) {
+        typesToValues.insert(std::make_pair(type, vector<json::Value*>()));
+      }
+      typesToValues[type].push_back(&c);
     }
-    if (typesToValues.find(type) == typesToValues.end()) {
-      typesToValues.insert(std::make_pair(type, vector<json::Value*>()));
-    }
-    typesToValues[type].push_back(&c);
   }
   
   std::stable_sort(types.begin(), types.end());
@@ -718,6 +774,24 @@ string makeArgumentList(vector<json::Value> &components) {
     result << "(" << type << "[]){";
     bool firstElement = true;
     for (auto c : typesToValues[type]) {
+      if (firstElement) {
+        firstElement = false;
+      } else {
+        result << ", ";
+      }
+      result << (*c)["repr"].GetString();
+    }
+    result << "}";
+  }
+  if (! pointers.empty()) {
+    if (firstArray) {
+      firstArray = false;
+    } else {
+      result << ", ";
+    }
+    result << "(void*[]){";
+    bool firstElement = true;
+    for (auto c : pointers) {
       if (firstElement) {
         firstElement = false;
       } else {

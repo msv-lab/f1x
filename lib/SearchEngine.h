@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <unordered_set>
+#include <unordered_map>
 #include "RepairUtil.h"
 #include "Project.h"
 #include "Runtime.h"
@@ -40,4 +42,6 @@ class SearchEngine {
   uint candidateCounter;
   uint testCounter;
   Config cfg;
+  std::unordered_set<uint> failing;
+  std::unordered_map<std::string, std::unordered_set<uint>> passing;
 };

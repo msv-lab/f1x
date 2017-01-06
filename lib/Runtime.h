@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <unordered_set>
 #include <boost/filesystem.hpp>
 #include "F1XConfig.h"
 #include <string>
@@ -27,8 +28,8 @@ class Runtime {
  public:
   Runtime(const boost::filesystem::path &workDir, const Config &cfg, const std::string source, const std::string header);
 
-  void setPartiotion(uint locId, uint candidateId, std::vector<uint> space);
-  std::vector<uint> getPartiotion(uint locId);
+  void cleanPartition(uint locId);
+  std::unordered_set<uint> getPartition(uint locId);
   boost::filesystem::path getWorkDir();
   boost::filesystem::path getSource();
   boost::filesystem::path getHeader();

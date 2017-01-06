@@ -28,7 +28,7 @@
 
 
 enum class Kind {
-  OPERATOR, VARIABLE, CONSTANT, PARAMETER, 
+  OPERATOR, VARIABLE, CONSTANT, PARAMETER,
   BV2, INT2, BOOL2, BOOL3 // auxiliary kinds
 };
 
@@ -41,7 +41,7 @@ enum class Type {
 enum class Operator {
   EQ, NEQ, LT, LE, GT, GE, OR, AND, ADD, SUB, MUL, DIV, MOD, NEG, NOT,
   BV_AND, BV_XOR, BV_OR, BV_SHL, BV_SHR, BV_NOT,
-  BV_TO_INT, INT_TO_BV // auxiliary operators
+  BV_TO_INT, INT_TO_BV, NONE // auxiliary operators
 };
 
 Type operatorType(const Operator &op);
@@ -59,7 +59,7 @@ struct Expression {
   Type type;
 
   /*
-    only if kind is OPERATOR
+    should be NONE if not of the kind OPERATOR
    */
   Operator op;
 
@@ -80,6 +80,10 @@ struct Expression {
 };
 
 std::string expressionToString(const Expression &expression);
+
+Expression getIntegerExpression(int n);
+
+Expression getNullPointer();
 
 
 enum class DefectClass {
@@ -106,7 +110,12 @@ struct CandidateLocation {
   std::vector<Expression> components;
 };
 
-
+/* TODO: this is better to call RepairAction,
+   it also makes sense to distinguish between repair schemes:
+     WIDENING, SUBSTITUTION, IF_GUARD, etc.
+   and schema instantiation
+     NULL_CHECK, GENERALIZATION, etc.
+ */
 enum class Transformation {
   NONE,
   ALTERNATIVE,    // alternative operator e.g. > --> >=

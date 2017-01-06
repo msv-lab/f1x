@@ -220,7 +220,7 @@ bool repair(Project &project,
   {
     fs::ofstream os(runtime.getSource());
     fs::ofstream oh(runtime.getHeader());
-    searchSpace = generateSearchSpace(cls, os, oh, cfg);
+    searchSpace = generateSearchSpace(cls, workDir, os, oh, cfg);
   }
 
   bool runtimeSuccess = runtime.compile();

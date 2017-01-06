@@ -29,6 +29,7 @@
 
 namespace fs = boost::filesystem;
 using std::vector;
+using std::unordered_set;
 
 Runtime::Runtime(const fs::path &workDir, const Config &cfg, const std::string source, const std::string header): 
   workDir(workDir),
@@ -37,21 +38,39 @@ Runtime::Runtime(const fs::path &workDir, const Config &cfg, const std::string s
     RUNTIME_HEADER_FILE_NAME = header;
   };
 
-void Runtime::setPartiotion(uint locId, uint candidateId, vector<uint> space) {
-  fs::ofstream out(workDir / std::to_string(locId));
-  out << candidateId;
-  for (auto &el : space) {
-    out << " " << el;
-  }
+void Runtime::cleanPartition(uint locId) {
+  fs::path partitionFile = workDir / "partition.txt";
+  fs::ofstream out;
+  out.open(partitionFile, std::ofstream::out | std::ofstream::trunc);
+  out.close();
 }
 
-vector<uint> Runtime::getPartiotion(uint locId) {
-  vector<uint> result;
-  fs::ifstream in(workDir / std::to_string(locId));
-  uint id;
-  in >> id;
-while (in >> id) {
-    result.push_back(id);
+unordered_set<uint> Runtime::getPartition(uint locId) {
+  unordered_set<uint> result;
+  unordered_set<uint> aux;
+  fs::path partitionFile = workDir / "partition.txt";
+  if (!fs::exists(partitionFile)) {
+    return result;
+  }
+  fs::ifstream in(partitionFile);
+  std::string line;
+  bool firstLine = true;
+  while (getline(in, line)) {
+    std::swap(result, aux);
+    result.clear();
+    std::istringstream iss(line);
+    uint id;
+    if (firstLine) {
+      firstLine = false;
+      while (iss >> id) {
+        result.insert(id);
+      }
+    } else {
+      while (iss >> id) {
+        if (aux.count(id))
+          result.insert(id);
+      }
+    }
   }
   return result;
 }
