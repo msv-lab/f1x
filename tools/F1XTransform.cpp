@@ -24,6 +24,7 @@
 #include "TransformationUtil.h"
 #include "InstrumentTransformer.h"
 #include "ApplyTransformer.h"
+#include "ProfileTransformer.h"
 #include "F1XConfig.h"
 
 using namespace clang::tooling;
@@ -45,6 +46,9 @@ static llvm::cl::OptionCategory F1XCategory("f1x-transform options");
 
 static cl::opt<bool>
 Instrument("instrument", cl::desc("instrument search space"), cl::cat(F1XCategory));
+
+static cl::opt<bool>
+Profile("profile", cl::desc("instrument search space for profile"), cl::cat(F1XCategory));
 
 static cl::opt<uint>
 FileId("file-id", cl::desc("file id"), cl::cat(F1XCategory));
@@ -101,6 +105,10 @@ int main(int argc, const char **argv) {
     FrontendFactory = newFrontendActionFactory<InstrumentRepairableAction>();
   else if (Apply)
     FrontendFactory = newFrontendActionFactory<ApplyPatchAction>();
+  else if(Profile)
+  {
+    FrontendFactory = newFrontendActionFactory<ProfileAction>();
+  }
   else {
     errs() << "error: specify -instrument or -apply options\n";
     return 1;
