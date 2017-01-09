@@ -56,24 +56,18 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
     if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
       if (failing.count(elem.id))
         continue;
-      bool passAll = true;
-      for (auto &test : tests) {
-        if (!passing[test].count(elem.id)) {
-          passAll = false;
-        }
-      }
-      if (passAll)
-        return index;
     }
     setenv("F1X_ID", std::to_string(elem.id).c_str(), true);
     setenv("F1X_LOC", std::to_string(elem.buggy->location.locId).c_str(), true);
     bool passAll = true;
     for (auto &test : tests) {
       BOOST_LOG_TRIVIAL(debug) << "executing candidate " << elem.id << " with test " << test;
-      testCounter++;
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+        if (passing[test].count(elem.id))
+          continue;
         runtime.cleanPartition(elem.buggy->location.locId);
       }
+      testCounter++;
       passAll = tester.isPassing(test);
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         unordered_set<uint> partition = runtime.getPartition(elem.buggy->location.locId);
