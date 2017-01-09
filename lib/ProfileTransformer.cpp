@@ -50,7 +50,7 @@ bool ProfileAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filena
   // source
   out_CPP << "#include<stdio.h>\n"
           << "#include \"" << ProfileInstr_H.str() << "\"\n\n";
-  out_CPP << "void recordStmt(int beginLine, int beginColumn, int endLine, int endColumn, int globalFileId){\n"
+  out_CPP << "void f1x_RecordStmt(int beginLine, int beginColumn, int endLine, int endColumn, int globalFileId){\n"
           << "  FILE * file = fopen(\""<< globalOutputFile << "\", \"a+\");\n"
           << "  fprintf(file, \"%d_%d_%d_%d_%d\\n\", beginLine, beginColumn, endLine, endColumn, globalFileId);\n"
           << "  fclose(file);\n"
@@ -60,7 +60,7 @@ bool ProfileAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filena
   out_H << "#ifdef __cplusplus" << "\n"
         << "extern \"C\" {" << "\n"
         << "#endif" << "\n";
-  out_H << "void recordStmt(int beginLine, int beginColumn, int endLine, int endColumn, int globalFileId);\n";
+  out_H << "void f1x_RecordStmt(int beginLine, int beginColumn, int endLine, int endColumn, int globalFileId);\n";
   
   return true;
 }
@@ -126,7 +126,7 @@ void ProfileStatementHandler::run(const MatchFinder::MatchResult &Result) {
         return;
 
       std::ostringstream replacement;
-      replacement << "({recordStmt(" << beginLine << ", " << beginColumn << ", " 
+      replacement << "({f1x_RecordStmt(" << beginLine << ", " << beginColumn << ", " 
                   << endLine << ", " << endColumn << ", " << globalFileId <<");"
                   << toString(stmt) << ";})";
 
@@ -169,14 +169,20 @@ void ProfileExpressionHandler::run(const MatchFinder::MatchResult &Result) {
     json::Value exprJSON = stmtToJSON(expr, profileLocations.GetAllocator());
     const char* type = exprJSON["type"].GetString();
     
-    std::ostringstream functionName;
+    std::ostringstream stringStream;
+    stringStream << "({f1x_RecordStmt(" << beginLine << ", " << beginColumn << ", " 
+                  << endLine << ", " << endColumn << ", " << globalFileId <<");"
+                  << toString(expr) << ";})";
+    
+    /*std::ostringstream functionName;
     functionName << "__f1x_" <<  beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn 
                  << "_" << "_" << globalBaseLocId;
+                 
     //source
     out_CPP << type << " " << functionName.str() 
         << "( int beginLine, int  beginColumn, int endLine, int endColumn, int globalFileId, " 
         << type <<" value" << "){\n"
-        <<"\trecordStmt( beginLine, beginColumn, endLine, endColumn, globalFileId);\n"
+        <<"\tf1x_RecordStmt( beginLine, beginColumn, endLine, endColumn, globalFileId);\n"
         <<"\treturn value;" << "\n}\n";
     //head
     out_H << type << " " << functionName.str() 
@@ -186,7 +192,7 @@ void ProfileExpressionHandler::run(const MatchFinder::MatchResult &Result) {
     std::ostringstream stringStream;
     stringStream << functionName.str() << "(" << beginLine << ", " << beginColumn
                  << ", " << endLine << ", " << endColumn << ", " << globalFileId
-                 << ", " << toString(expr) << ")";
+                 << ", " << toString(expr) << ")";*/
                  
 
     Rewrite.ReplaceText(expandedLoc, stringStream.str());
