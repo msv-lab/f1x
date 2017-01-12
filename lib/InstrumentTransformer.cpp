@@ -53,7 +53,18 @@ void initInterestingLocation()
   std::string line;
   while(std::getline(infile, line))
   {
-    GlobalInterestedLine[line] = 1;
+    std::string::size_type pos1, pos2;
+    pos2 = line.find(" ");
+    pos1 = 0;
+    std::string isInterestingLine = line.substr(pos1, pos2-pos1);
+    GlobalInterestedLine[isInterestingLine] = 1;
+    /*if(!isInterestingLine.compare("1"))
+    {
+      pos1 = pos2+1;
+      pos2 = line.find(" ", pos1);
+      std::string lineId = line.substr(pos1, pos2-pos1);
+      GlobalInterestedLine[lineId] = 1;
+    }*/
   }
 }
 

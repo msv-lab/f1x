@@ -18,20 +18,23 @@
 
 #include <string>
 #include <cstdlib>
+#include <sstream>
 
 #include <boost/log/trivial.hpp>
 
 #include "F1XConfig.h"
 #include "SearchEngine.h"
+#include "RepairUtil.h"
 
 using std::unordered_set;
 using std::unordered_map;
-
+using std::string;
 
 SearchEngine::SearchEngine(const std::vector<std::string> &tests,
                            TestingFramework &tester,
                            Runtime &runtime,
-                           const Config &cfg):
+                           const Config &cfg,
+                           std::map<string, std::vector<int>> relatedTestIndex):
   tests(tests),
   tester(tester),
   runtime(runtime),
@@ -44,6 +47,7 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   for (auto &test : tests) {
     passing[test] = {};
   }
+  testCaseSensitivity = relatedTestIndex;
 }
 
 uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom) {
@@ -60,7 +64,24 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
     setenv("F1X_ID", std::to_string(elem.id).c_str(), true);
     setenv("F1X_LOC", std::to_string(elem.buggy->location.locId).c_str(), true);
     bool passAll = true;
-    for (auto &test : tests) {
+    
+    std::shared_ptr<CandidateLocation> cl = elem.buggy;
+    
+    std::ostringstream repairLoc;
+    repairLoc << cl->location.beginLine << "_"
+                 << cl->location.beginColumn << "_"
+                 << cl->location.endLine << "_"
+                 << cl->location.endColumn << "_"
+                 << cl->location.fileId;
+    std::vector<int> testOrder = testCaseSensitivity[repairLoc.str()];
+    
+    BOOST_LOG_TRIVIAL(debug) << "***************before sorting********************";
+    for (int i=0; i<testOrder.size(); i++)
+      BOOST_LOG_TRIVIAL(debug) << testOrder[i] << " ";
+    BOOST_LOG_TRIVIAL(debug) << "*************************************************";
+    
+    for (int i=0; i<testOrder.size(); i++) {
+      auto test = tests[testOrder[i]];
       BOOST_LOG_TRIVIAL(debug) << "executing candidate " << elem.id << " with test " << test;
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         if (passing[test].count(elem.id))
@@ -83,8 +104,16 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
         }
       }
       if (!passAll)
+      {
+        testCaseSensitivity[repairLoc.str()] = changeSensitivity(testOrder,i);
         break;
+      }
     }
+    BOOST_LOG_TRIVIAL(debug) << "*****************after sorting*******************";
+    testOrder = testCaseSensitivity[repairLoc.str()];
+    for (int i=0; i<testOrder.size(); i++)
+      BOOST_LOG_TRIVIAL(debug) << testOrder[i];
+    BOOST_LOG_TRIVIAL(debug) << "*************************************************";
     if (passAll) {
       return index;
     }
@@ -99,4 +128,13 @@ uint SearchEngine::getCandidateCount() {
 
 uint SearchEngine::getTestCount() {
   return testCounter;
+}
+
+std::vector<int> SearchEngine::changeSensitivity(std::vector<int> iVec, int index)
+{
+    std::vector<int>::iterator it = iVec.begin()+index;
+    int temp = iVec[index];
+    iVec.erase(it);
+    iVec.insert(iVec.begin(), temp);
+    return iVec;
 }

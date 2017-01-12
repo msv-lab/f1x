@@ -18,8 +18,11 @@
 
 #pragma once
 
+#include <string>
 #include <unordered_set>
 #include <unordered_map>
+#include <map>
+#include <vector>
 #include "RepairUtil.h"
 #include "Project.h"
 #include "Runtime.h"
@@ -29,13 +32,16 @@ class SearchEngine {
   SearchEngine(const std::vector<std::string> &tests,
                TestingFramework &tester,
                Runtime &runtime,
-               const Config &cfg);
+               const Config &cfg,
+               std::map<std::string, std::vector<int>> relatedTestIndex);
 
   uint findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom);
   uint getCandidateCount();
   uint getTestCount();
 
  private:
+ 
+  std::vector<int> changeSensitivity(std::vector<int> iVec, int index);
   std::vector<std::string> tests;
   TestingFramework tester;
   Runtime runtime;
@@ -44,4 +50,5 @@ class SearchEngine {
   Config cfg;
   std::unordered_set<uint> failing;
   std::unordered_map<std::string, std::unordered_set<uint>> passing;
+  std::map<std::string, std::vector<int>> testCaseSensitivity;
 };

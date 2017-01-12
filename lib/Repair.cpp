@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <iomanip>
 #include <map>
+#include <set>
+#include <vector>
 
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
@@ -49,7 +51,10 @@ const std::string PROFILE_HEADER_FILE_NAME = "Recoder.h";
 const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
 const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
 
-std::map<string, int> interestedLine;
+std::map<std::string, std::vector<int>> relatedTestIndex;
+std::set<std::string> interestedLine;
+
+int testNum;
 
 double score(const SearchSpaceElement &el) {
   double result = (double) el.meta.distance;
@@ -84,26 +89,57 @@ double score(const SearchSpaceElement &el) {
   return result;
 }
 
-void mergeInterestedLine(const char* tempFile)
+bool mergerelatedTestIndex(int testIndex, const char* tempFile, bool pass)
 {
   std::ifstream infile(tempFile);
+  if(!infile)
+    return false;
+  
   std::string line;
   BOOST_LOG_TRIVIAL(debug) << "merging profiling recode:" << tempFile << "\n";
   while(std::getline(infile, line))
   {
-    if(interestedLine.find(line) == interestedLine.end())
-      interestedLine[line] = 1;
+    if(relatedTestIndex.find(line) == relatedTestIndex.end())
+    {
+      std::vector<int> temp;
+      relatedTestIndex[line] = temp;
+    }    
+    relatedTestIndex[line].push_back(testIndex);
+    
+    if(!pass)
+      interestedLine.insert(line);
   }
+  return true;
 }
 
-void recordinterestedLine(const char* interestingLocationFile)
+void recordrelatedTestIndex(const char* interestingLocationFile)
 {
-  BOOST_LOG_TRIVIAL(info) << "writing profiling data into " << interestingLocationFile << "\n";
   std::ofstream outfile(interestingLocationFile, std::ios::app);
-  std::map<string, int>::iterator it = interestedLine.begin();
-  while(it!=interestedLine.end())
+  BOOST_LOG_TRIVIAL(info) << "extracting the insteresting line!\n";
+  std::map<string, vector<int>>::iterator it = relatedTestIndex.begin();
+  while(it!=relatedTestIndex.end())
   {
-    outfile << it->first << "\n";
+  
+    if(interestedLine.find(it->first) == interestedLine.end())
+    {
+      relatedTestIndex.erase(it); //this is not an interesting line that should be instrumented
+    }
+    it++;
+  }
+    /*else
+      outfile << "0 ";*/
+  BOOST_LOG_TRIVIAL(info) << "writing profiling data into " << interestingLocationFile << "\n";
+  it = relatedTestIndex.begin();
+  while(it!=relatedTestIndex.end())
+  {
+    vector<int> tests = it->second;
+    outfile << it->first;
+    for(int i=0; i<tests.size(); i++)
+    {
+        outfile << " " << tests[i];
+    }
+    outfile << "\n";
+    
     it++;
   }
 }
@@ -135,6 +171,8 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "repairing project " << project.getRoot();
 
+  testNum = tests.size();  
+  
   pair<bool, bool> initialStatus = project.initialBuild();
   if (! initialStatus.first) {
     BOOST_LOG_TRIVIAL(warning) << "compilation returned non-zero exit code";
@@ -175,22 +213,26 @@ bool repair(Project &project,
   //fs::path tempFile;//the excution path will be saved in this file
   //tempFile  = workDir / fs::path(PROFILE_FILE_NAME);
   BOOST_LOG_TRIVIAL(info) << "profiling all the test cases\n";
-  for (auto &test : tests) {
+  //for (auto &test : tests) {
+  for (int i=0; i<tests.size(); i++) {
   
+    auto test = tests[i];
     pass = tester.isPassing(test);
-    if(!pass)
+
+    bool ret = mergerelatedTestIndex(i, ilFile.c_str(), pass);
+    if(ret)
     {
-      mergeInterestedLine(ilFile.c_str());
+      std::ostringstream cmd;
+      cmd << "rm " << ilFile.c_str();
+      system(cmd.str().c_str());
     }
-    std::ostringstream cmd;
-    cmd << "rm " << ilFile.c_str();
-    system(cmd.str().c_str());
+
   }
   
   //the excution path of the failing test case will be saved in this file
   //fs::path interestiongLocationFile;
   //interestiongLocationFile = workDir / fs::path(INTRESTING_LOCATIONS_FILE_NAME);
-  recordinterestedLine(ilFile.c_str());
+  recordrelatedTestIndex(ilFile.c_str());
   
   project.restoreOriginalFiles();
 
@@ -248,7 +290,7 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();
   
-  SearchEngine engine(tests, tester, runtime, cfg);
+  SearchEngine engine(tests, tester, runtime, cfg, relatedTestIndex);
 
   uint last = 0;
   uint patchCount = 0;

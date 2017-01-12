@@ -18,7 +18,7 @@
 
 #include <sstream>
 #include <fstream>
-#include<iostream>
+#include <iostream>
 
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
