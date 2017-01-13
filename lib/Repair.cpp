@@ -103,8 +103,19 @@ bool mergerelatedTestIndex(int testIndex, const char* tempFile, bool pass)
     {
       std::vector<int> temp;
       relatedTestIndex[line] = temp;
-    }    
-    relatedTestIndex[line].push_back(testIndex);
+    }
+    bool findTestIndex = false;
+    std::vector<int> currentRelateTest = relatedTestIndex[line];
+    for(int i=0; i<currentRelateTest.size(); i++)
+    {
+      if(currentRelateTest[i] == testIndex)
+      {
+        findTestIndex = true;
+        break;
+      }
+    }
+    if(!findTestIndex)
+      relatedTestIndex[line].push_back(testIndex);
     
     if(!pass)
       interestedLine.insert(line);

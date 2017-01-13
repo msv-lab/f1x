@@ -53,7 +53,6 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
 uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom) {
 
   uint index = indexFrom;
-
   for (; index < searchSpace.size(); index++) {
     candidateCounter++;
     auto elem = searchSpace[index];
