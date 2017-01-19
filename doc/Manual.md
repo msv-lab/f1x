@@ -21,7 +21,7 @@ f1x expression synthesizer is bit-precise; it supports all signed and unsigned b
 
 ### Prioritization ###
 
-f1x employs change minimality as the default patch prioritization strategy. It guarantees to generate the syntactically minimal patch in the entire search space. The syntactical change is measured in the number of changed AST nodes. For certain situations (e.g. how to compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical manner.
+f1x employs change minimality as the default patch prioritization, but it is straightforward to add support for other strategies. It guarantees to generate the syntactically minimal patch (global minimum) in the entire search space. The syntactical change is measured in the number of changed AST nodes. For certain situations (e.g. how to compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical manner.
 
 ## Usage ##
 
@@ -39,7 +39,7 @@ It order to let f1x transform and compile your application, you need to substitu
 
 ### Testing framework ###
 
-f1x needs to be able to execute an arbitrary test and to identify if this test passes or fails. To abstract over testing frameworks, f1x uses the following concepts:
+f1x needs to be able to execute an arbitrary test and to identify if this test passes or fails. To abstract over testing frameworks, f1x uses the following entities:
 
 - A set of unique test identifiers (e.g. "test1", "test2", ...)
 - A test driver executable that accepts a test identifier as the only argument, runs the corresponding test, and terminates with zero exit code if and only if the test passes.
@@ -82,7 +82,7 @@ The build command. If omitted, `make -e` is used. The build command is executed 
 
 #### -o [ --output ] PATH ####
 
-The path to the output patch (or directory when used with `--all`). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the direcotry `<SRC>-<TIME>` when used with `--all`)
+The path to the output patch (or directory when used with `--all`). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the directory `<SRC>-<TIME>` when used with `--all`)
 
 #### -a [ --all ] ####
 
