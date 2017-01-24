@@ -87,6 +87,12 @@ bool Profiler::compile() {
   return status == 0;
 }
 
+void Profiler::clearTrace() {
+  fs::path traceFile = workDir / TRACE_FILE_NAME;
+  fs::ofstream out;
+  out.open(traceFile, std::ofstream::out | std::ofstream::trunc);
+  out.close();
+}
 
 void Profiler::mergeTrace(int testIndex, bool isPassing) {
   fs::path traceFile = workDir / TRACE_FILE_NAME;
@@ -109,7 +115,7 @@ void Profiler::mergeTrace(int testIndex, bool isPassing) {
     }
   }
   if (covered.empty()) {
-    BOOST_LOG_TRIVIAL(warning) << "test no. " << testIndex << " produces empty trace";
+    BOOST_LOG_TRIVIAL(debug) << "test no. " << testIndex << " produces empty trace";
   }
 
   if (!isPassing) {

@@ -155,8 +155,10 @@ bool repair(Project &project,
 
   project.restoreOriginalFiles();
 
+  BOOST_LOG_TRIVIAL(info) << "profiling";
   for (int i = 0; i < tests.size(); i++) {
     auto test = tests[i];
+    profiler.clearTrace();
     bool isPassing = tester.isPassing(test);
     profiler.mergeTrace(i, isPassing);
   }
@@ -251,7 +253,7 @@ bool repair(Project &project,
           valid = false;
           BOOST_LOG_TRIVIAL(warning) << "generated patch failed validation";
           for (auto &t : failing) {
-            BOOST_LOG_TRIVIAL(debug) << "failed test: " << t;
+            BOOST_LOG_TRIVIAL(info) << "failed test: " << t;
           }
         }
 
@@ -263,8 +265,10 @@ bool repair(Project &project,
         project.restoreOriginalFiles();
       }
 
-      if (!valid)
+      if (!valid) {
+        last++;
         continue;
+      }
 
       fs::path patchFile = patchOutput;
       if (cfg.generateAll) {

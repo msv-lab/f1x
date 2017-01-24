@@ -284,7 +284,7 @@ int main (int argc, char *argv[])
   bool found = false;
   {
     Project project(root, files, buildCmd, workDir, cfg);
-    TestingFramework tester(project, driver, testTimeout, cfg);
+    TestingFramework tester(project, driver, testTimeout, workDir, cfg);
     
     found = repair(project, tester, tests, workDir, output, cfg);
   }

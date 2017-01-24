@@ -28,7 +28,14 @@
 using namespace clang;
 using namespace ast_matchers;
 
+static bool alreadyTransformed = false;
+
 bool ProfileAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
+  //NOTE: this is a wierd problem: sometimes this action is called two times that causes crash
+  if (alreadyTransformed) {
+    return false;
+  }
+  alreadyTransformed = true;
   return true;
 }
 

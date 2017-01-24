@@ -65,7 +65,15 @@ bool isInterestingLocation(uint fileId, uint beginLine, uint beginColumn, uint e
   return true;
 }
 
+static bool alreadyTransformed = false;
+
 bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
+  //NOTE: this is a wierd problem: sometimes this action is called two times that causes crash
+  if (alreadyTransformed) {
+    return false;
+  }
+  alreadyTransformed = true;
+
   candidateLocations.SetArray();
   initInterestingLocations();
   return true;

@@ -42,6 +42,7 @@ class Profiler {
   std::unordered_map<Location, std::vector<int>> getRelatedTestIndexes();
   boost::filesystem::path getProfile();
   void mergeTrace(int testIndex, bool isPassing);
+  void clearTrace();
 
  private:
   boost::filesystem::path workDir;

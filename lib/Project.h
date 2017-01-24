@@ -81,6 +81,7 @@ class TestingFramework {
   TestingFramework(const Project &project,
                    const boost::filesystem::path &driver,
                    const uint testTimeout,
+                   const boost::filesystem::path &workDir,
                    const Config &cfg);
   
   bool isPassing(const std::string &testId);
@@ -89,6 +90,7 @@ class TestingFramework {
   Project project;
   boost::filesystem::path driver;
   uint testTimeout;
+  boost::filesystem::path workDir;
   Config cfg;
 };
 

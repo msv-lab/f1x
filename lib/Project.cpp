@@ -333,14 +333,17 @@ bool Project::applyPatch(const SearchSpaceElement &patch) {
 TestingFramework::TestingFramework(const Project &project,
                                    const boost::filesystem::path &driver,
                                    const uint testTimeout,
+                                   const boost::filesystem::path &workDir,
                                    const Config &cfg):
   project(project),
   driver(driver),
   testTimeout(testTimeout),
+  workDir(workDir),
   cfg(cfg) {}
 
 bool TestingFramework::isPassing(const std::string &testId) {
   FromDirectory dir(project.getRoot());
+  InEnvironment env(map<string, string>{{"LD_LIBRARY_PATH", workDir.string()}});
   std::stringstream cmd;
   cmd << "timeout " << std::setprecision(3) << ((double) testTimeout) / 1000.0 << "s"
       << " " << driver.string() << " " << testId;
