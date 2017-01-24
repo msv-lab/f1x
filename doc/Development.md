@@ -27,6 +27,7 @@ f1x-transform represents the extracted expressions in the following way:
     [
         {
             "defect": "condition",
+            "locId": 1,
             "location" : {...},
             "expression": {...},
             "components": [...]
@@ -38,7 +39,6 @@ Where each location is represented as follows:
 
     {
         "fileId": 0,
-        "locId": 1;
         "beginLine": 1,
         "beginColumn": 2,
         "endLine": 1,

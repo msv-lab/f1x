@@ -38,14 +38,16 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
                            Runtime &runtime,
                            const Config &cfg,
                            shared_ptr<unordered_map<uint, unordered_set<F1XID>>> groupable,
-                           std::map<string, std::vector<int>> relatedTestIndex):
+                           std::unordered_map<Location, std::vector<int>> relatedTestIndexes):
   tests(tests),
   tester(tester),
   runtime(runtime),
   cfg(cfg),
-  candidateCounter(0),
-  testCounter(0),
-  groupable(groupable) {
+  groupable(groupable),
+  relatedTestIndexes(relatedTestIndexes) {
+  
+  stat.explorationCounter = 0;
+  stat.executionCounter = 0;
 
   //FIXME: I should use evaluation table instead
   failing = {};
@@ -53,16 +55,15 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   for (auto &test : tests) {
     passing[test] = {};
   }
-  testCaseSensitivity = relatedTestIndex;
 }
 
 uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom) {
 
   uint index = indexFrom;
   for (; index < searchSpace.size(); index++) {
-    candidateCounter++;
-    auto elem = searchSpace[index];
-    uint locId = elem.buggy->location.locId;
+    stat.explorationCounter++;
+    const SearchSpaceElement &elem = searchSpace[index];
+    uint locId = elem.buggy->locId;
     if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
       if (failing.count(elem.id))
         continue;
@@ -77,28 +78,19 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
     
     std::shared_ptr<CandidateLocation> cl = elem.buggy;
     
-    std::ostringstream repairLoc;
-    repairLoc << cl->location.beginLine << "_"
-              << cl->location.beginColumn << "_"
-              << cl->location.endLine << "_"
-              << cl->location.endColumn << "_"
-              << cl->location.fileId;
-    std::vector<int> testOrder = testCaseSensitivity[repairLoc.str()];
+    std::vector<int> testOrder = relatedTestIndexes[elem.buggy->location];
     
-    BOOST_LOG_TRIVIAL(debug) << "***************before sorting********************";
-    for (int i=0; i<testOrder.size(); i++)
-      BOOST_LOG_TRIVIAL(debug) << testOrder[i] << " ";
-    BOOST_LOG_TRIVIAL(debug) << "*************************************************";
-    
-    for (int i=0; i<testOrder.size(); i++) {
+    for (int i = 0; i < testOrder.size(); i++) {
       auto test = tests[testOrder[i]];
-      BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizeF1XID(elem.id) << " with test " << test;
+      BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizeF1XID(elem.id) 
+                               << " with test " << test;
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         if (passing[test].count(elem.id))
           continue;
+        runtime.clearPartition();
         runtime.setPartition((*groupable)[locId]);
       }
-      testCounter++;
+      stat.executionCounter++;
       passAll = tester.isPassing(test);
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         unordered_set<F1XID> partition = runtime.getPartition();
@@ -113,17 +105,12 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
           failing.insert(partition.begin(), partition.end());
         }
       }
-      if (!passAll)
-      {
-        testCaseSensitivity[repairLoc.str()] = changeSensitivity(testOrder,i);
+      if (!passAll) {
+        changeSensitivity(relatedTestIndexes[elem.buggy->location], i);
         break;
       }
     }
-    BOOST_LOG_TRIVIAL(debug) << "*****************after sorting*******************";
-    testOrder = testCaseSensitivity[repairLoc.str()];
-    for (int i=0; i<testOrder.size(); i++)
-      BOOST_LOG_TRIVIAL(debug) << testOrder[i];
-    BOOST_LOG_TRIVIAL(debug) << "*************************************************";
+
     if (passAll) {
       return index;
     }
@@ -132,19 +119,14 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
   return index;
 }
 
-uint SearchEngine::getCandidateCount() {
-  return candidateCounter;
+SearchStatistics SearchEngine::getStatistics() {
+  return stat;
 }
 
-uint SearchEngine::getTestCount() {
-  return testCounter;
-}
-
-std::vector<int> SearchEngine::changeSensitivity(std::vector<int> iVec, int index)
+void SearchEngine::changeSensitivity(std::vector<int> &testOrder, int index)
 {
-    std::vector<int>::iterator it = iVec.begin()+index;
-    int temp = iVec[index];
-    iVec.erase(it);
-    iVec.insert(iVec.begin(), temp);
-    return iVec;
+    std::vector<int>::iterator it = testOrder.begin() + index;
+    int temp = testOrder[index];
+    testOrder.erase(it);
+    testOrder.insert(testOrder.begin(), temp);
 }

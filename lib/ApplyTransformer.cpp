@@ -111,7 +111,7 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
 ApplicationExpressionHandler::ApplicationExpressionHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
 void ApplicationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
-  if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>("repairable")) {
+  if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>(BOUND)) {
       SourceManager &srcMgr = Rewrite.getSourceMgr();
 
       SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);

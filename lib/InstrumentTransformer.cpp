@@ -17,6 +17,7 @@
 */
 
 #include <sstream>
+#include <unordered_set>
 #include <fstream>
 
 #include <rapidjson/document.h>
@@ -40,44 +41,33 @@ using std::string;
 
 json::Document candidateLocations;
 
-std::map<std::string, int> GlobalInterestedLine;
-void initInterestingLocation()
-{
-  std::string interestLocFile = globalOutputFile;
-  std::size_t found = interestLocFile.find_last_of("/");
-  if (found!=std::string::npos)
-    interestLocFile.erase(found+1);
-  interestLocFile.append("Recoder");
+std::unordered_set<std::string> interestingLocations;
 
-  std::ifstream infile(interestLocFile.c_str());
+void initInterestingLocations() {
+  std::ifstream infile(globalProfileFile);
   std::string line;
-  while(std::getline(infile, line))
-  {
-    std::string::size_type pos1, pos2;
-    pos2 = line.find(" ");
-    pos1 = 0;
-    std::string isInterestingLine = line.substr(pos1, pos2-pos1);
-    GlobalInterestedLine[isInterestingLine] = 1;
-    /*if(!isInterestingLine.compare("1"))
-    {
-      pos1 = pos2+1;
-      pos2 = line.find(" ", pos1);
-      std::string lineId = line.substr(pos1, pos2-pos1);
-      GlobalInterestedLine[lineId] = 1;
-    }*/
+  while(std::getline(infile, line)) {
+    interestingLocations.insert(line);
   }
 }
 
-bool isInterestingLocation(std::string location)
-{
-  if(GlobalInterestedLine.find(location) == GlobalInterestedLine.end())
+bool isInterestingLocation(uint fileId, uint beginLine, uint beginColumn, uint endLine, uint endColumn) {
+  std::ostringstream location;
+  location << fileId << " "
+           << beginLine << " "
+           << beginColumn << " "
+           << endLine << " "
+           << endColumn;
+
+  if(interestingLocations.find(location.str()) == interestingLocations.end())
     return false;
+
   return true;
 }
 
 bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
   candidateLocations.SetArray();
-  initInterestingLocation();
+  initInterestingLocations();
   return true;
 }
 
@@ -116,7 +106,7 @@ void InstrumentationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
 InstrumentationStatementHandler::InstrumentationStatementHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
 void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result) {
-  if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {//Bound = repairable
+  if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();
 
@@ -125,10 +115,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
 
     if(!isTopLevelStatement(stmt, Result.Context))
       return;
-
-    uint locId = f1xloc(globalBaseLocId, globalFileId);
-    globalBaseLocId++;
-      
+   
     SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
     uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
@@ -136,17 +123,17 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-    std::ostringstream location;
-    location << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn 
-             << "_" << globalFileId;
-                 
-    if (!inRange(beginLine) || !isInterestingLocation(location.str()))
+               
+    if (!inRange(beginLine) || !isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
       return;
     
     // NOTE: to avoid extracting locations from headers:
     std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
+
+    uint locId = f1xloc(globalBaseLocId, globalFileId);
+    globalBaseLocId++;
                  
     llvm::errs() << beginLine << " "
                  << beginColumn << " "
@@ -162,7 +149,8 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     exprJSON.AddMember("type", json::Value().SetString("int"), candidateLocations.GetAllocator());
     exprJSON.AddMember("repr", json::Value().SetString("1"), candidateLocations.GetAllocator());
     candidateLoc.AddMember("expression", exprJSON, candidateLocations.GetAllocator());
-    json::Value locJSON = locToJSON(globalFileId, locId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
+    candidateLoc.AddMember("locId", json::Value().SetInt(locId), candidateLocations.GetAllocator());
+    json::Value locJSON = locToJSON(globalFileId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
     candidateLoc.AddMember("location", locJSON, candidateLocations.GetAllocator());
     json::Value componentsJSON(json::kArrayType);    
     vector<json::Value> components = collectComponents(stmt, beginLine, Result.Context, candidateLocations.GetAllocator());
@@ -211,15 +199,12 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
 InstrumentationExpressionHandler::InstrumentationExpressionHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
 void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
-  if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>("repairable")) {
+  if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>(BOUND)) {
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();
 
     if (insideMacro(expr, srcMgr, langOpts))
       return;
-
-    uint locId = f1xloc(globalBaseLocId, globalFileId);
-    globalBaseLocId++;
 
     SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
@@ -228,16 +213,16 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-    std::ostringstream location;
-    location << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn 
-             << "_" << globalFileId;
-                 
-    if (!inRange(beginLine) || !isInterestingLocation(location.str()))
+    if (!inRange(beginLine) || !isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
       return;
+
     // NOTE: to avoid extracting locations from headers:
     std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
+
+    uint locId = f1xloc(globalBaseLocId, globalFileId);
+    globalBaseLocId++;
 
     llvm::errs() << beginLine << " "
                  << beginColumn << " "
@@ -251,7 +236,8 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     candidateLoc.AddMember("defect", json::Value().SetString("expression"), candidateLocations.GetAllocator());
     json::Value exprJSON = stmtToJSON(expr, candidateLocations.GetAllocator());
     candidateLoc.AddMember("expression", exprJSON, candidateLocations.GetAllocator());
-    json::Value locJSON = locToJSON(globalFileId, locId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
+    candidateLoc.AddMember("locId", json::Value().SetInt(locId), candidateLocations.GetAllocator());
+    json::Value locJSON = locToJSON(globalFileId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
     candidateLoc.AddMember("location", locJSON, candidateLocations.GetAllocator());
     json::Value componentsJSON(json::kArrayType);
     vector<json::Value> components = collectComponents(expr, beginLine, Result.Context, candidateLocations.GetAllocator());

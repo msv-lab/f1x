@@ -47,6 +47,7 @@ uint globalFileId;
 uint globalFromLine;
 uint globalToLine;
 string globalOutputFile;
+string globalProfileFile;
 uint globalBeginLine;
 uint globalBeginColumn;
 uint globalEndLine;
@@ -472,11 +473,10 @@ json::Value stmtToJSON(const clang::Stmt *stmt,
 }
 
 
-json::Value locToJSON(uint fileId, uint locId, uint bl, uint bc, uint el, uint ec,
+json::Value locToJSON(uint fileId, uint bl, uint bc, uint el, uint ec,
                       json::Document::AllocatorType &allocator) {
   json::Value entry(json::kObjectType);
   entry.AddMember("fileId", json::Value().SetInt(fileId), allocator);
-  entry.AddMember("locId", json::Value().SetInt(locId), allocator);
   entry.AddMember("beginLine", json::Value().SetInt(bl), allocator);
   entry.AddMember("beginColumn", json::Value().SetInt(bc), allocator);
   entry.AddMember("endLine", json::Value().SetInt(el), allocator);

@@ -27,6 +27,13 @@
 #include "Project.h"
 #include "Runtime.h"
 
+
+struct SearchStatistics {
+  uint explorationCounter;
+  uint executionCounter;
+};
+
+
 class SearchEngine {
  public:
   SearchEngine(const std::vector<std::string> &tests,
@@ -34,23 +41,21 @@ class SearchEngine {
                Runtime &runtime,
                const Config &cfg,
                std::shared_ptr<std::unordered_map<uint, std::unordered_set<F1XID>>> groupable,
-               std::map<std::string, std::vector<int>> relatedTestIndex);
+               std::unordered_map<Location, std::vector<int>> relatedTestIndexes);
 
   uint findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom);
-  uint getCandidateCount();
-  uint getTestCount();
+  SearchStatistics getStatistics();
 
  private:
  
-  std::vector<int> changeSensitivity(std::vector<int> iVec, int index);
+  void changeSensitivity(std::vector<int> &testOrder, int index);
   std::vector<std::string> tests;
   TestingFramework tester;
   Runtime runtime;
-  uint candidateCounter;
-  uint testCounter; //FIXME: this should be refactored;
   Config cfg;
+  SearchStatistics stat;
   std::shared_ptr<std::unordered_map<uint, std::unordered_set<F1XID>>> groupable;
   std::unordered_set<F1XID> failing;
   std::unordered_map<std::string, std::unordered_set<F1XID>> passing;
-  std::map<std::string, std::vector<int>> testCaseSensitivity;
+  std::unordered_map<Location, std::vector<int>> relatedTestIndexes;
 };

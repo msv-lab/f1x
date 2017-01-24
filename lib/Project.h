@@ -34,7 +34,7 @@ struct ProjectFile {
 class Project {
  public:
   /* project saves original files on creation
-     the conventioned is to restore original after every modification */
+     the convention is to restore original after every modification */
   Project(const boost::filesystem::path &root,
           const std::vector<ProjectFile> &files,
           const std::string &buildCmd,          
@@ -49,14 +49,15 @@ class Project {
   bool buildWithRuntime(const boost::filesystem::path &header);
   void saveOriginalFiles();
   void saveInstrumentedFiles();
-  void saveProfileInstFiles();
+  void saveProfileInstumentedFiles();
   void savePatchedFiles();
   void restoreOriginalFiles();
   void restoreInstrumentedFiles();
   void computeDiff(const ProjectFile &file,
                    const boost::filesystem::path &outputFile);
   bool instrumentFile(const ProjectFile &file,
-                      const boost::filesystem::path &outputFile, const bool isProfile);
+                      const boost::filesystem::path &outputFile,
+                      const boost::filesystem::path *profile = nullptr);
   bool applyPatch(const SearchSpaceElement &patch);
   boost::filesystem::path getRoot() const;
   std::vector<ProjectFile> getFiles() const;

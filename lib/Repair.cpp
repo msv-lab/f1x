@@ -33,6 +33,7 @@
 #include "RepairUtil.h"
 #include "Project.h"
 #include "Runtime.h"
+#include "Profiler.h"
 #include "Synthesis.h"
 #include "SearchEngine.h"
 
@@ -47,17 +48,6 @@ using std::unordered_set;
 
 const string CANDADATE_LOCATIONS_FILE_NAME = "extracted.json";
 
-const std::string PROFILE_FILE_NAME = "Recoder";
-const std::string PROFILE_SOURCE_FILE_NAME = "Recoder.cpp";
-const std::string PROFILE_HEADER_FILE_NAME = "Recoder.h";
-
-const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
-const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
-
-std::map<std::string, std::vector<int>> relatedTestIndex;
-std::set<std::string> interestedLine;
-
-int testNum;
 
 double score(const SearchSpaceElement &el) {
   double result = (double) el.meta.distance;
@@ -92,71 +82,6 @@ double score(const SearchSpaceElement &el) {
   return result;
 }
 
-bool mergerelatedTestIndex(int testIndex, const char* tempFile, bool pass)
-{
-  std::ifstream infile(tempFile);
-  if(!infile)
-    return false;
-  
-  std::string line;
-  BOOST_LOG_TRIVIAL(debug) << "merging profiling recode:" << tempFile << "\n";
-  while(std::getline(infile, line))
-  {
-    if(relatedTestIndex.find(line) == relatedTestIndex.end())
-    {
-      std::vector<int> temp;
-      relatedTestIndex[line] = temp;
-    }
-    bool findTestIndex = false;
-    std::vector<int> currentRelateTest = relatedTestIndex[line];
-    for(int i=0; i<currentRelateTest.size(); i++)
-    {
-      if(currentRelateTest[i] == testIndex)
-      {
-        findTestIndex = true;
-        break;
-      }
-    }
-    if(!findTestIndex)
-      relatedTestIndex[line].push_back(testIndex);
-    
-    if(!pass)
-      interestedLine.insert(line);
-  }
-  return true;
-}
-
-void recordrelatedTestIndex(const char* interestingLocationFile)
-{
-  std::ofstream outfile(interestingLocationFile, std::ios::app);
-  BOOST_LOG_TRIVIAL(info) << "extracting the insteresting line!\n";
-  std::map<string, vector<int>>::iterator it = relatedTestIndex.begin();
-  while(it!=relatedTestIndex.end())
-  {
-  
-    if(interestedLine.find(it->first) == interestedLine.end())
-    {
-      relatedTestIndex.erase(it); //this is not an interesting line that should be instrumented
-    }
-    it++;
-  }
-    /*else
-      outfile << "0 ";*/
-  BOOST_LOG_TRIVIAL(info) << "writing profiling data into " << interestingLocationFile << "\n";
-  it = relatedTestIndex.begin();
-  while(it!=relatedTestIndex.end())
-  {
-    vector<int> tests = it->second;
-    outfile << it->first;
-    for(int i=0; i<tests.size(); i++)
-    {
-        outfile << " " << tests[i];
-    }
-    outfile << "\n";
-    
-    it++;
-  }
-}
 
 bool comparePatches(const SearchSpaceElement &a, const SearchSpaceElement &b) {
   return score(a) < score(b);
@@ -175,10 +100,11 @@ void dumpSearchSpace(std::vector<SearchSpaceElement> &searchSpace, const fs::pat
   }
 }
 
+
 shared_ptr<unordered_map<uint, unordered_set<F1XID>>> getGroupable(const std::vector<SearchSpaceElement> &searchSpace) {
   shared_ptr<unordered_map<uint, unordered_set<F1XID>>> result(new unordered_map<uint, unordered_set<F1XID>>);
   for (auto &el : searchSpace) {
-    uint locId = el.buggy->location.locId;
+    uint locId = el.buggy->locId;
     if (! result->count(locId)) {
       (*result)[locId] = unordered_set<F1XID>();
     }
@@ -196,8 +122,6 @@ bool repair(Project &project,
             const Config &cfg) {
 
   BOOST_LOG_TRIVIAL(info) << "repairing project " << project.getRoot();
-
-  testNum = tests.size();  
   
   pair<bool, bool> initialBuildStatus = project.initialBuild();
   if (! initialBuildStatus.first) {
@@ -208,65 +132,40 @@ bool repair(Project &project,
     return false;
   }
 
-/**********************************************/
-//this part is used to profile
-  fs::path ilFile = workDir / fs::path(PROFILE_FILE_NAME);
-  BOOST_LOG_TRIVIAL(info) << "instrumenting for profile\n";
-  //instrument candidate file to record the expressions and statements excuted by a test case
-  bool profileInstSuccess = project.instrumentFile(project.getFiles()[0], ilFile, true);
+  fs::path traceFile = workDir / TRACE_FILE_NAME;
+
+  bool profileInstSuccess = project.instrumentFile(project.getFiles()[0], traceFile);
   if (! profileInstSuccess) {
     BOOST_LOG_TRIVIAL(warning) << "profiling instrumentation returned non-zero exit code";
   }
+  project.saveProfileInstumentedFiles();
 
-  project.saveProfileInstFiles();
+  Profiler profiler(workDir, cfg);
 
-//compile and excute all tests @waiting to implement
-  Runtime profileRuntime(workDir, cfg, PROFILE_SOURCE_FILE_NAME, PROFILE_HEADER_FILE_NAME);
-  bool profileSuccess = profileRuntime.compile();
-
-  if (! profileSuccess) {
-    BOOST_LOG_TRIVIAL(error) << "profile compilation failed";
+  bool profilerBuildSuccess = profiler.compile();
+  if (! profilerBuildSuccess) {
+    BOOST_LOG_TRIVIAL(error) << "profiler runtime compilation failed";
     return false;
   }
 
-  bool profileRebuildSucceeded = project.buildWithRuntime(profileRuntime.getHeader());
-
+  bool profileRebuildSucceeded = project.buildWithRuntime(profiler.getHeader());
   if (! profileRebuildSucceeded) {
-    BOOST_LOG_TRIVIAL(warning) << "compilation with runtime returned non-zero exit code";
+    BOOST_LOG_TRIVIAL(warning) << "compilation with profiler runtime returned non-zero exit code";
   }
 
-  bool pass = false;
-  //fs::path tempFile;//the excution path will be saved in this file
-  //tempFile  = workDir / fs::path(PROFILE_FILE_NAME);
-  BOOST_LOG_TRIVIAL(info) << "profiling all the test cases\n";
-  //for (auto &test : tests) {
-  for (int i=0; i<tests.size(); i++) {
-  
-    auto test = tests[i];
-    pass = tester.isPassing(test);
-
-    bool ret = mergerelatedTestIndex(i, ilFile.c_str(), pass);
-    if(ret)
-    {
-      std::ostringstream cmd;
-      cmd << "rm " << ilFile.c_str();
-      system(cmd.str().c_str());
-    }
-
-  }
-  
-  //the excution path of the failing test case will be saved in this file
-  //fs::path interestiongLocationFile;
-  //interestiongLocationFile = workDir / fs::path(INTRESTING_LOCATIONS_FILE_NAME);
-  recordrelatedTestIndex(ilFile.c_str());
-  
   project.restoreOriginalFiles();
 
-/**********************************************/
+  for (int i = 0; i < tests.size(); i++) {
+    auto test = tests[i];
+    bool isPassing = tester.isPassing(test);
+    profiler.mergeTrace(i, isPassing);
+  }
+  
+  fs::path profile = profiler.getProfile();
+  
+  fs::path clFile = workDir / CANDADATE_LOCATIONS_FILE_NAME;
 
-  fs::path clFile = workDir / fs::path(CANDADATE_LOCATIONS_FILE_NAME);
-
-  bool instrSuccess = project.instrumentFile(project.getFiles()[0], clFile, false);
+  bool instrSuccess = project.instrumentFile(project.getFiles()[0], clFile, &profile);
   if (! instrSuccess) {
     BOOST_LOG_TRIVIAL(warning) << "transformation returned non-zero exit code";
   }
@@ -282,7 +181,7 @@ bool repair(Project &project,
 
   vector<SearchSpaceElement> searchSpace;
 
-  Runtime runtime(workDir, cfg, RUNTIME_SOURCE_FILE_NAME, RUNTIME_HEADER_FILE_NAME);
+  Runtime runtime(workDir, cfg);
 
   BOOST_LOG_TRIVIAL(info) << "generating search space";
   {
@@ -314,11 +213,9 @@ bool repair(Project &project,
     dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
   }
 
-  shared_ptr<unordered_map<uint, unordered_set<F1XID>>> groupable = getGroupable(searchSpace);
-
   BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();
   
-  SearchEngine engine(tests, tester, runtime, cfg, groupable, relatedTestIndex);
+  SearchEngine engine(tests, tester, runtime, cfg, getGroupable(searchSpace), profiler.getRelatedTestIndexes());
 
   uint last = 0;
   uint patchCount = 0;
@@ -388,8 +285,10 @@ bool repair(Project &project,
     last++;
   }
 
-  BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << engine.getCandidateCount();
-  BOOST_LOG_TRIVIAL(info) << "tests executed: " << engine.getTestCount();
+  SearchStatistics stat = engine.getStatistics();
+
+  BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << stat.explorationCounter;
+  BOOST_LOG_TRIVIAL(info) << "tests executed: " << stat.executionCounter;
 
   return patchCount > 0;
 }

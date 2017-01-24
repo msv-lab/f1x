@@ -22,6 +22,7 @@
 #include <unordered_map>
 
 #include "Synthesis.h"
+#include "Runtime.h"
 
 namespace fs = boost::filesystem;
 
@@ -309,14 +310,15 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
     castStr = "";
     if (runtimeRepr.type == Type::POINTER && cl->original.type != Type::POINTER)
       castStr = "(std::size_t)";
-    OS << "if (candidate_value == " << castStr << expressionToString(runtimeRepr) << ") ofs << " << currentId << " << ' ';" << "\n";
+    // FIXME: currently fill with zeros:
+    OS << "if (candidate_value == " << castStr << expressionToString(runtimeRepr) << ") ofs << " << currentId << " << \" 0 0 0 0 \";" << "\n";
     if (currentId == topId + mutants.size() - 1) {
       OS << "partitioned = true;" << "\n";
     } else {
       OS << "next = " << (currentId + 1) << ";" << "\n";
     }
     OS << "break; " << "\n";
-    F1XID f1xid;
+    F1XID f1xid{0};
     f1xid.base = currentId; //FIXME: this should be more complete
     ss.push_back(SearchSpaceElement{cl, f1xid, candidate.first, candidate.second});
 
@@ -439,7 +441,7 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
        << "(" << makeParameterList(cl) << ")"
        << "{" << "\n";
 
-    fs::path partitionFile = workDir / "partition.txt";
+    fs::path partitionFile = workDir / PARTITION_OUT;
     
     OS << "std::ofstream ofs;" << "\n"
        << "ofs.open (" << partitionFile << ", std::ofstream::out | std::ofstream::app);" << "\n";

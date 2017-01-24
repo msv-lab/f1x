@@ -31,11 +31,9 @@ namespace fs = boost::filesystem;
 using std::vector;
 using std::unordered_set;
 
-Runtime::Runtime(const fs::path &workDir, const Config &cfg, const std::string source, const std::string header): 
+Runtime::Runtime(const fs::path &workDir, const Config &cfg): 
   workDir(workDir),
-  cfg(cfg),
-  source(source),
-  header(header) {};
+  cfg(cfg) {};
 
 void Runtime::setPartition(std::unordered_set<F1XID> ids) {
   fs::path partitionFile = workDir / PARTITION_IN;
@@ -43,6 +41,13 @@ void Runtime::setPartition(std::unordered_set<F1XID> ids) {
   for (auto &id : ids) {
     out << id.base << " " << id.int2 << " " << id.bool2 << " " << id.cond3 << " " << id.param << "\n";
   }
+}
+
+void Runtime::clearPartition() {
+  fs::path partitionFile = workDir / PARTITION_OUT;
+  fs::ofstream out;
+  out.open(partitionFile, std::ofstream::out | std::ofstream::trunc);
+  out.close();
 }
 
 unordered_set<F1XID> Runtime::getPartition() {
@@ -75,16 +80,12 @@ unordered_set<F1XID> Runtime::getPartition() {
   return result;
 }
 
-fs::path Runtime::getWorkDir() {
-  return workDir;
-}
-
 boost::filesystem::path Runtime::getHeader() {
-  return workDir / header;
+  return workDir / RUNTIME_HEADER_FILE_NAME;
 }
 
 boost::filesystem::path Runtime::getSource() {
-  return workDir / source;
+  return workDir / RUNTIME_SOURCE_FILE_NAME;
 }
 
 bool Runtime::compile() {
@@ -92,7 +93,7 @@ bool Runtime::compile() {
   FromDirectory dir(workDir);
   std::stringstream cmd;
   cmd << cfg.runtimeCompiler << " -O2 -fPIC"
-      << " " << source
+      << " " << RUNTIME_SOURCE_FILE_NAME
       << " -shared"
       << " -o libf1xrt.so";
   if (cfg.verbose) {

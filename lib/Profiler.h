@@ -18,33 +18,34 @@
 
 #pragma once
 
+#include <unordered_map>
 #include <unordered_set>
-#include <string>
-#include <sstream>
 
 #include <boost/filesystem.hpp>
 
 #include "F1XConfig.h"
 #include "RepairUtil.h"
 
-const std::string PARTITION_IN = "partition.in";
-const std::string PARTITION_OUT = "partition.out";
-const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
-const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
+const std::string TRACE_FILE_NAME = "trace.txt";
+const std::string PROFILE_FILE_NAME = "profile.txt";
+const std::string PROFILE_SOURCE_FILE_NAME = "profile.cpp";
+const std::string PROFILE_HEADER_FILE_NAME = "profile.h";
 
 
-class Runtime {
+class Profiler {
  public:
-  Runtime(const boost::filesystem::path &workDir, const Config &cfg);
+  Profiler(const boost::filesystem::path &workDir, const Config &cfg);
 
-  void setPartition(std::unordered_set<F1XID> ids);
-  std::unordered_set<F1XID> getPartition();
-  void clearPartition();
-  boost::filesystem::path getSource();
   boost::filesystem::path getHeader();
+  boost::filesystem::path getSource();
   bool compile();
+  std::unordered_map<Location, std::vector<int>> getRelatedTestIndexes();
+  boost::filesystem::path getProfile();
+  void mergeTrace(int testIndex, bool isPassing);
 
  private:
   boost::filesystem::path workDir;
   Config cfg;
+  std::unordered_map<Location, std::vector<int>> relatedTestIndexes;
+  std::unordered_set<Location> interestingLocations;
 };

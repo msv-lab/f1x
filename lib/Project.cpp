@@ -38,6 +38,7 @@ namespace json = rapidjson;
 using std::string;
 using std::vector;
 using std::map;
+using std::shared_ptr;
 
 
 bool projectFilesInCompileDB(fs::path root, vector<ProjectFile> files) {
@@ -230,8 +231,8 @@ void Project::saveInstrumentedFiles() {
   saveFilesWithPrefix("instrumented");
 }
 
-void Project::saveProfileInstFiles() {
-  saveFilesWithPrefix("profileInstr");
+void Project::saveProfileInstumentedFiles() {
+  saveFilesWithPrefix("profile_instrumented");
 }
 
 void Project::savePatchedFiles() {
@@ -265,7 +266,8 @@ void Project::computeDiff(const ProjectFile &file,
 }
 
 bool Project::instrumentFile(const ProjectFile &file,
-                             const boost::filesystem::path &outputFile, const bool isProfile) {
+                             const boost::filesystem::path &outputFile,
+                             const boost::filesystem::path *profile) {
   BOOST_LOG_TRIVIAL(info) << "instrumenting source files";
   
   uint id = getFileId(file);
@@ -274,10 +276,10 @@ bool Project::instrumentFile(const ProjectFile &file,
   std::stringstream cmd;
   cmd << "f1x-transform " << file.relpath.string();
   
-  if(isProfile)
+  if(! profile)
     cmd << " --profile";
   else
-    cmd << " --instrument";
+    cmd << " --instrument " << *profile;
 
   cmd << " --from-line " << file.fromLine
       << " --to-line " << file.toLine

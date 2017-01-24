@@ -138,17 +138,41 @@ enum class DefectClass {
 
 struct Location {
   uint fileId;
-  uint locId;  
   uint beginLine;
   uint beginColumn;
   uint endLine;
   uint endColumn;
+
+  bool operator==(const Location &other) const { 
+    return (fileId == other.fileId
+            && beginLine == other.beginLine
+            && beginColumn == other.beginColumn
+            && endLine == other.endLine
+            && endColumn == other.endColumn);
+  }
 };
+
+
+namespace std {
+  template<>
+    struct hash<Location> {
+    inline size_t operator()(const Location& id) const {
+      size_t value = 0;
+      hash_combine(value, id.fileId);
+      hash_combine(value, id.beginLine);
+      hash_combine(value, id.beginColumn);
+      hash_combine(value, id.endLine);
+      hash_combine(value, id.endColumn);
+      return value;
+    }
+  };
+}
 
 
 struct CandidateLocation {
   DefectClass defect;
   Location location;
+  uint locId; //NOTE: this is different from location, because it is only for schema applications
   Expression original;
   std::vector<Expression> components;
 };

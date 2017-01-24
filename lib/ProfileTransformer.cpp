@@ -20,11 +20,6 @@
 #include <fstream>
 #include <iostream>
 
-#include <rapidjson/document.h>
-#include <rapidjson/istreamwrapper.h>
-#include <rapidjson/ostreamwrapper.h>
-#include <rapidjson/writer.h>
-
 #include "F1XConfig.h"
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
@@ -33,41 +28,11 @@
 using namespace clang;
 using namespace ast_matchers;
 
-namespace json = rapidjson;
-json::Document profileLocations;
-
-std::ostringstream ProfileInstr_CPP;
-std::ostringstream ProfileInstr_H;
-
 bool ProfileAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
-  profileLocations.SetArray();
-  
-  ProfileInstr_CPP << globalOutputFile << ".cpp";
-  ProfileInstr_H << globalOutputFile << ".h";
-  std::ofstream out_CPP(ProfileInstr_CPP.str(), std::ios::app);
-  std::ofstream out_H(ProfileInstr_H.str(), std::ios::app);
-
-  // source
-  out_CPP << "#include<stdio.h>\n"
-          << "#include \"" << ProfileInstr_H.str() << "\"\n\n";
-  out_CPP << "void f1x_RecordStmt(int beginLine, int beginColumn, int endLine, int endColumn, int globalFileId){\n"
-          << "  FILE * file = fopen(\""<< globalOutputFile << "\", \"a+\");\n"
-          << "  fprintf(file, \"%d_%d_%d_%d_%d\\n\", beginLine, beginColumn, endLine, endColumn, globalFileId);\n"
-          << "  fclose(file);\n"
-          << "}\n\n";
-  
-  // header
-  out_H << "#ifdef __cplusplus" << "\n"
-        << "extern \"C\" {" << "\n"
-        << "#endif" << "\n";
-  out_H << "void f1x_RecordStmt(int beginLine, int beginColumn, int endLine, int endColumn, int globalFileId);\n";
-  
   return true;
 }
 
 void ProfileAction::EndSourceFileAction() {
-  
-  std::ofstream out_H(ProfileInstr_H.str(), std::ios::app);
   FileID ID = TheRewriter.getSourceMgr().getMainFileID();
   if (INPLACE_MODIFICATION) {
     overwriteMainChangedFile(TheRewriter);
@@ -76,9 +41,6 @@ void ProfileAction::EndSourceFileAction() {
   } else {
       TheRewriter.getEditBuffer(ID).write(llvm::outs());
   }
-  out_H << "#ifdef __cplusplus" << "\n"
-        << "}" << "\n"
-        << "#endif" << "\n";
 }
 
 std::unique_ptr<ASTConsumer> ProfileAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
@@ -126,9 +88,12 @@ void ProfileStatementHandler::run(const MatchFinder::MatchResult &Result) {
         return;
 
       std::ostringstream replacement;
-      replacement << "({f1x_RecordStmt(" << beginLine << ", " << beginColumn << ", " 
-                  << endLine << ", " << endColumn << ", " << globalFileId <<");"
-                  << toString(stmt) << ";})";
+      replacement << "({ __f1x_trace(" << globalFileId << ", "
+                                       << beginLine << ", "
+                                       << beginColumn << ", "
+                                       << endLine << ", "
+                                       << endColumn << "); "
+                  << toString(stmt) << "; })";
 
       Rewrite.ReplaceText(expandedLoc, replacement.str());
   }
@@ -138,16 +103,13 @@ void ProfileStatementHandler::run(const MatchFinder::MatchResult &Result) {
 ProfileExpressionHandler::ProfileExpressionHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
 void ProfileExpressionHandler::run(const MatchFinder::MatchResult &Result) {
-  if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>("repairable")) {
+  if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>(BOUND)) {
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();
 
     if (insideMacro(expr, srcMgr, langOpts))
       return;
 
-    uint locId = f1xloc(globalBaseLocId, globalFileId);
-    globalBaseLocId++;
-    
     SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
     uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
@@ -163,38 +125,14 @@ void ProfileExpressionHandler::run(const MatchFinder::MatchResult &Result) {
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
-    std::ofstream out_CPP(ProfileInstr_CPP.str(), std::ios::app);
-    std::ofstream out_H(ProfileInstr_H.str(), std::ios::app);
-    
-    json::Value exprJSON = stmtToJSON(expr, profileLocations.GetAllocator());
-    const char* type = exprJSON["type"].GetString();
-    
     std::ostringstream stringStream;
-    stringStream << "({f1x_RecordStmt(" << beginLine << ", " << beginColumn << ", " 
-                  << endLine << ", " << endColumn << ", " << globalFileId <<");"
-                  << toString(expr) << ";})";
+    stringStream << "({ __f1x_trace(" << globalFileId << ", " 
+                                      << beginLine << ", "
+                                      << beginColumn << ", " 
+                                      << endLine << ", "
+                                      << endColumn << "); "
+                 << toString(expr) << "; })";
     
-    /*std::ostringstream functionName;
-    functionName << "__f1x_" <<  beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn 
-                 << "_" << "_" << globalBaseLocId;
-                 
-    //source
-    out_CPP << type << " " << functionName.str() 
-        << "( int beginLine, int  beginColumn, int endLine, int endColumn, int globalFileId, " 
-        << type <<" value" << "){\n"
-        <<"\tf1x_RecordStmt( beginLine, beginColumn, endLine, endColumn, globalFileId);\n"
-        <<"\treturn value;" << "\n}\n";
-    //head
-    out_H << type << " " << functionName.str() 
-          << "( int beginLine, int  beginColumn, int endLine, int endColumn, int globalFileId, " 
-          << type <<" value" << ");\n";
-        
-    std::ostringstream stringStream;
-    stringStream << functionName.str() << "(" << beginLine << ", " << beginColumn
-                 << ", " << endLine << ", " << endColumn << ", " << globalFileId
-                 << ", " << toString(expr) << ")";*/
-                 
-
     Rewrite.ReplaceText(expandedLoc, stringStream.str());
   }
 }

@@ -375,7 +375,6 @@ vector<shared_ptr<CandidateLocation>> loadCandidateLocations(const fs::path &pat
 
     Location location {
       loc["location"]["fileId"].GetUint(),
-      loc["location"]["locId"].GetUint(),
       loc["location"]["beginLine"].GetUint(),
       loc["location"]["beginColumn"].GetUint(),
       loc["location"]["endLine"].GetUint(),
@@ -389,7 +388,9 @@ vector<shared_ptr<CandidateLocation>> loadCandidateLocations(const fs::path &pat
       components.push_back(convertExpression(c));
     }
 
-    shared_ptr<CandidateLocation> cl(new CandidateLocation{defect, location, expression, components});
+    uint locId = loc["locId"].GetUint();
+
+    shared_ptr<CandidateLocation> cl(new CandidateLocation{defect, location, locId, expression, components});
     result.push_back(cl);
   }
 

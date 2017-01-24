@@ -30,6 +30,7 @@ const bool INPLACE_MODIFICATION = true;
 extern uint globalFileId;
 extern uint globalFromLine;
 extern uint globalToLine;
+extern std::string globalProfileFile;
 extern std::string globalOutputFile;
 extern uint globalBeginLine;
 extern uint globalBeginColumn;
@@ -62,7 +63,7 @@ rapidjson::Value stmtToJSON(const clang::Stmt *stmt,
                             rapidjson::Document::AllocatorType &allocator);
 
 
-rapidjson::Value locToJSON(uint fileId, uint locId, uint bl, uint bc, uint el, uint ec,
+rapidjson::Value locToJSON(uint fileId, uint bl, uint bc, uint el, uint ec,
                            rapidjson::Document::AllocatorType &allocator);
 
 
