@@ -24,7 +24,61 @@
 
 
 /*
+  The meta-program structure:
 
+  static bool __f1x_id_initialized = false;
+  static vector<F1XID> __f1x_ids;
+
+  TYPE __f1x_LOCID(ARGS) {
+    if (!__f1x_id_initialized) {
+      // read from file partition.in
+      __f1x_id_initialized = true;
+    }
+
+    id = __f1x_id;
+    id_int2 = __f1x_id_int2;
+    id_bool2 = __f1x_id_bool2;
+    id_cond3 = __f1x_id_cond3;
+    id_param = __f1x_id_param;
+
+    int int2 = 0;
+    bool bool2 = 0;
+    bool cond3 = 0;
+    int param = 0;
+    
+    eval_result = 0;
+
+    output_value = 0;
+    output_initialized = false;
+    idx = 0;
+    
+  eval_LOCID:
+    if (id0) {
+      switch () {
+      ...
+      }
+    }
+    ...
+    // here compute int2, bool2, cond3, eval_result
+
+    if (!output_initialized) {
+      output_value = eval_result;
+      output_initialized = true;
+    } else if (output_value == eval_result) {
+      // print id0, id1, id2, id3, id4 to partition.out
+    }
+
+    if (__f1x_ids.size() > idx) {
+      id0 = __f1x_ids[idx].id0;
+      ...
+      idx++
+      goto eval_LOCID;
+    }
+
+    return output_value;
+  }
+
+  ---------------------------------------------------------------------
   Currently, we compute distance in the following way:
   
   var -> var = 1
@@ -38,20 +92,20 @@
   p - max parameter value
 
   Subcomponents:
-  * BoolTree2
-  * IntTree2
-  * Cond3
+  * BOOL2 - boolean tree with 2 leaves
+  * INT2 - integer tree with 2 leaves
+  * COND3 - boolean tree with 3 leaves
 
-  BoolTree2:
+  BOOL2:
   6 comparison operators * n variables * (n + p) variables + parameter
   = 6n^2 + 6np
 
-  IntTree2:
+  INT2:
   either (n + p)
   5 arithmetic operators * n variables * (n + p) variables + parameter
   = 5n^2 + 5np
 
-  Cond3: (X + X) > Y:
+  COND3: (X + X) > Y:
   (5n^2 + 5np) * 6 * n
   = 30n^3 + 30n^2p
 

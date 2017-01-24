@@ -35,14 +35,15 @@ using std::unordered_map;
 // size of simple (atomic) modification
 const uint ATOMIC_EDIT = 1;
 const string POINTER_ARG_NAME = "__ptr_vals";
-
+const string ID_TYPE = "unsigned long";
+const string PARAM_TYPE = "int";
+const string INT2_TYPE = "int"; //FIXME: this a serious assumption, need to cast explicitly inside patches
 
 string argNameByType(const std::string &typeName) {
   std::string result = typeName;
   std::replace(result.begin(), result.end(), ' ', '_');
   return "__" + result + "_vals";
 }
-
 
 vector<Operator> mutateNumericOperator(Operator op) {
   switch (op) {
@@ -315,7 +316,9 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
       OS << "next = " << (currentId + 1) << ";" << "\n";
     }
     OS << "break; " << "\n";
-    ss.push_back(SearchSpaceElement{cl, currentId, candidate.first, candidate.second});
+    F1XID f1xid;
+    f1xid.base = currentId; //FIXME: this should be more complete
+    ss.push_back(SearchSpaceElement{cl, f1xid, candidate.first, candidate.second});
 
     id++;
   }

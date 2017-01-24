@@ -21,15 +21,19 @@
 #include <unordered_set>
 #include <boost/filesystem.hpp>
 #include "F1XConfig.h"
+#include "RepairUtil.h"
 #include <string>
 #include <sstream>
+
+const std::string PARTITION_IN = "partition.in";
+const std::string PARTITION_OUT = "partition.out";
 
 class Runtime {
  public:
   Runtime(const boost::filesystem::path &workDir, const Config &cfg, const std::string source, const std::string header);
 
-  void cleanPartition(uint locId);
-  std::unordered_set<uint> getPartition(uint locId);
+  void setPartition(std::unordered_set<F1XID> ids);
+  std::unordered_set<F1XID> getPartition();
   boost::filesystem::path getWorkDir();
   boost::filesystem::path getSource();
   boost::filesystem::path getHeader();
@@ -39,6 +43,6 @@ class Runtime {
   boost::filesystem::path workDir;
   Config cfg;
   
-  std::string RUNTIME_SOURCE_FILE_NAME;
-  std::string RUNTIME_HEADER_FILE_NAME;
+  std::string source;
+  std::string header;
 };

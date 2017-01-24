@@ -33,22 +33,22 @@ using std::unordered_set;
 
 Runtime::Runtime(const fs::path &workDir, const Config &cfg, const std::string source, const std::string header): 
   workDir(workDir),
-  cfg(cfg) {
-    RUNTIME_SOURCE_FILE_NAME = source;
-    RUNTIME_HEADER_FILE_NAME = header;
-  };
+  cfg(cfg),
+  source(source),
+  header(header) {};
 
-void Runtime::cleanPartition(uint locId) {
-  fs::path partitionFile = workDir / "partition.txt";
-  fs::ofstream out;
-  out.open(partitionFile, std::ofstream::out | std::ofstream::trunc);
-  out.close();
+void Runtime::setPartition(std::unordered_set<F1XID> ids) {
+  fs::path partitionFile = workDir / PARTITION_IN;
+  fs::ofstream out(partitionFile, std::ofstream::out);
+  for (auto &id : ids) {
+    out << id.base << " " << id.int2 << " " << id.bool2 << " " << id.cond3 << " " << id.param << "\n";
+  }
 }
 
-unordered_set<uint> Runtime::getPartition(uint locId) {
-  unordered_set<uint> result;
-  unordered_set<uint> aux;
-  fs::path partitionFile = workDir / "partition.txt";
+unordered_set<F1XID> Runtime::getPartition() {
+  unordered_set<F1XID> result;
+  unordered_set<F1XID> aux;
+  fs::path partitionFile = workDir / PARTITION_OUT;
   if (!fs::exists(partitionFile)) {
     return result;
   }
@@ -59,14 +59,14 @@ unordered_set<uint> Runtime::getPartition(uint locId) {
     std::swap(result, aux);
     result.clear();
     std::istringstream iss(line);
-    uint id;
+    F1XID id;
     if (firstLine) {
       firstLine = false;
-      while (iss >> id) {
+      while (iss >> id.base >> id.int2 >> id.bool2 >> id.cond3 >> id.param) {
         result.insert(id);
       }
     } else {
-      while (iss >> id) {
+      while (iss >> id.base >> id.int2 >> id.bool2 >> id.cond3 >> id.param) {
         if (aux.count(id))
           result.insert(id);
       }
@@ -80,11 +80,11 @@ fs::path Runtime::getWorkDir() {
 }
 
 boost::filesystem::path Runtime::getHeader() {
-  return workDir / RUNTIME_HEADER_FILE_NAME;
+  return workDir / header;
 }
 
 boost::filesystem::path Runtime::getSource() {
-  return workDir / RUNTIME_SOURCE_FILE_NAME;
+  return workDir / source;
 }
 
 bool Runtime::compile() {
@@ -92,7 +92,7 @@ bool Runtime::compile() {
   FromDirectory dir(workDir);
   std::stringstream cmd;
   cmd << cfg.runtimeCompiler << " -O2 -fPIC"
-      << " " << RUNTIME_SOURCE_FILE_NAME 
+      << " " << source
       << " -shared"
       << " -o libf1xrt.so";
   if (cfg.verbose) {

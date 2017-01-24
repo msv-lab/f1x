@@ -39,6 +39,12 @@ using std::vector;
 using std::shared_ptr;
 
 
+std::string visualizeF1XID(const F1XID &id) {
+  std::stringstream result;
+  result << id.base << ":" << id.int2 << ":" << id.bool2 << ":" << id.cond3 << ":" << id.param;
+  return result.str();
+}
+
 FromDirectory::FromDirectory(const boost::filesystem::path &path):
   original(path) {
   fs::current_path(path);
@@ -192,11 +198,14 @@ string operatorToString(const Operator &op) {
     return ">>";
   case Operator::BV_NOT:
     return "~";
+  case Operator::INT_CAST:
+    return "(int)";
   case Operator::BV_TO_INT:
     return ""; // implicit
   case Operator::INT_TO_BV:
     return ""; // implicit
   }
+  throw std::invalid_argument("unsupported operator");
 }
 
 
@@ -248,7 +257,10 @@ Type operatorType(const Operator &op) {
     return Type::INTEGER;
   case Operator::INT_TO_BV:
     return Type::BITVECTOR;
+  case Operator::INT_CAST:
+    return Type::INTEGER;
   }
+  throw std::invalid_argument("unsupported operator");
 }
 
 
@@ -262,7 +274,7 @@ std::string expressionToString(const Expression &expression) {
            expression.repr + " " +
            expressionToString(expression.args[1]) + ")";
   }
-  return "<unsupported>";
+  throw std::invalid_argument("unsupported expression");
 }
 
 
@@ -289,10 +301,10 @@ std::string metaToString(const PatchMeta &meta) {
     return "concretize";
   case Transformation::SUBSTITUTION:
     return "substitute";
-  case Transformation::WIDENING:
-    return "widen";
-  case Transformation::NARROWING:
-    return "narrow";
+  case Transformation::LOOSENING:
+    return "loosen";
+  case Transformation::TIGHTENING:
+    return "tighten";
   default:
     return "change";
   }
@@ -337,6 +349,7 @@ Expression convertExpression(const json::Value &json) {
       args.push_back(convertExpression(arg));
     }
   } else {
+    op = Operator::NONE;
     if (kindStr == "pointer") {
       type = Type::POINTER;
     } else {

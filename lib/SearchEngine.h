@@ -33,6 +33,7 @@ class SearchEngine {
                TestingFramework &tester,
                Runtime &runtime,
                const Config &cfg,
+               std::shared_ptr<std::unordered_map<uint, std::unordered_set<F1XID>>> groupable,
                std::map<std::string, std::vector<int>> relatedTestIndex);
 
   uint findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom);
@@ -46,9 +47,10 @@ class SearchEngine {
   TestingFramework tester;
   Runtime runtime;
   uint candidateCounter;
-  uint testCounter;
+  uint testCounter; //FIXME: this should be refactored;
   Config cfg;
-  std::unordered_set<uint> failing;
-  std::unordered_map<std::string, std::unordered_set<uint>> passing;
+  std::shared_ptr<std::unordered_map<uint, std::unordered_set<F1XID>>> groupable;
+  std::unordered_set<F1XID> failing;
+  std::unordered_map<std::string, std::unordered_set<F1XID>> passing;
   std::map<std::string, std::vector<int>> testCaseSensitivity;
 };

@@ -27,6 +27,46 @@
 #include "F1XConfig.h"
 
 
+struct F1XID {
+  uint base;
+  uint int2;
+  uint bool2;
+  uint cond3;
+  uint param;
+
+  bool operator==(const F1XID &other) const { 
+    return (base == other.base
+            && int2 == other.int2
+            && bool2 == other.bool2
+            && cond3 == other.cond3
+            && param == other.param);
+  }
+};
+
+// http://stackoverflow.com/questions/19195183/how-to-properly-hash-the-custom-struct
+template <class T>
+inline void hash_combine(std::size_t & s, const T & v)
+{
+  std::hash<T> h;
+  s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
+}
+
+namespace std {
+  template<>
+    struct hash<F1XID> {
+    inline size_t operator()(const F1XID& id) const {
+      size_t value = 0;
+      hash_combine(value, id.base);
+      hash_combine(value, id.int2);
+      hash_combine(value, id.bool2);
+      hash_combine(value, id.cond3);
+      hash_combine(value, id.param);
+      return value;
+    }
+  };
+}
+
+
 enum class Kind {
   OPERATOR, VARIABLE, CONSTANT, PARAMETER,
   BV2, INT2, BOOL2, BOOL3 // auxiliary kinds
@@ -39,9 +79,12 @@ enum class Type {
 
 
 enum class Operator {
+  NONE, // this is when node is not an operator
   EQ, NEQ, LT, LE, GT, GE, OR, AND, ADD, SUB, MUL, DIV, MOD, NEG, NOT,
   BV_AND, BV_XOR, BV_OR, BV_SHL, BV_SHR, BV_NOT,
-  BV_TO_INT, INT_TO_BV, NONE // auxiliary operators
+  // auxiliary operators
+  BV_TO_INT, INT_TO_BV, // these are for synthesizer to separate arithmetic and bitwise parts
+  INT_CAST // this is for INT2 substitutions, because other types are not supported inside runtime
 };
 
 Type operatorType(const Operator &op);
@@ -110,9 +153,10 @@ struct CandidateLocation {
   std::vector<Expression> components;
 };
 
-/* TODO: this is better to call RepairAction,
-   it also makes sense to distinguish between repair schemes:
-     WIDENING, SUBSTITUTION, IF_GUARD, etc.
+/* TODO: this all should be refactored to look like
+     TransformationSchema and SchemaInitialization
+   it makes sense to distinguish between repair schemas:
+     IF_GUARD, etc.
    and schema instantiation
      NULL_CHECK, GENERALIZATION, etc.
  */
@@ -124,8 +168,8 @@ enum class Transformation {
   GENERALIZATION, // e.g. 1 --> x
   CONCRETIZATION, // e.g. x --> 1
   SUBSTITUTION,   // (generic) substution of subnode
-  WIDENING,       // adding "|| something"
-  NARROWING       // adding "&& something"
+  LOOSENING,      // adding "|| something"
+  TIGHTENING      // adding "&& something"
 };
 
 
@@ -137,10 +181,13 @@ struct PatchMeta {
 
 struct SearchSpaceElement {
   std::shared_ptr<CandidateLocation> buggy;
-  uint id;
+  F1XID id;
   Expression patch;
   PatchMeta meta;
 };
+
+
+std::string visualizeF1XID(const F1XID &id);
 
 
 std::string visualizeElement(const SearchSpaceElement &el, const boost::filesystem::path &file);

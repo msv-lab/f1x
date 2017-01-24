@@ -41,6 +41,9 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::shared_ptr;
+using std::unordered_map;
+using std::unordered_set;
+
 
 const string CANDADATE_LOCATIONS_FILE_NAME = "extracted.json";
 
@@ -77,10 +80,10 @@ double score(const SearchSpaceElement &el) {
   case Transformation::SUBSTITUTION:
     result -= BAD;
     break;
-  case Transformation::WIDENING:
+  case Transformation::LOOSENING:
     result -= BAD;
     break;
-  case Transformation::NARROWING:
+  case Transformation::TIGHTENING:
     result -= BAD;
     break;
   default:
@@ -172,6 +175,18 @@ void dumpSearchSpace(std::vector<SearchSpaceElement> &searchSpace, const fs::pat
   }
 }
 
+shared_ptr<unordered_map<uint, unordered_set<F1XID>>> getGroupable(const std::vector<SearchSpaceElement> &searchSpace) {
+  shared_ptr<unordered_map<uint, unordered_set<F1XID>>> result(new unordered_map<uint, unordered_set<F1XID>>);
+  for (auto &el : searchSpace) {
+    uint locId = el.buggy->location.locId;
+    if (! result->count(locId)) {
+      (*result)[locId] = unordered_set<F1XID>();
+    }
+    (*result)[locId].insert(el.id);
+  }
+  return result;
+}
+
 
 bool repair(Project &project,
             TestingFramework &tester,
@@ -184,11 +199,11 @@ bool repair(Project &project,
 
   testNum = tests.size();  
   
-  pair<bool, bool> initialStatus = project.initialBuild();
-  if (! initialStatus.first) {
+  pair<bool, bool> initialBuildStatus = project.initialBuild();
+  if (! initialBuildStatus.first) {
     BOOST_LOG_TRIVIAL(warning) << "compilation returned non-zero exit code";
   }
-  if (! initialStatus.second) {
+  if (! initialBuildStatus.second) {
     BOOST_LOG_TRIVIAL(error) << "failed to infer compile commands";
     return false;
   }
@@ -299,9 +314,11 @@ bool repair(Project &project,
     dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
   }
 
+  shared_ptr<unordered_map<uint, unordered_set<F1XID>>> groupable = getGroupable(searchSpace);
+
   BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();
   
-  SearchEngine engine(tests, tester, runtime, cfg, relatedTestIndex);
+  SearchEngine engine(tests, tester, runtime, cfg, groupable, relatedTestIndex);
 
   uint last = 0;
   uint patchCount = 0;

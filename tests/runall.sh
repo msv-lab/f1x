@@ -73,13 +73,19 @@ for test in $TESTS; do
         pointer)
             args="--files program.c:25 --driver $test/test.sh --tests n1 n2 p1 --test-timeout 1000"
             ;;
+        replace-constant)
+            args="--files program.c --driver $test/test.sh --tests n1 n2 n3 n4 p1 p2 p3 --test-timeout 1000"
+            ;;
+        substitute-int2)
+            args="--files program.c --driver $test/test.sh --tests n1 n2 p1 --test-timeout 1000"
+            ;;
         *)
             echo "command for test $test is not defined"
             exit 1
             ;;
     esac
 
-    repair_cmd="f1x $test $args --output output.patch -v"
+    repair_cmd="f1x $test $args --output output.patch --enable-cleanup"
 
     repair_dir=`mktemp -d`
     cp -r "$test" "$repair_dir"
