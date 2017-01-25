@@ -1,17 +1,18 @@
 # Comparison with Angelix #
 
-f1x is the successor of [Angelix](http://angelix.io), but it also borrows ideas from other systems such as [GenProg](http://dijkstra.cs.virginia.edu/genprog/) and [Prophet](http://groups.csail.mit.edu/pac/patchgen/). f1x is the result of deep reflection, extreme simplification and balancing trade-offs. f1x was designed for the purpose of large scale experimentation: it is reliable (it guarantees to generate the most reliable patch in the search space according to a given static prioritization strategy), it is efficient (it traverses search space X times faster than previous tools), and it is simple (zero configuration, simple and extensible architecture, relatively easy-to-use). However, f1x does not surpass Angelix in all aspects.
+f1x is the successor of [Angelix](http://angelix.io). f1x realizes a theoretically and practically superior search space exploration algorithm, however it may not surpass Angelix in all use cases.
 
-Choose f1x if you
+The advantages of f1x:
 
-- Need more patches
-- Need more correct patches
-- Need to generate patches faster
-- Want to spend less effort for installation and configuration
+- f1x generates more patches (e.g. for Genprog benchmark);
+- f1x is significantly faster (e.g. for Genprog benchmark);
+- f1x provides higher reliability guarantees: it finds the most reliable patch (global maximum) according to a given prioritization strategy;
+- f1x is easier to install and use;
+- f1x does not require manual source code instrumentation;
+- f1x does not rely on symbolic execution and therefore can be applied to a wider variety of programs;
+- explicit representation of search space makes it easier to extend (e.g. change prioritization strategy). 
 
-Choose Angelix if you
+The advantages of Angelix:
 
-- Need more complex patches (e.g. multi-line patches)
-- Research symbolic techniques (symbolic execution, SMT solving)
-
-From the user perpective, f1x employs an equivalent model of the analysed software (Makefile-based build, test framework abstraction, etc.), so it can serve almost as a drop-in replacement of Angelix. A notable difference is that f1x is not hygienic, that is it operates directly on the provided source tree.
+- Angelix can generate multi-line patches;
+- Angelix uses more informative (symbolic) representation of search space and specification.

@@ -1,8 +1,6 @@
-![workflow](doc/logo.png)
+![logo](doc/logo.png)
 
-f1x is a test-driven patch generation engine for C/C++ programs. It can automatically find and fix bugs in program expressions based on given passing and failing tests. f1x was designed for the purpose of large scale experimentation, which is critical for the future of automated program repair research. Specifically, f1x aims to be reliable, efficient and easy-to-use.
-
-f1x combines ideas from existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. This enables f1x to traverse the search space in an arbitrary order without sacrificing efficiency. As a result, f1x is the first system that guarantees to always generate the most reliable patch in the search space (global maximum) according to a given static prioritization strategy. Apart from that, f1x explores search space X times faster compared to previous approaches when repairing large programs such as PHP, Libtiff, etc.
+f1x is a test-driven patch generation engine for C/C++ programs. It can automatically find and fix software bugs by analyzing behaviour of passing and failing tests. f1x aims to be reliable, efficient and easy-to-use, which is critical for large scale experimentation. f1x combines ideas from existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. This enables f1x to traverse the search space in an arbitrary order without sacrificing efficiency. As a result, f1x is the first system that guarantees to always generate the most reliable patch in the search space according to a given static prioritization strategy.Apart from that, f1x explores search space X times faster compared to previous approaches when repairing large programs such as PHP, Libtiff, etc.
 
 More details about f1x can be found in our publication.
 
@@ -54,3 +52,4 @@ To test f1x, execute `./tests/runall.sh`.
 * Abhik Roychoudhury, Professor, Principal investigator
 * Sergey Mechtaev, PhD student, Developer
 * Gao Xiang, PhD student, Developer
+* Shin Hwei Tan, PhD Student, Contributor

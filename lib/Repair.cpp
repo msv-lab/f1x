@@ -48,8 +48,7 @@ using std::unordered_set;
 
 const string CANDADATE_LOCATIONS_FILE_NAME = "extracted.json";
 
-
-double score(const SearchSpaceElement &el) {
+double simplicityScore(const SearchSpaceElement &el) {
   double result = (double) el.meta.distance;
   const double GOOD = 0.3;
   const double OK = 0.2;
@@ -84,7 +83,7 @@ double score(const SearchSpaceElement &el) {
 
 
 bool comparePatches(const SearchSpaceElement &a, const SearchSpaceElement &b) {
-  return score(a) < score(b);
+  return simplicityScore(a) < simplicityScore(b);
 }
 
 
@@ -96,7 +95,8 @@ void prioritize(std::vector<SearchSpaceElement> &searchSpace) {
 void dumpSearchSpace(std::vector<SearchSpaceElement> &searchSpace, const fs::path &file, const vector<ProjectFile> &files) {
   fs::ofstream os(file);
   for (auto &el : searchSpace) {
-    os << std::setprecision(3) << score(el) << " " << visualizeElement(el, files[el.buggy->location.fileId].relpath) << "\n";
+    os << std::setprecision(3) << simplicityScore(el) << " " 
+       << visualizeElement(el, files[el.buggy->location.fileId].relpath) << "\n";
   }
 }
 
@@ -155,7 +155,7 @@ bool repair(Project &project,
 
   project.restoreOriginalFiles();
 
-  BOOST_LOG_TRIVIAL(info) << "profiling";
+  BOOST_LOG_TRIVIAL(info) << "profiling project";
   for (int i = 0; i < tests.size(); i++) {
     auto test = tests[i];
     profiler.clearTrace();
@@ -215,9 +215,12 @@ bool repair(Project &project,
     dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
   }
 
+  auto relatedTestIndexes = profiler.getRelatedTestIndexes();
+
+  BOOST_LOG_TRIVIAL(info) << "number of locations: " << relatedTestIndexes.size();
   BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();
   
-  SearchEngine engine(tests, tester, runtime, cfg, getGroupable(searchSpace), profiler.getRelatedTestIndexes());
+  SearchEngine engine(tests, tester, runtime, cfg, getGroupable(searchSpace), relatedTestIndexes);
 
   uint last = 0;
   uint patchCount = 0;
@@ -230,6 +233,7 @@ bool repair(Project &project,
       fs::path relpath = project.getFiles()[searchSpace[last].buggy->location.fileId].relpath;
       BOOST_LOG_TRIVIAL(info) << "found patch: " << visualizeElement(searchSpace[last], relpath);
       
+      BOOST_LOG_TRIVIAL(info) << "applying patch";
       bool appSuccess = project.applyPatch(searchSpace[last]);
       if (! appSuccess) {
         BOOST_LOG_TRIVIAL(warning) << "patch application failed";
@@ -240,13 +244,12 @@ bool repair(Project &project,
       bool valid = true;
 
       if (cfg.validatePatches) {
-        BOOST_LOG_TRIVIAL(info) << "validating patch";
-
         bool rebuildSuccess = project.build();
         if (! rebuildSuccess) {
           BOOST_LOG_TRIVIAL(warning) << "compilation with patch returned non-zero exit code";
         }
 
+        BOOST_LOG_TRIVIAL(info) << "validating patch";
         vector<string> failing = getFailing(tester, tests);
 
         if (!failing.empty()) {

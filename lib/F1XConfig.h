@@ -24,8 +24,8 @@ typedef std::uint_least32_t uint;
 
 
 enum class Exploration {
-  GENERATE_AND_VALIDATE,
-  SEMANTIC_PARTITIONING
+  GENERATE_AND_VALIDATE, // evaluate patches one-by-one
+  SEMANTIC_PARTITIONING  // group patches into semantic partitions
 };
 
 
@@ -37,8 +37,8 @@ enum class LocalizationFormula {
 
 
 enum class TestPrioritization {
-  FIXED_ORDER,      // failing, then passing
-  MAX_FAILING       // prioritize tests that failed maximum number of times
+  FIXED_ORDER,      // first run failing, then passing tests
+  MAX_FAILING       // dynamically prioritize tests based on previous failures
 };
 
 

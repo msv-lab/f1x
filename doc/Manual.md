@@ -1,12 +1,10 @@
 # Manual #
 
-f1x is a test-driven automated program repair engine for C/C++ programs. It can automatically find and fix bugs in program expressions based on given passing and failing tests. f1x was designed for the purpose of large scale experimentation, which is critical for the future of automated program repair research. Specifically, f1x aims to be reliable, efficient and easy-to-use.
-
-f1x combines ideas from existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. This enables f1x to traverse the search space in an arbitrary order without sacrificing efficiency. As a result, f1x is the first system that guarantees to always generate the most reliable patch in the search space according to a given static prioritization strategy. Specifically, in the current implementation f1x finds the syntactically minimal modification in the entire search space. Apart from that, f1x explores search space X times faster compared to previous approaches when repairing large programs such as PHP, Libtiff, etc.
+f1x is a test-driven patch generation engine for C/C++ programs. It can automatically find and fix software bugs by analyzing behaviour of passing and failing tests. f1x aims to be reliable, efficient and easy-to-use, which is critical for large scale experimentation. f1x combines ideas from existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. This enables f1x to traverse the search space in an arbitrary order without sacrificing efficiency. As a result, f1x is the first system that guarantees to always generate the most reliable patch in the search space according to a given static prioritization strategy. Apart from that, f1x explores search space X times faster compared to previous approaches when repairing large programs such as PHP, Libtiff, etc.
 
 ## Characteristics ##
 
-The three main characteristics of a repair tool are the search space (syntactical changes that can be generated), the prioritization strategy (which patch is selected from multiple plausible ones) and exploration speed (the number of candidate patches evaluated within a unit of time).
+The three main characteristics of a repair tool are the search space (syntactical changes that can be generated), the prioritization strategy (which patch is selected from multiple plausible ones) and the exploration speed (the number of candidate patches evaluated within a unit of time).
 
 ### Search space ###
 
@@ -16,12 +14,13 @@ The search space of f1x is the following:
 2. Modification of RHS of assignments (integer and pointer types)
 3. Modification of return arguments (integer and pointer types)
 4. Inserting if-guards for break, continue, function calls
+5. Inserting array initialization with memset
 
 f1x expression synthesizer is bit-precise; it supports all signed and unsigned builtin (C99) integer types.
 
 ### Prioritization ###
 
-f1x employs change minimality as the default patch prioritization, but it is straightforward to add support for other strategies. It guarantees to generate the syntactically minimal patch (global minimum) in the entire search space. The syntactical change is measured in the number of changed AST nodes. For certain situations (e.g. how to compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical manner.
+f1x currently supports only one prioritization strategy: sorting patches based on the size of syntactical change. It guarantees to generate the syntactically minimal patch (global minimum) in the search space. The motivation behind this prioritization is that small changes are easier to understand and they are less likely to break existing functionality. The syntactical change is measured in the number of changed AST nodes. For certain situations (e.g. compare `x - y ---> x + y` and `x - y ---> y - x`), the score for a patch is defined in a heuristical manner.
 
 ## Usage ##
 

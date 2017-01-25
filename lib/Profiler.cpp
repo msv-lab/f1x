@@ -109,7 +109,11 @@ void Profiler::mergeTrace(int testIndex, bool isPassing) {
       }
       vector<int> current = relatedTestIndexes[loc];
       if (std::find(current.begin(), current.end(), testIndex) == current.end()) {
-        relatedTestIndexes[loc].push_back(testIndex);
+        //NOTE: put failing in the beginning, passing in the end
+        if (isPassing)
+          relatedTestIndexes[loc].push_back(testIndex);
+        else
+          relatedTestIndexes[loc].insert(relatedTestIndexes[loc].begin(), testIndex);
       }
       covered.insert(loc);
     }

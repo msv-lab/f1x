@@ -106,7 +106,9 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
         }
       }
       if (!passAll) {
-        changeSensitivity(relatedTestIndexes[elem.buggy->location], i);
+        if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
+          changeSensitivity(relatedTestIndexes[elem.buggy->location], i);
+        }
         break;
       }
     }
