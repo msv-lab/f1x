@@ -131,7 +131,7 @@ bool simplifiable(const Expression &expr) {
   case Operator::DIV:
   case Operator::MOD:
   case Operator::NEG:
-  case Operator::NOT:
+  case Operator::NOT: //TODE: shouldn't I move it to a separate schema?
   case Operator::BV_AND:
   case Operator::BV_OR:
   case Operator::BV_XOR:

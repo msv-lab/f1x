@@ -41,7 +41,7 @@ To install f1x, add the `build/tools` directory into your `PATH`:
     
 To test f1x, execute `./tests/runall.sh`.
 
-## Documentation ##
+## Resources ##
 
 * [Tutorial (small program)](doc/Tutorial.md)
 * [Tutorial (Heartbleed)](doc/Heartbleed.md)
@@ -49,6 +49,7 @@ To test f1x, execute `./tests/runall.sh`.
 * [Troubleshooting](doc/Troubleshooting.md)
 * [Development](doc/Development.md)
 * [Experiments with Genprog ICSE'12 benchmark](https://github.com/mechtaev/f1x-genprog-icse12)
+* [Experiments with IntroClass benchmark](https://github.com/mechtaev/f1x-introclass)
 
 ## People ##
 
