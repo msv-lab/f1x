@@ -63,7 +63,7 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
   for (; index < searchSpace.size(); index++) {
     stat.explorationCounter++;
     const SearchSpaceElement &elem = searchSpace[index];
-    uint locId = elem.buggy->locId;
+    uint appId = elem.app->appId;
     if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
       if (failing.count(elem.id))
         continue;
@@ -73,12 +73,12 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
                         { "F1X_ID_BOOL2", to_string(elem.id.bool2) },
                         { "F1X_ID_COND3", to_string(elem.id.cond3) },
                         { "F1X_ID_PARAM", to_string(elem.id.param) },
-                        { "F1X_LOC", to_string(locId) } });
+                        { "F1X_APP", to_string(appId) } });
     bool passAll = true;
     
-    std::shared_ptr<CandidateLocation> cl = elem.buggy;
+    std::shared_ptr<SchemaApplication> sa = elem.app;
     
-    std::vector<int> testOrder = relatedTestIndexes[elem.buggy->location];
+    std::vector<int> testOrder = relatedTestIndexes[elem.app->location];
     
     for (int i = 0; i < testOrder.size(); i++) {
       auto test = tests[testOrder[i]];
@@ -88,7 +88,7 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
         if (passing[test].count(elem.id))
           continue;
         runtime.clearPartition();
-        runtime.setPartition((*groupable)[locId]);
+        runtime.setPartition((*groupable)[appId]);
       }
       stat.executionCounter++;
       passAll = tester.isPassing(test);
@@ -107,7 +107,7 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
       }
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
-          changeSensitivity(relatedTestIndexes[elem.buggy->location], i);
+          changeSensitivity(relatedTestIndexes[elem.app->location], i);
         }
         break;
       }

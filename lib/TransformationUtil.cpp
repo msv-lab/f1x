@@ -53,19 +53,19 @@ uint globalBeginColumn;
 uint globalEndLine;
 uint globalEndColumn;
 string globalPatch;
-uint globalBaseLocId = 0;
+uint globalBaseAppId = 0;
 
-const uint F1XLOC_WIDTH = 32;
-const uint F1XLOC_VALUE_BITS = 10;
+const uint F1XAPP_WIDTH = 32;
+const uint F1XAPP_VALUE_BITS = 10;
 
 /*
-  __f1x_loc is a F1XID_WIDTH bit transparent location ID. The left F1XID_VALUE_BITS bits of this id is the file ID.
+  __f1x_app is a F1XID_WIDTH bit transparent schema application ID. The left F1XID_VALUE_BITS bits of this id is the file ID.
  */
 
-uint f1xloc(uint baseId, uint fileId) {
-  assert(baseId < (1 << (F1XLOC_WIDTH - F1XLOC_VALUE_BITS)));
+uint f1xapp(uint baseId, uint fileId) {
+  assert(baseId < (1 << (F1XAPP_WIDTH - F1XAPP_VALUE_BITS)));
   uint result = fileId;
-  result <<= (F1XLOC_WIDTH - F1XLOC_VALUE_BITS);
+  result <<= (F1XAPP_WIDTH - F1XAPP_VALUE_BITS);
   result += baseId;
   return result;
 }

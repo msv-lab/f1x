@@ -37,7 +37,7 @@ extern uint globalBeginColumn;
 extern uint globalEndLine;
 extern uint globalEndColumn;
 extern std::string globalPatch;
-extern uint globalBaseLocId;
+extern uint globalBaseAppId;
 
 uint getDeclExpandedLine(const clang::Decl *decl, clang::SourceManager &srcMgr);
 
@@ -75,5 +75,5 @@ std::vector<rapidjson::Value> collectComponents(const clang::Stmt *stmt,
 
 std::string makeArgumentList(std::vector<rapidjson::Value> &components);
 
-uint f1xloc(uint baseId, uint fileId);
+uint f1xapp(uint baseId, uint fileId);
 bool inRange(uint line);

@@ -46,33 +46,33 @@ using std::unordered_map;
 using std::unordered_set;
 
 
-const string CANDADATE_LOCATIONS_FILE_NAME = "extracted.json";
+const string SCHEMA_APPLICATIONS_FILE_NAME = "applications.json";
 
 double simplicityScore(const SearchSpaceElement &el) {
   double result = (double) el.meta.distance;
   const double GOOD = 0.3;
   const double OK = 0.2;
   const double BAD = 0.1;
-  switch (el.meta.transformation) {
-  case Transformation::ALTERNATIVE:
+  switch (el.meta.kind) {
+  case ModificationKind::OPERATOR:
     result -= OK;
     break;
-  case Transformation::SWAPING:
+  case ModificationKind::SWAPING:
     result -= GOOD;
     break;
-  case Transformation::SIMPLIFICATION:
+  case ModificationKind::SIMPLIFICATION:
     result -= GOOD;
     break;
-  case Transformation::GENERALIZATION:
+  case ModificationKind::GENERALIZATION:
     result -= GOOD;
     break;
-  case Transformation::SUBSTITUTION:
+  case ModificationKind::SUBSTITUTION:
     result -= BAD;
     break;
-  case Transformation::LOOSENING:
+  case ModificationKind::LOOSENING:
     result -= BAD;
     break;
-  case Transformation::TIGHTENING:
+  case ModificationKind::TIGHTENING:
     result -= BAD;
     break;
   default:
@@ -96,7 +96,7 @@ void dumpSearchSpace(std::vector<SearchSpaceElement> &searchSpace, const fs::pat
   fs::ofstream os(file);
   for (auto &el : searchSpace) {
     os << std::setprecision(3) << simplicityScore(el) << " " 
-       << visualizeElement(el, files[el.buggy->location.fileId].relpath) << "\n";
+       << visualizeElement(el, files[el.app->location.fileId].relpath) << "\n";
   }
 }
 
@@ -104,7 +104,7 @@ void dumpSearchSpace(std::vector<SearchSpaceElement> &searchSpace, const fs::pat
 shared_ptr<unordered_map<uint, unordered_set<F1XID>>> getGroupable(const std::vector<SearchSpaceElement> &searchSpace) {
   shared_ptr<unordered_map<uint, unordered_set<F1XID>>> result(new unordered_map<uint, unordered_set<F1XID>>);
   for (auto &el : searchSpace) {
-    uint locId = el.buggy->locId;
+    uint locId = el.app->appId;
     if (! result->count(locId)) {
       (*result)[locId] = unordered_set<F1XID>();
     }
@@ -165,13 +165,13 @@ bool repair(Project &project,
   
   fs::path profile = profiler.getProfile();
   
-  fs::path clFile = workDir / CANDADATE_LOCATIONS_FILE_NAME;
+  fs::path saFile = workDir / SCHEMA_APPLICATIONS_FILE_NAME;
 
-  bool instrSuccess = project.instrumentFile(project.getFiles()[0], clFile, &profile);
+  bool instrSuccess = project.instrumentFile(project.getFiles()[0], saFile, &profile);
   if (! instrSuccess) {
     BOOST_LOG_TRIVIAL(warning) << "transformation returned non-zero exit code";
   }
-  if (! fs::exists(clFile)) {
+  if (! fs::exists(saFile)) {
     BOOST_LOG_TRIVIAL(error) << "failed to extract candidate locations";
     return false;
   }
@@ -179,7 +179,7 @@ bool repair(Project &project,
   project.saveInstrumentedFiles();
 
   BOOST_LOG_TRIVIAL(debug) << "loading candidate locations";
-  vector<shared_ptr<CandidateLocation>> cls = loadCandidateLocations(clFile);
+  vector<shared_ptr<SchemaApplication>> sas = loadSchemaApplications(saFile);
 
   vector<SearchSpaceElement> searchSpace;
 
@@ -189,7 +189,7 @@ bool repair(Project &project,
   {
     fs::ofstream os(runtime.getSource());
     fs::ofstream oh(runtime.getHeader());
-    searchSpace = generateSearchSpace(cls, workDir, os, oh, cfg);
+    searchSpace = generateSearchSpace(sas, workDir, os, oh, cfg);
   }
 
   bool runtimeSuccess = runtime.compile();
@@ -230,7 +230,7 @@ bool repair(Project &project,
 
     if (last < searchSpace.size()) {
 
-      fs::path relpath = project.getFiles()[searchSpace[last].buggy->location.fileId].relpath;
+      fs::path relpath = project.getFiles()[searchSpace[last].app->location.fileId].relpath;
       BOOST_LOG_TRIVIAL(info) << "found patch: " << visualizeElement(searchSpace[last], relpath);
       
       BOOST_LOG_TRIVIAL(info) << "applying patch";

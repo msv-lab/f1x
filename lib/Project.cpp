@@ -98,7 +98,7 @@ void adjustCompileDB(fs::path projectRoot) {
       uint index = command.find(" ");
       command = command.substr(0, index) + " " + includeCmd + " " + command.substr(index);
     }
-    string defineCmd =  "-D__f1x_loc=0ul";
+    string defineCmd =  "-D__f1x_app=0ul";
     if (command.find(defineCmd) == std::string::npos) {
       uint index = command.find(" ");
       command = command.substr(0, index) + " " + defineCmd + " " + command.substr(index);
@@ -308,17 +308,17 @@ uint Project::getFileId(const ProjectFile &file) {
 bool Project::applyPatch(const SearchSpaceElement &patch) {
   BOOST_LOG_TRIVIAL(debug) << "applying patch";
   FromDirectory dir(root);
-  uint beginLine = patch.buggy->location.beginLine;
-  uint beginColumn = patch.buggy->location.beginColumn;
-  uint endLine = patch.buggy->location.endLine;
-  uint endColumn = patch.buggy->location.endColumn;
+  uint beginLine = patch.app->location.beginLine;
+  uint beginColumn = patch.app->location.beginColumn;
+  uint endLine = patch.app->location.endLine;
+  uint endColumn = patch.app->location.endColumn;
   std::stringstream cmd;
-  cmd << "f1x-transform " << files[patch.buggy->location.fileId].relpath.string() << " --apply"
+  cmd << "f1x-transform " << files[patch.app->location.fileId].relpath.string() << " --apply"
       << " --bl " << beginLine
       << " --bc " << beginColumn
       << " --el " << endLine
       << " --ec " << endColumn
-      << " --patch " << "\"" << expressionToString(patch.patch) << "\"";
+      << " --patch " << "\"" << expressionToString(patch.modified) << "\"";
   if (cfg.verbose) {
     cmd << " >&2";
   } else {

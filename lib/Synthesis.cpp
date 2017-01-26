@@ -122,6 +122,7 @@ Expression makeRightSubs(const Expression &expr, const Expression &subs) {
 
 // simplifiable are those that have arguments of the same type as the result
 bool simplifiable(const Expression &expr) {
+  //TODE: not is not here, because it represent a separate modification kind?
   switch (expr.op) {
   case Operator::OR:
   case Operator::AND:
@@ -131,7 +132,6 @@ bool simplifiable(const Expression &expr) {
   case Operator::DIV:
   case Operator::MOD:
   case Operator::NEG:
-  case Operator::NOT: //TODE: shouldn't I move it to a separate schema?
   case Operator::BV_AND:
   case Operator::BV_OR:
   case Operator::BV_XOR:
@@ -144,39 +144,39 @@ bool simplifiable(const Expression &expr) {
   }
 }
 
-vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<Expression> &components) {
-  vector<pair<Expression, PatchMeta>> result;
+vector<pair<Expression, PatchMetadata>> mutate(const Expression &expr, const vector<Expression> &components) {
+  vector<pair<Expression, PatchMetadata>> result;
   if (expr.args.size() == 0) {
-    if (expr.kind == Kind::CONSTANT) {
+    if (expr.kind == NodeKind::CONSTANT) {
       if (expr.type == Type::INTEGER) {
         for (auto &c : components) {
           if (c.type == Type::INTEGER)
-            result.push_back(make_pair(c, PatchMeta{Transformation::GENERALIZATION, ATOMIC_EDIT}));
+            result.push_back(make_pair(c, PatchMetadata{ModificationKind::GENERALIZATION, ATOMIC_EDIT}));
         }
         result.push_back(make_pair(getIntegerExpression(0),
-                                   PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+                                   PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
         result.push_back(make_pair(getIntegerExpression(1),
-                                   PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+                                   PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
       }
     }
-    if (expr.kind == Kind::VARIABLE) {
+    if (expr.kind == NodeKind::VARIABLE) {
       if (expr.type == Type::INTEGER) {
         for (auto &c : components) {
           if (c.type == Type::INTEGER)
-            result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+            result.push_back(make_pair(c, PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
         }
         result.push_back(make_pair(getIntegerExpression(0),
-                                   PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
+                                   PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT}));
         result.push_back(make_pair(getIntegerExpression(1),
-                                   PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
+                                   PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT}));
       }
       if (expr.type == Type::POINTER) {
         for (auto &c : components) {
           if (c.type == Type::POINTER && expr.rawType == c.rawType)
-            result.push_back(make_pair(c, PatchMeta{Transformation::SUBSTITUTION, ATOMIC_EDIT}));
+            result.push_back(make_pair(c, PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
         }
         result.push_back(make_pair(getNullPointer(),
-                                   PatchMeta{Transformation::CONCRETIZATION, ATOMIC_EDIT}));
+                                   PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT}));
       }
     }
   } else {
@@ -190,26 +190,26 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
       Expression e = expr;
       e.op = m;
       e.repr = operatorToString(m);
-      result.push_back(make_pair(std::move(e), PatchMeta{Transformation::ALTERNATIVE, ATOMIC_EDIT}));
+      result.push_back(make_pair(std::move(e), PatchMetadata{ModificationKind::OPERATOR, ATOMIC_EDIT}));
     }
 
     // FIXME: need to avoid division by zero
     if (expr.args.size() == 1) {
-      vector<pair<Expression, PatchMeta>> argMutants = mutate(expr.args[0], components);
+      vector<pair<Expression, PatchMetadata>> argMutants = mutate(expr.args[0], components);
       for (auto &m : argMutants) {
         result.push_back(make_pair(makeArgSubs(expr, m.first), m.second));
       }
       if (simplifiable(expr)) {
         Expression argCopy = expr.args[0];
         // FIXME: instead of ATOMIC_EDIT simplification should depend on the size of deleted subexpression
-        result.push_back(make_pair(argCopy, PatchMeta{Transformation::SIMPLIFICATION, ATOMIC_EDIT}));
+        result.push_back(make_pair(argCopy, PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT}));
       }
     } else if (expr.args.size() == 2) {
-      vector<pair<Expression, PatchMeta>> leftMutants = mutate(expr.args[0], components);
+      vector<pair<Expression, PatchMetadata>> leftMutants = mutate(expr.args[0], components);
       for (auto &m : leftMutants) {
         result.push_back(make_pair(makeLeftSubs(expr, m.first), m.second));
       }
-      vector<pair<Expression, PatchMeta>> rightMutants = mutate(expr.args[1], components);
+      vector<pair<Expression, PatchMetadata>> rightMutants = mutate(expr.args[1], components);
       for (auto &m : rightMutants) {
         result.push_back(make_pair(makeRightSubs(expr, m.first), m.second));
       }
@@ -217,8 +217,8 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
         Expression leftCopy = expr.args[0];
         Expression rightCopy = expr.args[1];
         // FIXME: instead of ATOMIC_EDIT simplification should depend on the size of deleted subexpression
-        result.push_back(make_pair(leftCopy, PatchMeta{Transformation::SIMPLIFICATION, ATOMIC_EDIT}));
-        result.push_back(make_pair(rightCopy, PatchMeta{Transformation::SIMPLIFICATION, ATOMIC_EDIT}));
+        result.push_back(make_pair(leftCopy, PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT}));
+        result.push_back(make_pair(rightCopy, PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT}));
       }
     }
   }
@@ -228,7 +228,7 @@ vector<pair<Expression, PatchMeta>> mutate(const Expression &expr, const vector<
 
 void substituteRealNames(Expression &expression,
                          unordered_map<string, string> &accessByName) {
-  if (expression.args.size() == 0 && expression.kind == Kind::VARIABLE) {
+  if (expression.args.size() == 0 && expression.kind == NodeKind::VARIABLE) {
     expression.repr = accessByName[expression.repr];
   } else {
     for (auto &arg : expression.args) {
@@ -238,13 +238,13 @@ void substituteRealNames(Expression &expression,
 }
 
 
-void generateExpressions(shared_ptr<CandidateLocation> cl,
+void generateExpressions(shared_ptr<SchemaApplication> sa,
                          uint &id,
                          std::ostream &OS,
                          vector<SearchSpaceElement> &ss) {
   vector<string> types;
   vector<Expression> pointers;
-  for (auto &c : cl->components) {
+  for (auto &c : sa->components) {
     if (c.type == Type::INTEGER) {
       if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
         types.push_back(c.rawType);
@@ -261,7 +261,7 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
     namesByType[type] = vector<string>();
   }
 
-  for (auto &c : cl->components) {
+  for (auto &c : sa->components) {
     if (c.type == Type::INTEGER) {
       namesByType[c.rawType].push_back(c.repr);
     }
@@ -279,15 +279,15 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
     accessByName[pointers[index].repr] = POINTER_ARG_NAME + "[" + std::to_string(index) + "]";
   }
 
-  vector<pair<Expression, PatchMeta>> mutants = mutate(cl->original, cl->components);
+  vector<pair<Expression, PatchMetadata>> mutants = mutate(sa->original, sa->components);
   
   uint topId = id;
 
   string outputType;
-  if (cl->original.type == Type::POINTER) {
+  if (sa->original.type == Type::POINTER) {
     outputType= "void*";
   } else {
-    outputType = cl->original.rawType;
+    outputType = sa->original.rawType;
    }
 
   for (auto &candidate : mutants) {
@@ -299,7 +299,7 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
        << "if (! evaluated) { " << "\n";
     // FIXME: this is a temporary hack
     string castStr;
-    if (runtimeRepr.type == Type::POINTER && cl->original.type != Type::POINTER)
+    if (runtimeRepr.type == Type::POINTER && sa->original.type != Type::POINTER)
       castStr = "(std::size_t)";
     OS << "candidate_value = " << castStr << expressionToString(runtimeRepr) << ";" << "\n";
     OS << "evaluated = true;" << "\n"
@@ -308,7 +308,7 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
        << "}" << "\n";
     // FIXME: this is very imprecise, the comparison should depend on type
     castStr = "";
-    if (runtimeRepr.type == Type::POINTER && cl->original.type != Type::POINTER)
+    if (runtimeRepr.type == Type::POINTER && sa->original.type != Type::POINTER)
       castStr = "(std::size_t)";
     // FIXME: currently fill with zeros:
     OS << "if (candidate_value == " << castStr << expressionToString(runtimeRepr) << ") ofs << " << currentId << " << \" 0 0 0 0 \";" << "\n";
@@ -320,7 +320,7 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
     OS << "break; " << "\n";
     F1XID f1xid{0};
     f1xid.base = currentId; //FIXME: this should be more complete
-    ss.push_back(SearchSpaceElement{cl, f1xid, candidate.first, candidate.second});
+    ss.push_back(SearchSpaceElement{f1xid, sa, candidate.first, candidate.second});
 
     id++;
   }
@@ -329,23 +329,23 @@ void generateExpressions(shared_ptr<CandidateLocation> cl,
 
 void addRuntimeLoader(std::ostream &OH) {
   OH << "unsigned long __f1x_id;" << "\n"
-     << "unsigned long __f1x_loc;" << "\n"
+     << "unsigned long __f1x_app;" << "\n"
      << "class F1XRuntimeLoader {" << "\n"
      << "public:" << "\n"
      << "F1XRuntimeLoader() {" << "\n"
      << "__f1x_id = strtoul(getenv(\"F1X_ID\"), (char **)NULL, 10);" << "\n"
-     << "__f1x_loc = strtoul(getenv(\"F1X_LOC\"), (char **)NULL, 10);" << "\n"
+     << "__f1x_app = strtoul(getenv(\"F1X_APP\"), (char **)NULL, 10);" << "\n"
      << "}" << "\n"
      << "};" << "\n"
      << "static F1XRuntimeLoader __loader;" << "\n";
 }
 
-string makeParameterList(shared_ptr<CandidateLocation> cl) {
+string makeParameterList(shared_ptr<SchemaApplication> sa) {
   std::ostringstream result;
 
   vector<string> types;
   bool hasPointers = false;
-  for (auto &c : cl->components) {
+  for (auto &c : sa->components) {
     if (c.type == Type::INTEGER) {
       if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
         types.push_back(c.rawType);
@@ -378,7 +378,7 @@ string makeParameterList(shared_ptr<CandidateLocation> cl) {
   return result.str();
 }
 
-vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<CandidateLocation>> &candidateLocations,
+vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<SchemaApplication>> &schemaApplications,
                                                const fs::path &workDir,
                                                std::ostream &OS,
                                                std::ostream &OH,
@@ -388,24 +388,24 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
   OH << "#ifdef __cplusplus" << "\n"
      << "extern \"C\" {" << "\n"
      << "#endif" << "\n"
-     << "extern unsigned long __f1x_loc;" << "\n"
+     << "extern unsigned long __f1x_app;" << "\n"
      << "extern unsigned long __f1x_id;" << "\n";
 
-  for (auto cl : candidateLocations) {
+  for (auto sa : schemaApplications) {
     string outputType;
-    if (cl->original.type == Type::POINTER) {
+    if (sa->original.type == Type::POINTER) {
       outputType= "void*";
     } else {
-      outputType = cl->original.rawType;
+      outputType = sa->original.rawType;
     }
 
     OH << outputType << " __f1x_" 
-       << cl->location.fileId << "_"
-       << cl->location.beginLine << "_"
-       << cl->location.beginColumn << "_"
-       << cl->location.endLine << "_"
-       << cl->location.endColumn
-       << "(" << makeParameterList(cl) << ")"
+       << sa->location.fileId << "_"
+       << sa->location.beginLine << "_"
+       << sa->location.beginColumn << "_"
+       << sa->location.endLine << "_"
+       << sa->location.endColumn
+       << "(" << makeParameterList(sa) << ")"
        << ";" << "\n";
   }
 
@@ -424,21 +424,21 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
 
   uint id = 0;
 
-  for (auto cl : candidateLocations) {
+  for (auto sa : schemaApplications) {
     string outputType;
-    if (cl->original.type == Type::POINTER) {
+    if (sa->original.type == Type::POINTER) {
       outputType= "void*";
     } else {
-      outputType = cl->original.rawType;
+      outputType = sa->original.rawType;
     }
 
     OS << outputType << " __f1x_"
-       << cl->location.fileId << "_"
-       << cl->location.beginLine << "_"
-       << cl->location.beginColumn << "_"
-       << cl->location.endLine << "_"
-       << cl->location.endColumn
-       << "(" << makeParameterList(cl) << ")"
+       << sa->location.fileId << "_"
+       << sa->location.beginLine << "_"
+       << sa->location.beginColumn << "_"
+       << sa->location.endLine << "_"
+       << sa->location.endColumn
+       << "(" << makeParameterList(sa) << ")"
        << "{" << "\n";
 
     fs::path partitionFile = workDir / PARTITION_OUT;
@@ -458,7 +458,7 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<Candidate
 
     OS << "while (!evaluated || !partitioned) {" << "\n"
        << "switch (next) {" << "\n";
-    generateExpressions(cl, id, OS, searchSpace);
+    generateExpressions(sa, id, OS, searchSpace);
     OS << "}" << "\n";
     OS << "}" << "\n";
 

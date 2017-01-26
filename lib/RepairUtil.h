@@ -67,7 +67,7 @@ namespace std {
 }
 
 
-enum class Kind {
+enum class NodeKind {
   OPERATOR, VARIABLE, CONSTANT, PARAMETER,
   BV2, INT2, BOOL2, BOOL3 // auxiliary kinds
 };
@@ -82,9 +82,8 @@ enum class Operator {
   NONE, // this is when node is not an operator
   EQ, NEQ, LT, LE, GT, GE, OR, AND, ADD, SUB, MUL, DIV, MOD, NEG, NOT,
   BV_AND, BV_XOR, BV_OR, BV_SHL, BV_SHR, BV_NOT,
-  // auxiliary operators
-  BV_TO_INT, INT_TO_BV, // these are for synthesizer to separate arithmetic and bitwise parts
-  INT_CAST // this is for INT2 substitutions, because other types are not supported inside runtime
+  BV_TO_INT, INT_TO_BV, // auxiliary operators for synthesizer to separate arithmetic and bitwise parts
+  INT_CAST // auxiliary operator for INT2 substitutions, because other types are not supported inside runtime
 };
 
 Type operatorType(const Operator &op);
@@ -97,28 +96,11 @@ std::string operatorToString(const Operator &op);
 
 
 struct Expression {
-  Kind kind;
-  
+  NodeKind kind;
   Type type;
-
-  /*
-    should be NONE if not of the kind OPERATOR
-   */
-  Operator op;
-
-  /* 
-     Either 
-       char, unsinged char, unsigned short, unsigned int, unsigned long, signed char, short, int, long
-     or
-       the base type of pointer
-   */
-  std::string rawType;
-
-  /*
-    1, 2,... for constants; "x", "y",... for variables; ">=",... for ops
-  */
-  std::string repr;
-
+  Operator op;   /* should be NONE if not of the kind OPERATOR */
+  std::string rawType; /* either innteger type (char, unsinged char, unsigned short, ...) or pointer base type */
+  std::string repr; /* 1, 2,... for constants; "x", "y",... for variables; ">=",... for ops */
   std::vector<Expression> args;
 };
 
@@ -127,13 +109,6 @@ std::string expressionToString(const Expression &expression);
 Expression getIntegerExpression(int n);
 
 Expression getNullPointer();
-
-
-enum class DefectClass {
-  CONDITION,  // existing program conditions in if, for, while, etc.
-  EXPRESSION, // right side of assignments, call arguments
-  GUARD       // adding guard for existing statement
-};
 
 
 struct Location {
@@ -168,46 +143,63 @@ namespace std {
   };
 }
 
+/*
+  We use the following structure to represent patching:
+  - TransformationSchema is a high-level transformation rule
+  - ModificationKind is a kind of expression modification
+  - SchemaApplication is an application of a schema to a program location
+  - SearchSpaceElement is a concrete patch
+ */
 
-struct CandidateLocation {
-  DefectClass defect;
-  Location location;
-  uint locId; //NOTE: this is different from location, because it is only for schema applications
-  Expression original;
-  std::vector<Expression> components;
+
+enum class TransformationSchema {
+  EXPRESSION,  // changing existing expression
+  IF_GUARD,    // adding guard for existing statement
+  ARRAY_INIT   // adding memset for array
 };
 
-/* TODO: this all should be refactored to look like
-     TransformationSchema and SchemaInitialization
-   it makes sense to distinguish between repair schemas:
-     IF_GUARD, etc.
-   and schema instantiation
-     NULL_CHECK, GENERALIZATION, etc.
- */
-enum class Transformation {
-  NONE,
-  ALTERNATIVE,    // alternative operator e.g. > --> >=
+
+enum class ModificationKind {
+  OPERATOR,       // operator replacement e.g. > --> >=
   SWAPING,        // swaping arguments
   SIMPLIFICATION, // simplifying expression
   GENERALIZATION, // e.g. 1 --> x
   CONCRETIZATION, // e.g. x --> 1
-  SUBSTITUTION,   // (generic) substution of subnode
   LOOSENING,      // adding "|| something"
-  TIGHTENING      // adding "&& something"
+  TIGHTENING,     // adding "&& something"
+  NEGATION,       // (logically) negate or remove negation
+  NULL_CHECK,     // adding null check
+  SUBSTITUTION    // (generic) substution of subnode
 };
 
 
-struct PatchMeta {
-  Transformation transformation;
+enum struct LocationContext {
+  CONDITION, //NOTE: this is for if and loop conditions, etc.
+  UNKNOWN
+};
+
+
+struct SchemaApplication {
+  uint appId;
+  TransformationSchema schema;
+  Location location;
+  LocationContext context;
+  Expression original;
+  std::vector<Expression> components;
+};
+
+
+struct PatchMetadata {
+  ModificationKind kind;
   uint distance;
 };
 
 
 struct SearchSpaceElement {
-  std::shared_ptr<CandidateLocation> buggy;
   F1XID id;
-  Expression patch;
-  PatchMeta meta;
+  std::shared_ptr<SchemaApplication> app;
+  Expression modified;
+  PatchMetadata meta;
 };
 
 
@@ -243,7 +235,7 @@ class parse_error : public std::logic_error {
 };
 
 
-std::vector<std::shared_ptr<CandidateLocation>> loadCandidateLocations(const boost::filesystem::path &path);
+std::vector<std::shared_ptr<SchemaApplication>> loadSchemaApplications(const boost::filesystem::path &path);
 
 
 bool isExecutable(const char *file);

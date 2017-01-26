@@ -39,7 +39,7 @@ namespace json = rapidjson;
 using std::vector;
 using std::string;
 
-json::Document candidateLocations;
+json::Document schemaApplications;
 
 std::unordered_set<std::string> interestingLocations;
 
@@ -74,7 +74,7 @@ bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, Str
   }
   alreadyTransformed = true;
 
-  candidateLocations.SetArray();
+  schemaApplications.SetArray();
   initInterestingLocations();
   return true;
 }
@@ -92,7 +92,7 @@ void InstrumentRepairableAction::EndSourceFileAction() {
   std::ofstream ofs(globalOutputFile);
   json::OStreamWrapper osw(ofs);
   json::Writer<json::OStreamWrapper> writer(osw);
-  candidateLocations.Accept(writer);
+  schemaApplications.Accept(writer);
 }
 
 std::unique_ptr<ASTConsumer> InstrumentRepairableAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
@@ -140,34 +140,35 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
-    uint locId = f1xloc(globalBaseLocId, globalFileId);
-    globalBaseLocId++;
+    uint appId = f1xapp(globalBaseAppId, globalFileId);
+    globalBaseAppId++;
                  
     llvm::errs() << beginLine << " "
                  << beginColumn << " "
                  << endLine << " "
                  << endColumn << "\n"
-                 << locId << "\n"
+                 << appId << "\n"
                  << toString(stmt) << "\n";
 
-    json::Value candidateLoc(json::kObjectType);
-    candidateLoc.AddMember("defect", json::Value().SetString("guard"), candidateLocations.GetAllocator());
+    json::Value app(json::kObjectType);
+    app.AddMember("schema", json::Value().SetString("if_guard"), schemaApplications.GetAllocator());
     json::Value exprJSON(json::kObjectType);
-    exprJSON.AddMember("kind", json::Value().SetString("constant"), candidateLocations.GetAllocator());
-    exprJSON.AddMember("type", json::Value().SetString("int"), candidateLocations.GetAllocator());
-    exprJSON.AddMember("repr", json::Value().SetString("1"), candidateLocations.GetAllocator());
-    candidateLoc.AddMember("expression", exprJSON, candidateLocations.GetAllocator());
-    candidateLoc.AddMember("locId", json::Value().SetInt(locId), candidateLocations.GetAllocator());
-    json::Value locJSON = locToJSON(globalFileId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
-    candidateLoc.AddMember("location", locJSON, candidateLocations.GetAllocator());
+    exprJSON.AddMember("kind", json::Value().SetString("constant"), schemaApplications.GetAllocator());
+    exprJSON.AddMember("type", json::Value().SetString("int"), schemaApplications.GetAllocator());
+    exprJSON.AddMember("repr", json::Value().SetString("1"), schemaApplications.GetAllocator());
+    app.AddMember("expression", exprJSON, schemaApplications.GetAllocator());
+    app.AddMember("appId", json::Value().SetInt(appId), schemaApplications.GetAllocator());
+    json::Value locJSON = locToJSON(globalFileId, beginLine, beginColumn, endLine, endColumn, schemaApplications.GetAllocator());
+    app.AddMember("location", locJSON, schemaApplications.GetAllocator());
+    app.AddMember("context", json::Value().SetString("unknown"), schemaApplications.GetAllocator()); //FIXME: infer context
     json::Value componentsJSON(json::kArrayType);    
-    vector<json::Value> components = collectComponents(stmt, beginLine, Result.Context, candidateLocations.GetAllocator());
+    vector<json::Value> components = collectComponents(stmt, beginLine, Result.Context, schemaApplications.GetAllocator());
     string arguments = makeArgumentList(components);
     for (auto &component : components) {
-      componentsJSON.PushBack(component, candidateLocations.GetAllocator());
+      componentsJSON.PushBack(component, schemaApplications.GetAllocator());
     }
-    candidateLoc.AddMember("components", componentsJSON, candidateLocations.GetAllocator());
-    candidateLocations.PushBack(candidateLoc, candidateLocations.GetAllocator());
+    app.AddMember("components", componentsJSON, schemaApplications.GetAllocator());
+    schemaApplications.PushBack(app, schemaApplications.GetAllocator());
 
 	  unsigned origLength = Rewrite.getRangeSize(expandedLoc);
     std::ostringstream stringStream;
@@ -176,7 +177,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     if(addBrackets)
     	stringStream << "{ ";
     stringStream << "if ("
-                 << "!(__f1x_loc == " << locId << "ul) || "
+                 << "!(__f1x_app == " << appId << "ul) || "
                  << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
                  << "(" << arguments << ")"
                  << ") "
@@ -229,35 +230,35 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
-    uint locId = f1xloc(globalBaseLocId, globalFileId);
-    globalBaseLocId++;
+    uint appId = f1xapp(globalBaseAppId, globalFileId);
+    globalBaseAppId++;
 
     llvm::errs() << beginLine << " "
                  << beginColumn << " "
                  << endLine << " "
                  << endColumn << "\n"
-                 << locId << "\n"
+                 << appId << "\n"
                  << toString(expr) << "\n";
 
-    json::Value candidateLoc(json::kObjectType);
-    //FIXME: condition is more precise defect class:
-    candidateLoc.AddMember("defect", json::Value().SetString("expression"), candidateLocations.GetAllocator());
-    json::Value exprJSON = stmtToJSON(expr, candidateLocations.GetAllocator());
-    candidateLoc.AddMember("expression", exprJSON, candidateLocations.GetAllocator());
-    candidateLoc.AddMember("locId", json::Value().SetInt(locId), candidateLocations.GetAllocator());
-    json::Value locJSON = locToJSON(globalFileId, beginLine, beginColumn, endLine, endColumn, candidateLocations.GetAllocator());
-    candidateLoc.AddMember("location", locJSON, candidateLocations.GetAllocator());
+    json::Value app(json::kObjectType);
+    app.AddMember("schema", json::Value().SetString("expression"), schemaApplications.GetAllocator());
+    json::Value exprJSON = stmtToJSON(expr, schemaApplications.GetAllocator());
+    app.AddMember("expression", exprJSON, schemaApplications.GetAllocator());
+    app.AddMember("appId", json::Value().SetInt(appId), schemaApplications.GetAllocator());
+    json::Value locJSON = locToJSON(globalFileId, beginLine, beginColumn, endLine, endColumn, schemaApplications.GetAllocator());
+    app.AddMember("location", locJSON, schemaApplications.GetAllocator());
+    app.AddMember("context", json::Value().SetString("unknown"), schemaApplications.GetAllocator()); //FIXME: infer context
     json::Value componentsJSON(json::kArrayType);
-    vector<json::Value> components = collectComponents(expr, beginLine, Result.Context, candidateLocations.GetAllocator());
+    vector<json::Value> components = collectComponents(expr, beginLine, Result.Context, schemaApplications.GetAllocator());
     string arguments = makeArgumentList(components);
     for (auto &component : components) {
-      componentsJSON.PushBack(component, candidateLocations.GetAllocator());
+      componentsJSON.PushBack(component, schemaApplications.GetAllocator());
     }
-    candidateLoc.AddMember("components", componentsJSON, candidateLocations.GetAllocator());
-    candidateLocations.PushBack(candidateLoc, candidateLocations.GetAllocator());
+    app.AddMember("components", componentsJSON, schemaApplications.GetAllocator());
+    schemaApplications.PushBack(app, schemaApplications.GetAllocator());
     
     std::ostringstream stringStream;
-    stringStream << "(__f1x_loc == " << locId << "ul ? "
+    stringStream << "(__f1x_app == " << appId << "ul ? "
                  << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
                  << "(" << arguments << ")"
                  << " : " << toString(expr) << ")";

@@ -71,29 +71,29 @@ InEnvironment::~InEnvironment() {
   }
 }
 
-Kind kindByString(const string &kindStr) {
+NodeKind kindByString(const string &kindStr) {
   if (kindStr == "operator") {
-    return Kind::OPERATOR;
+    return NodeKind::OPERATOR;
   } else if (kindStr == "object") {
-    return Kind::VARIABLE;
+    return NodeKind::VARIABLE;
   } else if (kindStr == "pointer") {
-    return Kind::VARIABLE;
+    return NodeKind::VARIABLE;
   } else if (kindStr == "constant") {
-    return Kind::CONSTANT;
+    return NodeKind::CONSTANT;
   } else {
     throw parse_error("unsupported kind: " + kindStr);
   }
 }
 
-DefectClass defectClassByString(const string &defectStr) {
-  if (defectStr == "expression") {
-    return DefectClass::EXPRESSION;
-  } else if (defectStr == "condition") {
-    return DefectClass::CONDITION;
-  } else if (defectStr == "guard") {
-    return DefectClass::GUARD;
+TransformationSchema transformationSchemaByString(const string &str) {
+  if (str == "expression") {
+    return TransformationSchema::EXPRESSION;
+  } else if (str == "if_guard") {
+    return TransformationSchema::IF_GUARD;
+  } else if (str == "array_init") {
+    return TransformationSchema::ARRAY_INIT;
   } else {
-    throw parse_error("unsupported defect: " + defectStr);
+    throw parse_error("unsupported transformation schema: " + str);
   }
 }
 
@@ -279,34 +279,62 @@ std::string expressionToString(const Expression &expression) {
 
 
 Expression getIntegerExpression(int n) {
-  return Expression{Kind::CONSTANT, Type::INTEGER, Operator::NONE, "int", std::to_string(n), {}};
+  return Expression{ NodeKind::CONSTANT,
+                     Type::INTEGER,
+                     Operator::NONE,
+                     "int",
+                     std::to_string(n),
+                     {} };
 }
 
 Expression getNullPointer() {
-  return Expression{Kind::CONSTANT, Type::POINTER, Operator::NONE, "void", "0", {}};
+  return Expression{ NodeKind::CONSTANT,
+                     Type::POINTER,
+                     Operator::NONE,
+                     "void",
+                     "0",
+                     {} };
 }
 
 
-std::string metaToString(const PatchMeta &meta) {
-  switch (meta.transformation) {
-  case Transformation::ALTERNATIVE:
-    return "replace operator";
-  case Transformation::SWAPING:
-    return "swap argument";
-  case Transformation::SIMPLIFICATION:
-    return "simplify";
-  case Transformation::GENERALIZATION:
-    return "generalize";
-  case Transformation::CONCRETIZATION:
-    return "concretize";
-  case Transformation::SUBSTITUTION:
-    return "substitute";
-  case Transformation::LOOSENING:
-    return "loosen";
-  case Transformation::TIGHTENING:
-    return "tighten";
+std::string transformationSchemaToString(const TransformationSchema &schema) {
+  switch (schema) {
+  case TransformationSchema::EXPRESSION:
+    return "modify expression";
+  case TransformationSchema::IF_GUARD:
+    return "add if guard";
+  case TransformationSchema::ARRAY_INIT:
+    return "add array initialization";
   default:
-    return "change";
+    throw std::invalid_argument("unsupported transformation schema");
+  }
+}
+
+
+std::string modificationKindToString(const ModificationKind &kind) {
+  switch (kind) {
+  case ModificationKind::OPERATOR:
+    return "replace operator";
+  case ModificationKind::SWAPING:
+    return "swap arguments";
+  case ModificationKind::SIMPLIFICATION:
+    return "simplify";
+  case ModificationKind::GENERALIZATION:
+    return "generalize";
+  case ModificationKind::CONCRETIZATION:
+    return "concretize";
+  case ModificationKind::LOOSENING:
+    return "loosen";
+  case ModificationKind::TIGHTENING:
+    return "tighten";
+  case ModificationKind::NEGATION:
+    return "negate";
+  case ModificationKind::NULL_CHECK:
+    return "null check";
+  case ModificationKind::SUBSTITUTION:
+    return "substitute";
+  default:
+    throw std::invalid_argument("unsupported modification kind");
   }
 }
 
@@ -314,20 +342,19 @@ std::string metaToString(const PatchMeta &meta) {
 std::string visualizeElement(const SearchSpaceElement &el,
                              const boost::filesystem::path &file) {
   std::stringstream result;
-  result << metaToString(el.meta)
-         << " "
-         << expressionToString(el.buggy->original)
-         << " to "
-         << expressionToString(el.patch)
-         << " in " << file.string()
-         << ":" << el.buggy->location.beginLine;
+  result << transformationSchemaToString(el.app->schema) 
+         << " (" << modificationKindToString(el.meta.kind)
+         << expressionToString(el.app->original)
+         << " ---> "
+         << expressionToString(el.modified)
+         << " @" << file.string() << ":" << el.app->location.beginLine;
   return result.str();
 }                                                          
 
 
 Expression convertExpression(const json::Value &json) {
   string kindStr = json["kind"].GetString();
-  Kind kind = kindByString(kindStr);
+  NodeKind kind = kindByString(kindStr);
   Type type;
   string rawType = json["type"].GetString();
   Operator op;
@@ -335,7 +362,7 @@ Expression convertExpression(const json::Value &json) {
   vector<Expression> args;
   if (json.HasMember("args")) {
     const auto &arguments = json["args"].GetArray();
-    assert(kind == Kind::OPERATOR);
+    assert(kind == NodeKind::OPERATOR);
     if (arguments.Size() == 1) {
       op = unaryOperatorByString(repr);
       type = operatorType(op);
@@ -361,8 +388,8 @@ Expression convertExpression(const json::Value &json) {
 }
 
 
-vector<shared_ptr<CandidateLocation>> loadCandidateLocations(const fs::path &path) {
-  vector<shared_ptr<CandidateLocation>> result;
+vector<shared_ptr<SchemaApplication>> loadSchemaApplications(const fs::path &path) {
+  vector<shared_ptr<SchemaApplication>> result;
   json::Document d;
   {
     fs::ifstream ifs(path);
@@ -370,28 +397,40 @@ vector<shared_ptr<CandidateLocation>> loadCandidateLocations(const fs::path &pat
     d.ParseStream(isw);
   }
 
-  for (auto &loc : d.GetArray()) {
-    DefectClass defect = defectClassByString(loc["defect"].GetString());
+  for (auto &app : d.GetArray()) {
+    uint appId = app["appId"].GetUint();
+
+    TransformationSchema schema = transformationSchemaByString(app["schema"].GetString());
 
     Location location {
-      loc["location"]["fileId"].GetUint(),
-      loc["location"]["beginLine"].GetUint(),
-      loc["location"]["beginColumn"].GetUint(),
-      loc["location"]["endLine"].GetUint(),
-      loc["location"]["endColumn"].GetUint()
+      app["location"]["fileId"].GetUint(),
+      app["location"]["beginLine"].GetUint(),
+      app["location"]["beginColumn"].GetUint(),
+      app["location"]["endLine"].GetUint(),
+      app["location"]["endColumn"].GetUint()
     };
 
-    Expression expression = convertExpression(loc["expression"]);
+    LocationContext context;
+    if (app["context"].GetString() == "condition") {
+      context = LocationContext::CONDITION;
+    } else {
+      context = LocationContext::UNKNOWN;
+    }
+
+    Expression expression = convertExpression(app["expression"]);
 
     vector<Expression> components;
-    for (auto &c : loc["components"].GetArray()) {
+    for (auto &c : app["components"].GetArray()) {
       components.push_back(convertExpression(c));
     }
 
-    uint locId = loc["locId"].GetUint();
-
-    shared_ptr<CandidateLocation> cl(new CandidateLocation{defect, location, locId, expression, components});
-    result.push_back(cl);
+    shared_ptr<SchemaApplication> sa(new SchemaApplication{ appId,
+                                                            schema,
+                                                            location,
+                                                            context,
+                                                            expression,
+                                                            components });
+    result.push_back(sa);
   }
 
   return result;
