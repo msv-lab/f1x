@@ -126,6 +126,7 @@ StatementMatcher RepairableExpression =
         RepairableReturn);
 
 StatementMatcher RepairableStatement =
-  anyOf(callExpr().bind(BOUND),
+  anyOf(allOf(unless(hasDescendant(expr(ignoringParenImpCasts(RepairableExpression)))),
+              callExpr().bind(BOUND)),
         breakStmt().bind(BOUND),
         continueStmt().bind(BOUND));
