@@ -30,8 +30,20 @@
 namespace fs = boost::filesystem;
 using std::string;
 using std::vector;
-using std::unordered_set;
+using std::set;
 using std::unordered_map;
+
+
+string locToString(const Location &loc) {
+  std::ostringstream out;
+  out << loc.fileId << " "
+      << loc.beginLine << " "
+      << loc.beginColumn << " "
+      << loc.endLine << " "
+      << loc.endColumn;
+  return out.str();
+}
+
 
 Profiler::Profiler(const fs::path &workDir, const Config &cfg): 
   workDir(workDir),
@@ -97,7 +109,7 @@ void Profiler::clearTrace() {
 void Profiler::mergeTrace(int testIndex, bool isPassing) {
   fs::path traceFile = workDir / TRACE_FILE_NAME;
   fs::ifstream infile(traceFile);
-  unordered_set<Location> covered;
+  set<string> covered;
   if(infile) {
     string line;
     while (std::getline(infile, line)) {
@@ -115,7 +127,7 @@ void Profiler::mergeTrace(int testIndex, bool isPassing) {
         else
           relatedTestIndexes[loc].insert(relatedTestIndexes[loc].begin(), testIndex);
       }
-      covered.insert(loc);
+      covered.insert(locToString(loc));
     }
   }
   if (covered.empty()) {
@@ -127,7 +139,7 @@ void Profiler::mergeTrace(int testIndex, bool isPassing) {
       interestingLocations.insert(covered.begin(), covered.end());
     } else {
       //NOTE: here is intentionally intersection:
-      unordered_set<Location> newInteresting;
+      set<string> newInteresting;
       for (auto &loc : interestingLocations) {
         if (covered.count(loc)) {
           newInteresting.insert(loc);
@@ -145,18 +157,14 @@ fs::path Profiler::getProfile() {
   //NOTE: removing uninteresting test indexes
   unordered_map<Location, vector<int>>::iterator it = relatedTestIndexes.begin();
   while(it != relatedTestIndexes.end()) {
-    if(interestingLocations.find(it->first) == interestingLocations.end()) {
+    if(interestingLocations.find(locToString(it->first)) == interestingLocations.end()) {
       relatedTestIndexes.erase(it);
     }
     it++;
   }
 
   for (auto &loc : interestingLocations) {
-    outfile << loc.fileId << " "
-            << loc.beginLine << " "
-            << loc.beginColumn << " "
-            << loc.endLine << " "
-            << loc.endColumn << "\n";
+    outfile << loc << "\n";
   }
 
   return profileFile;

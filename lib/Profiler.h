@@ -19,7 +19,7 @@
 #pragma once
 
 #include <unordered_map>
-#include <unordered_set>
+#include <set>
 
 #include <boost/filesystem.hpp>
 
@@ -48,5 +48,5 @@ class Profiler {
   boost::filesystem::path workDir;
   Config cfg;
   std::unordered_map<Location, std::vector<int>> relatedTestIndexes;
-  std::unordered_set<Location> interestingLocations;
+  std::set<std::string> interestingLocations; //NOTE: set of string to make more deterministic
 };

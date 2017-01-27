@@ -87,7 +87,7 @@ The path to the output patch (or directory when used with `--all`). If omitted, 
 
 #### -a [ --all ] ####
 
-Enables generation of all patches in the search space.
+Enables generation of all patches in the search space. In this mode, consider using `--disable-validation` to reduce evaluation time.
 
 #### -v [ --verbose ] ####
 
