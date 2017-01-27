@@ -178,6 +178,17 @@ bool isTopLevelStatement(const Stmt *stmt, ASTContext *context) {
     return true;
   }
 
+  if (isChildOfNonblock(stmt, context)) {
+    return true;
+  }
+    
+  return false;
+}
+
+bool isChildOfNonblock(const Stmt *stmt, ASTContext *context)
+{
+  auto it = context->getParents(*stmt).begin();
+
   const IfStmt* is;
   if ((is = it->get<IfStmt>()) != NULL) {
     return stmt != is->getCond();
@@ -192,27 +203,38 @@ bool isTopLevelStatement(const Stmt *stmt, ASTContext *context) {
   if ((ws = it->get<WhileStmt>()) != NULL) {
     return stmt != ws->getCond();
   }
-    
+
   return false;
 }
 
-bool shouldAddBrackets(const Stmt *stmt, ASTContext *context)
+
+bool inConditionContext(const Stmt *stmt, ASTContext *context)
 {
   auto it = context->getParents(*stmt).begin();
+
   const IfStmt* is;
   if ((is = it->get<IfStmt>()) != NULL) {
-    return true;
+    return stmt == is->getCond();
   }
+
   const ForStmt* fs;
   if ((fs = it->get<ForStmt>()) != NULL) {
-    return true;
+    return stmt == fs->getCond();
   }
+
   const WhileStmt* ws;
   if ((ws = it->get<WhileStmt>()) != NULL) {
-    return true;
+    return stmt == ws->getCond();
   }
+
+  const BinaryOperator* bo;
+  if ((bo = it->get<BinaryOperator>()) != NULL) {
+    return bo->getOpcode() == clang::BO_And || bo->getOpcode() == clang::BO_Or;
+  }
+
   return false;
 }
+
 
 BuiltinType::Kind getBuiltinKind(const QualType &type) {
   QualType canon = type.getCanonicalType();
