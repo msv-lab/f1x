@@ -160,7 +160,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     app.AddMember("appId", json::Value().SetInt(appId), schemaApplications.GetAllocator());
     json::Value locJSON = locToJSON(globalFileId, beginLine, beginColumn, endLine, endColumn, schemaApplications.GetAllocator());
     app.AddMember("location", locJSON, schemaApplications.GetAllocator());
-    app.AddMember("context", json::Value().SetString("unknown"), schemaApplications.GetAllocator()); //FIXME: infer context
+    app.AddMember("context", json::Value().SetString("condition"), schemaApplications.GetAllocator());
     json::Value componentsJSON(json::kArrayType);    
     vector<json::Value> components = collectComponents(stmt, beginLine, Result.Context, schemaApplications.GetAllocator());
     string arguments = makeArgumentList(components);
@@ -173,7 +173,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
 	  unsigned origLength = Rewrite.getRangeSize(expandedLoc);
     std::ostringstream stringStream;
     
-    bool addBrackets = shouldAddBrackets(stmt, Result.Context);
+    bool addBrackets = isChildOfNonblock(stmt, Result.Context);
     if(addBrackets)
     	stringStream << "{ ";
     stringStream << "if ("
@@ -247,7 +247,13 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     app.AddMember("appId", json::Value().SetInt(appId), schemaApplications.GetAllocator());
     json::Value locJSON = locToJSON(globalFileId, beginLine, beginColumn, endLine, endColumn, schemaApplications.GetAllocator());
     app.AddMember("location", locJSON, schemaApplications.GetAllocator());
-    app.AddMember("context", json::Value().SetString("unknown"), schemaApplications.GetAllocator()); //FIXME: infer context
+    json::Value context;
+    if (inConditionContext(expr, Result.Context)) {
+      context = json::Value().SetString("condition");
+    } else {
+      context = json::Value().SetString("unknown");
+    }
+    app.AddMember("context", context, schemaApplications.GetAllocator());
     json::Value componentsJSON(json::kArrayType);
     vector<json::Value> components = collectComponents(expr, beginLine, Result.Context, schemaApplications.GetAllocator());
     string arguments = makeArgumentList(components);

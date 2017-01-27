@@ -82,7 +82,7 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
         std::stringstream replacement;
         
         unsigned origLength = Rewrite.getRangeSize(expandedLoc);
-        bool addBrackets = shouldAddBrackets(stmt, Result.Context);
+        bool addBrackets = isChildOfNonblock(stmt, Result.Context);
         if(addBrackets)
     	    replacement << "{ ";
     	    
