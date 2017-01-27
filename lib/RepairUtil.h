@@ -206,6 +206,9 @@ struct SearchSpaceElement {
 std::string visualizeF1XID(const F1XID &id);
 
 
+std::string visualizeChange(const SearchSpaceElement &el);
+
+
 std::string visualizeElement(const SearchSpaceElement &el, const boost::filesystem::path &file);
 
 

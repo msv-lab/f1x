@@ -297,7 +297,7 @@ Expression getNullPointer() {
 }
 
 
-std::string transformationSchemaToString(const TransformationSchema &schema) {
+std::string visualizeTransformationSchema(const TransformationSchema &schema) {
   switch (schema) {
   case TransformationSchema::EXPRESSION:
     return "modify expression";
@@ -311,7 +311,7 @@ std::string transformationSchemaToString(const TransformationSchema &schema) {
 }
 
 
-std::string modificationKindToString(const ModificationKind &kind) {
+std::string visualizeModificationKind(const ModificationKind &kind) {
   switch (kind) {
   case ModificationKind::OPERATOR:
     return "replace operator";
@@ -339,15 +339,23 @@ std::string modificationKindToString(const ModificationKind &kind) {
 }
 
 
+std::string visualizeChange(const SearchSpaceElement &el) {
+  std::stringstream result;
+  result << "\"" << expressionToString(el.app->original) << "\""
+         << " ---> "
+         << "\"" << expressionToString(el.modified) << "\"";
+  return result.str();
+}                                                          
+
+
 std::string visualizeElement(const SearchSpaceElement &el,
                              const boost::filesystem::path &file) {
   std::stringstream result;
-  result << transformationSchemaToString(el.app->schema) 
-         << " (" << modificationKindToString(el.meta.kind) << ") "
-         << expressionToString(el.app->original)
-         << " ---> "
-         << expressionToString(el.modified)
-         << " @" << file.string() << ":" << el.app->location.beginLine;
+  result << visualizeF1XID(el.id) << " "
+         << visualizeTransformationSchema(el.app->schema) 
+         << " [" << visualizeModificationKind(el.meta.kind) << "] "
+         << visualizeChange(el)
+         << " in " << file.string() << ":" << el.app->location.beginLine;
   return result.str();
 }                                                          
 
