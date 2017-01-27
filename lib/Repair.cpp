@@ -233,7 +233,6 @@ bool repair(Project &project,
       fs::path relpath = project.getFiles()[searchSpace[last].app->location.fileId].relpath;
       BOOST_LOG_TRIVIAL(info) << "plausible patch: " << visualizeChange(searchSpace[last]) << " in " << relpath.string() << ":" << searchSpace[last].app->location.beginLine;;
       
-      BOOST_LOG_TRIVIAL(info) << "applying patch";
       bool appSuccess = project.applyPatch(searchSpace[last]);
       if (! appSuccess) {
         BOOST_LOG_TRIVIAL(warning) << "patch application failed";

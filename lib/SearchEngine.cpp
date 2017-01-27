@@ -49,6 +49,8 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   stat.explorationCounter = 0;
   stat.executionCounter = 0;
 
+  progress = 0;
+
   //FIXME: I should use evaluation table instead
   failing = {};
   passing = {};
@@ -62,18 +64,26 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
   uint index = indexFrom;
   for (; index < searchSpace.size(); index++) {
     stat.explorationCounter++;
+    if ((100 * index) / searchSpace.size() >= progress) {
+      BOOST_LOG_TRIVIAL(info) << "search space explored: " << progress << "%";
+      progress += 10;
+    }
+
     const SearchSpaceElement &elem = searchSpace[index];
     uint appId = elem.app->appId;
+
     if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
       if (failing.count(elem.id))
         continue;
     }
+
     InEnvironment env({ { "F1X_ID", to_string(elem.id.base) },
                         { "F1X_ID_INT2", to_string(elem.id.int2) },
                         { "F1X_ID_BOOL2", to_string(elem.id.bool2) },
                         { "F1X_ID_COND3", to_string(elem.id.cond3) },
                         { "F1X_ID_PARAM", to_string(elem.id.param) },
                         { "F1X_APP", to_string(appId) } });
+
     bool passAll = true;
     
     std::shared_ptr<SchemaApplication> sa = elem.app;
@@ -84,14 +94,18 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
       auto test = tests[testOrder[i]];
       BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizeF1XID(elem.id) 
                                << " with test " << test;
+
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         if (passing[test].count(elem.id))
           continue;
         runtime.clearPartition();
         runtime.setPartition((*groupable)[appId]);
       }
+
       stat.executionCounter++;
+
       passAll = tester.isPassing(test);
+
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         unordered_set<F1XID> partition = runtime.getPartition();
         for (auto &pel: partition) {
@@ -105,6 +119,7 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
           failing.insert(partition.begin(), partition.end());
         }
       }
+
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
           changeSensitivity(relatedTestIndexes[elem.app->location], i);

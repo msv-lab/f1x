@@ -54,6 +54,7 @@ class SearchEngine {
   Runtime runtime;
   Config cfg;
   SearchStatistics stat;
+  uint progress;
   std::shared_ptr<std::unordered_map<uint, std::unordered_set<F1XID>>> groupable;
   std::unordered_set<F1XID> failing;
   std::unordered_map<std::string, std::unordered_set<F1XID>> passing;
