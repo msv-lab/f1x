@@ -343,7 +343,7 @@ std::string visualizeElement(const SearchSpaceElement &el,
                              const boost::filesystem::path &file) {
   std::stringstream result;
   result << transformationSchemaToString(el.app->schema) 
-         << " (" << modificationKindToString(el.meta.kind)
+         << " (" << modificationKindToString(el.meta.kind) << ") "
          << expressionToString(el.app->original)
          << " ---> "
          << expressionToString(el.modified)

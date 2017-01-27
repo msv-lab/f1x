@@ -10,7 +10,7 @@ The repair module is responsible for running tests, maintaining search space and
 
 ## Search space representation ##
 
-The entire search space is explicitly represented as a C++ vector `searchSpace` in the SearchEngine.cpp. The search space can be freely manipulated and efficiently traversed in an arbitrary order.
+The entire search space is explicitly represented as a C++ vector `searchSpace` in SearchEngine.cpp. The search space can be freely manipulated and efficiently traversed in an arbitrary order.
 
 ## Runtime ##
 
@@ -22,12 +22,13 @@ TODO: describe communication protocol
 
 f1x and f1x-transform communicate using JSON format.
 
-f1x-transform represents the extracted expressions in the following way:
+f1x-transform represents transformation schemas applications to program locations in the following way:
 
     [
         {
-            "defect": "condition",
-            "locId": 1,
+            "appId": 1,
+            "schema": "if_guard",
+            "context": "condition",
             "location" : {...},
             "expression": {...},
             "components": [...]
