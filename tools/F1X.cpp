@@ -275,7 +275,12 @@ int main (int argc, char *argv[])
   } else {
     output = fs::path(vm["output"].as<string>());
   }
+
   output = fs::absolute(output);
+  if (fs::exists(output)) {
+    BOOST_LOG_TRIVIAL(warning) << "existing "<< output << " will be overwritten";
+    fs::remove_all(output);
+  }
 
   fs::path workDir = fs::temp_directory_path() / fs::unique_path();
   fs::create_directory(workDir);
