@@ -1,10 +1,8 @@
 ![logo](doc/logo.png)
 
-f1x (ef-one-eks) is a test-driven patch generation engine for C/C++ programs. It can automatically find and fix software bugs by analyzing behaviour of passing and failing tests. f1x aims to be reliable, efficient and easy-to-use, which is critical for large scale experimentation.
+f1x (ef-one-eks) is a test-driven patch generation engine for C/C++ programs. It automatically finds and fixes software bugs by analyzing behaviour of passing and failing tests. f1x aims to be reliable, efficient and easy-to-use.
 
-f1x combines ideas from existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. This enables f1x to traverse the search space in an arbitrary order without sacrificing efficiency. As a result, f1x is the first system that guarantees to always generate the most reliable patch in the search space according to a given static prioritization strategy. Apart from that, f1x explores search space X times faster compared to previous approaches when repairing large programs such as PHP, Libtiff, etc.
-
-More details about f1x can be found in our publication.
+f1x implements a novel search exploraton algorithm that is specifically designed for prioritized search spaces (when correctness probability is assigned to candidate patches using, for example, machine learning). This algorithm combines ideas from existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. As a result, f1x is the first system that achieves both reliability and efficiency. First, f1x guarantees to generate the most reliable patch in the search space according to a given prioritization strategy. Second, f1x explores search space X times faster compared to previous approaches when repairing large programs such as PHP, Libtiff, etc. More details about f1x can be found in our publication.
 
 ## Installation ##
 
