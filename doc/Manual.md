@@ -10,7 +10,7 @@ The three main characteristics of a repair tool are the search space (syntactica
 
 ### Search space ###
 
-The search space of f1x is the following:
+The search space of f1x is defined by the following transformation schemas:
 
 1. Modification of side-effect free conditions
 2. Appending `|| expr` or `&& expr` to conditions with side effects
