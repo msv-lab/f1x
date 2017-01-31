@@ -35,11 +35,18 @@ Runtime::Runtime(const fs::path &workDir, const Config &cfg):
   workDir(workDir),
   cfg(cfg) {};
 
+//NOTE: EOF must be right after the last id
 void Runtime::setPartition(std::unordered_set<F1XID> ids) {
   fs::path partitionFile = workDir / PARTITION_IN;
   fs::ofstream out(partitionFile, std::ofstream::out);
+  bool first = true;
   for (auto &id : ids) {
-    out << id.base << " " << id.int2 << " " << id.bool2 << " " << id.cond3 << " " << id.param << "\n";
+    if (first) {
+      out << id.base << " " << id.int2 << " " << id.bool2 << " " << id.cond3 << " " << id.param;
+      first = false;
+    } else {
+      out << " " << id.base << " " << id.int2 << " " << id.bool2 << " " << id.cond3 << " " << id.param;
+    }
   }
 }
 
@@ -67,11 +74,13 @@ unordered_set<F1XID> Runtime::getPartition() {
     F1XID id;
     if (firstLine) {
       firstLine = false;
-      while (iss >> id.base >> id.int2 >> id.bool2 >> id.cond3 >> id.param) {
+      while (iss >> id.base) {
+        iss >> id.int2 >> id.bool2 >> id.cond3 >> id.param;
         result.insert(id);
       }
     } else {
-      while (iss >> id.base >> id.int2 >> id.bool2 >> id.cond3 >> id.param) {
+      while (iss >> id.base) {
+        iss >> id.int2 >> id.bool2 >> id.cond3 >> id.param;
         if (aux.count(id))
           result.insert(id);
       }

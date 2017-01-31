@@ -12,11 +12,20 @@ The repair module is responsible for running tests, maintaining search space and
 
 The entire search space is explicitly represented as a C++ vector `searchSpace` in SearchEngine.cpp. The search space can be efficiently traversed in an arbitrary order.
 
+The following data structures are used for search space represention (in `RepairUtil.h`):
+
+- `TransformationSchema` is a high-level transformation rule (e.g. adding guard)
+- `ModificationKind` is a kind of expression modification (e.g. operator replacement)
+- `SchemaApplication` is an application of a schema to a program location
+- `SearchSpaceElement` is a concrete patch
+
+Search space elements are assigned unique identifiers. Each application of a transformation schema is identified using a positive integer `f1xapp`. Each candidate patch is transparently identified using five positive integers: `f1xid_base`, `f1xid_int2`, `f1xid_bool2`, `f1xid_comp3`, `f1xid_param`. These integers are used by the synthesizer and the runtime to encode the structure of synthesized expressions.
+
 ## Runtime ##
 
 f1x meta-program runtime is generated automatically and dynamically linked to the buggy program. The runtime is responsible for computing semantic partitions. It takes a candidate and a search space to partition as the arguments and outputs a subset of the given search space that have the same semantic impact as the given candidate.
 
-Repair process and runtime interact using filesystem (files `partition.in` and `partition.out`).
+The repair process and the meta-program runtime interact through filesystem (files `partition.in` and `partition.out`).
 
 ## Transformation ##
 

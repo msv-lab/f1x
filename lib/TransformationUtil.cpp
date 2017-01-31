@@ -59,7 +59,7 @@ const uint F1XAPP_WIDTH = 32;
 const uint F1XAPP_VALUE_BITS = 10;
 
 /*
-  __f1x_app is a F1XID_WIDTH bit transparent schema application ID. The left F1XID_VALUE_BITS bits of this id is the file ID.
+  __f1xapp is a F1XID_WIDTH bit transparent schema application ID. The left F1XID_VALUE_BITS bits of this id is the file ID.
  */
 
 uint f1xapp(uint baseId, uint fileId) {

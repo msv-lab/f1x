@@ -91,7 +91,7 @@ TransformationSchema transformationSchemaByString(const string &str) {
   } else if (str == "if_guard") {
     return TransformationSchema::IF_GUARD;
   } else if (str == "array_init") {
-    return TransformationSchema::ARRAY_INIT;
+    return TransformationSchema::INITIALIZATION;
   } else {
     throw parse_error("unsupported transformation schema: " + str);
   }
@@ -303,7 +303,7 @@ std::string visualizeTransformationSchema(const TransformationSchema &schema) {
     return "modify expression";
   case TransformationSchema::IF_GUARD:
     return "add if guard";
-  case TransformationSchema::ARRAY_INIT:
+  case TransformationSchema::INITIALIZATION:
     return "add array initialization";
   default:
     throw std::invalid_argument("unsupported transformation schema");

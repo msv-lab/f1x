@@ -43,7 +43,7 @@ class SearchEngine {
                std::shared_ptr<std::unordered_map<uint, std::unordered_set<F1XID>>> groupable,
                std::unordered_map<Location, std::vector<int>> relatedTestIndexes);
 
-  uint findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom);
+  uint findNext(const std::vector<SearchSpaceElement> &searchSpace, uint fromIdx);
   SearchStatistics getStatistics();
 
  private:

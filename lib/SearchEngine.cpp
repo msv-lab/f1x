@@ -33,6 +33,8 @@ using std::shared_ptr;
 using std::string;
 using std::to_string;
 
+const uint SHOW_PROGRESS_STEP = 10;
+
 SearchEngine::SearchEngine(const std::vector<std::string> &tests,
                            TestingFramework &tester,
                            Runtime &runtime,
@@ -59,30 +61,30 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   }
 }
 
-uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, uint indexFrom) {
+uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, uint fromIdx) {
 
-  uint index = indexFrom;
-  for (; index < searchSpace.size(); index++) {
+  uint candIdx = fromIdx;
+  for (; candIdx < searchSpace.size(); candIdx++) {
     stat.explorationCounter++;
-    if ((100 * index) / searchSpace.size() >= progress) {
+    if ((100 * candIdx) / searchSpace.size() >= progress) {
       BOOST_LOG_TRIVIAL(info) << "search space explored: " << progress << "%";
-      progress += 10;
+      progress += SHOW_PROGRESS_STEP;
     }
 
-    const SearchSpaceElement &elem = searchSpace[index];
-    uint appId = elem.app->appId;
+    const SearchSpaceElement &elem = searchSpace[candIdx];
 
     if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
       if (failing.count(elem.id))
         continue;
+      runtime.setPartition((*groupable)[elem.app->appId]);
     }
 
-    InEnvironment env({ { "F1X_ID", to_string(elem.id.base) },
+    InEnvironment env({ { "F1X_APP", to_string(elem.app->appId) },
+                        { "F1X_ID_BASE", to_string(elem.id.base) },
                         { "F1X_ID_INT2", to_string(elem.id.int2) },
                         { "F1X_ID_BOOL2", to_string(elem.id.bool2) },
                         { "F1X_ID_COND3", to_string(elem.id.cond3) },
-                        { "F1X_ID_PARAM", to_string(elem.id.param) },
-                        { "F1X_APP", to_string(appId) } });
+                        { "F1X_ID_PARAM", to_string(elem.id.param) } });
 
     bool passAll = true;
     
@@ -90,8 +92,8 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
     
     std::vector<int> testOrder = relatedTestIndexes[elem.app->location];
     
-    for (int i = 0; i < testOrder.size(); i++) {
-      auto test = tests[testOrder[i]];
+    for (int orderIdx = 0; orderIdx < testOrder.size(); orderIdx++) {
+      auto test = tests[testOrder[orderIdx]];
       BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizeF1XID(elem.id) 
                                << " with test " << test;
 
@@ -99,18 +101,20 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
         if (passing[test].count(elem.id))
           continue;
         runtime.clearPartition();
-        runtime.setPartition((*groupable)[appId]);
+        //FIXME: select unexplored candidates
       }
 
       stat.executionCounter++;
 
       passAll = tester.isPassing(test);
+      if (passAll) {
+        BOOST_LOG_TRIVIAL(debug) << "PASS";
+      } else {
+        BOOST_LOG_TRIVIAL(debug) << "FAIL";
+      }
 
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         unordered_set<F1XID> partition = runtime.getPartition();
-        for (auto &pel: partition) {
-          BOOST_LOG_TRIVIAL(debug) << "same partition " << visualizeF1XID(pel);
-        }
         if (passAll) {
           passing[test].insert(elem.id);
           passing[test].insert(partition.begin(), partition.end());
@@ -122,18 +126,18 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
 
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
-          changeSensitivity(relatedTestIndexes[elem.app->location], i);
+          changeSensitivity(relatedTestIndexes[elem.app->location], orderIdx);
         }
         break;
       }
     }
 
     if (passAll) {
-      return index;
+      return candIdx;
     }
   }
 
-  return index;
+  return candIdx;
 }
 
 SearchStatistics SearchEngine::getStatistics() {

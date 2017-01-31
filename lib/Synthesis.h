@@ -26,52 +26,47 @@
 /*
   The meta-program structure:
 
-  static bool __f1x_id_initialized = false;
-  static vector<F1XID> __f1x_ids;
+  // loaded by the runtime loader:
+  static vector<__f1xid_t> __f1xids;
 
   TYPE __f1x_LOCID(ARGS) {
-    if (!__f1x_id_initialized) {
-      // read from file partition.in
-      __f1x_id_initialized = true;
-    }
 
-    id = __f1x_id;
-    id_int2 = __f1x_id_int2;
-    id_bool2 = __f1x_id_bool2;
-    id_cond3 = __f1x_id_cond3;
-    id_param = __f1x_id_param;
+    id.base = __f1xid_base;
+    id.int2 = __f1xid_int2;
+    id.bool2 = __f1xid_bool2;
+    id.cond3 = __f1xid_cond3;
+    id.param = __f1xid_param;
 
-    int int2 = 0;
-    bool bool2 = 0;
-    bool cond3 = 0;
-    int param = 0;
-    
-    eval_result = 0;
+    base_value;
+    int2_value;
+    bool2_value;
+    cond3_value;
+    param_value;
 
     output_value = 0;
     output_initialized = false;
-    idx = 0;
+    index = 0;
     
-  eval_LOCID:
-    if (id0) {
+  label_LOCID:
+    if (id.int2) {
       switch () {
       ...
       }
     }
     ...
-    // here compute int2, bool2, cond3, eval_result
+    // here compute base_value, int2_value, ...
 
     if (!output_initialized) {
-      output_value = eval_result;
+      output_value = base_value;
       output_initialized = true;
-    } else if (output_value == eval_result) {
+    } else if (output_value == base_value) {
       // print id0, id1, id2, id3, id4 to partition.out
     }
 
-    if (__f1x_ids.size() > idx) {
-      id0 = __f1x_ids[idx].id0;
+    if (__f1xids.size() > index) {
+      id0 = __f1xids[index].id0;
       ...
-      idx++
+      index++
       goto eval_LOCID;
     }
 

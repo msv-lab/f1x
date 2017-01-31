@@ -98,7 +98,7 @@ void adjustCompileDB(fs::path projectRoot) {
       uint index = command.find(" ");
       command = command.substr(0, index) + " " + includeCmd + " " + command.substr(index);
     }
-    string defineCmd =  "-D__f1x_app=0ul";
+    string defineCmd =  "-D__f1xapp=0ul";
     if (command.find(defineCmd) == std::string::npos) {
       uint index = command.find(" ");
       command = command.substr(0, index) + " " + defineCmd + " " + command.substr(index);

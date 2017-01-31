@@ -143,19 +143,14 @@ namespace std {
   };
 }
 
-/*
-  We use the following structure to represent patching:
-  - TransformationSchema is a high-level transformation rule
-  - ModificationKind is a kind of expression modification
-  - SchemaApplication is an application of a schema to a program location
-  - SearchSpaceElement is a concrete patch
- */
-
 
 enum class TransformationSchema {
-  EXPRESSION,  // changing existing expression
-  IF_GUARD,    // adding guard for existing statement
-  ARRAY_INIT   // adding memset for array
+  EXPRESSION,      // modifying side-effect free expressions (conditions, RHS of assignments, return arguments)
+  LOOSENING,       // appending `|| expr` to conditions with side effects
+  TIGHTENING,      // appending `&& expr` to conditions with side effects
+  IF_GUARD,        // inserting if-guards for break, continue, function calls
+  INITIALIZATION,  // inserting memory initialization
+  FUNCTION         // replacing invoked function with another one
 };
 
 

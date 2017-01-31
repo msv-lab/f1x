@@ -12,12 +12,12 @@ The three main characteristics of a repair tool are the search space (syntactica
 
 The search space of f1x is defined by the following transformation schemas:
 
-1. Modification of side-effect free conditions
-2. Appending `|| expr` or `&& expr` to conditions with side effects
-3. Modification of side-effect free RHS of assignments
-4. Modification of side-effect free return arguments
-5. Inserting if-guards for break, continue, function calls
-6. Inserting array initialization
+1. modifying side-effect free expressions (conditions, RHS of assignments, return arguments);
+2. appending `|| expr` to conditions with side effects;
+3. appending `&& expr` to conditions with side effects;
+4. inserting if-guards for break, continue, function calls;
+5. inserting memory initialization;
+5. replacing invoked function with another one.
 
 f1x expression synthesizer is bit-precise; it supports all builtin (C99) integer types and pointers.
 

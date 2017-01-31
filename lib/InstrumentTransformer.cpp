@@ -176,12 +176,15 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     bool addBrackets = isChildOfNonblock(stmt, Result.Context);
     if(addBrackets)
     	stringStream << "{ ";
+
+    //FIXME: should I use location or appid for the runtime function name?
     stringStream << "if ("
-                 << "!(__f1x_app == " << appId << "ul) || "
+                 << "!(__f1xapp == " << appId << "ul) || "
                  << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
                  << "(" << arguments << ")"
                  << ") "
                  << toString(stmt);
+
     if(addBrackets)
     {
       stringStream << "; }";
@@ -264,7 +267,7 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     schemaApplications.PushBack(app, schemaApplications.GetAllocator());
     
     std::ostringstream stringStream;
-    stringStream << "(__f1x_app == " << appId << "ul ? "
+    stringStream << "(__f1xapp == " << appId << "ul ? "
                  << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
                  << "(" << arguments << ")"
                  << " : " << toString(expr) << ")";
