@@ -31,6 +31,7 @@
 struct SearchStatistics {
   ulong explorationCounter;
   ulong executionCounter;
+  ulong timeoutCounter;
 };
 
 

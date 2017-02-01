@@ -50,6 +50,7 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   
   stat.explorationCounter = 0;
   stat.executionCounter = 0;
+  stat.timeoutCounter = 0;
 
   progress = 0;
 
@@ -105,13 +106,22 @@ ulong SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace,
 
       stat.executionCounter++;
 
-      passAll = tester.isPassing(test);
-      if (passAll) {
+      TestStatus status = tester.execute(test);
+      switch (status) {
+      case TestStatus::PASS:
         BOOST_LOG_TRIVIAL(debug) << "PASS";
-      } else {
+        break;
+      case TestStatus::FAIL:
         BOOST_LOG_TRIVIAL(debug) << "FAIL";
+        break;
+      case TestStatus::TIMEOUT:
+        BOOST_LOG_TRIVIAL(debug) << "TIMEOUT";
+        stat.timeoutCounter++;
+        break;
       }
 
+      passAll = (status == TestStatus::PASS);
+        
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         unordered_set<F1XID> partition = runtime.getPartition();
         if (passAll) {

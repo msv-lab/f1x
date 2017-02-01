@@ -341,7 +341,10 @@ TestingFramework::TestingFramework(const Project &project,
   workDir(workDir),
   cfg(cfg) {}
 
-bool TestingFramework::isPassing(const std::string &testId) {
+
+const ulong TIMEOUT_STATUS = 124;
+
+TestStatus TestingFramework::execute(const std::string &testId) {
   FromDirectory dir(project.getRoot());
   InEnvironment env(map<string, string>{{"LD_LIBRARY_PATH", workDir.string()}});
   std::stringstream cmd;
@@ -354,7 +357,13 @@ bool TestingFramework::isPassing(const std::string &testId) {
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   ulong status = std::system(cmd.str().c_str());
-  return (status == 0);
+  if (status == 0) {
+    return TestStatus::PASS;
+  } else if (status == TIMEOUT_STATUS) {
+    return TestStatus::TIMEOUT;
+  } else {
+    return TestStatus::FAIL;
+  }
 }
 
 
@@ -363,7 +372,7 @@ vector<string> getFailing(TestingFramework &tester, const vector<string> &tests)
   vector<string> failingTests;
 
   for (auto &test : tests) {
-    if (! tester.isPassing(test)) {
+    if (tester.execute(test) != TestStatus::PASS) {
       failingTests.push_back(test);
     }
   }

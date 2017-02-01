@@ -68,6 +68,11 @@ namespace std {
 }
 
 
+enum class TestStatus {
+  PASS, FAIL, TIMEOUT
+};
+
+
 enum class NodeKind {
   OPERATOR, VARIABLE, CONSTANT, PARAMETER,
   BV2, INT2, BOOL2, BOOL3 // auxiliary kinds

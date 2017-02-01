@@ -159,7 +159,7 @@ bool repair(Project &project,
   for (int i = 0; i < tests.size(); i++) {
     auto test = tests[i];
     profiler.clearTrace();
-    bool isPassing = tester.isPassing(test);
+    bool isPassing = (tester.execute(test) == TestStatus::PASS);
     profiler.mergeTrace(i, isPassing);
   }
   
@@ -295,6 +295,7 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << stat.explorationCounter;
   BOOST_LOG_TRIVIAL(info) << "tests executed: " << stat.executionCounter;
+  BOOST_LOG_TRIVIAL(info) << "timeouts: " << stat.timeoutCounter;
 
   return patchCount > 0;
 }

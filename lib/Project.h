@@ -84,7 +84,7 @@ class TestingFramework {
                    const boost::filesystem::path &workDir,
                    const Config &cfg);
   
-  bool isPassing(const std::string &testId);
+  TestStatus execute(const std::string &testId);
 
  private:
   Project project;
