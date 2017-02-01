@@ -122,8 +122,6 @@ int main (int argc, char *argv[])
     ("enable-cleanup", "remove intermediate files")
     ("enable-metadata", "output patch metadata")
     ("disable-analysis", "don't partition search space")
-    ("disable-condext", "disable condition search space extension")
-    ("disable-init", "don't perform initialization")
     ("disable-validation", "don't validate generated patches")
     ("disable-testprior", "don't prioritize tests")
     ;
@@ -181,14 +179,6 @@ int main (int argc, char *argv[])
 
   if (vm.count("disable-analysis")) {
     cfg.exploration = Exploration::GENERATE_AND_VALIDATE;
-  }
-
-  if (vm.count("disable-init")) {
-    cfg.initializePartitions = false;
-  }
-
-  if (vm.count("disable-condext")) {
-    cfg.conditionExtension = false;
   }
 
   if (vm.count("disable-analysis")) {

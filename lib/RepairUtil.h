@@ -74,10 +74,11 @@ enum class TestStatus {
 
 
 enum class NodeKind {
-  OPERATOR, VARIABLE, CONSTANT, PARAMETER,
-  BV2, INT2, BOOL2, BOOL3 // auxiliary kinds
+  OPERATOR, VARIABLE, CONSTANT,
+  PARAMETER, INT2, BOOL2, COND3 // abstract node kinds
 };
 
+bool isAbstractNode(NodeKind kind);
 
 enum class Type {
   BOOLEAN, INTEGER, POINTER, BITVECTOR
@@ -114,7 +115,41 @@ std::string expressionToString(const Expression &expression);
 
 Expression getIntegerExpression(int n);
 
-Expression getNullPointer();
+const Expression NULL_NODE = Expression{ NodeKind::CONSTANT,
+                                         Type::POINTER,
+                                         Operator::NONE,
+                                         "void",
+                                         "0",
+                                         {} };
+
+
+const Expression PARAMETER_NODE = Expression{ NodeKind::PARAMETER,
+                                              Type::INTEGER,
+                                              Operator::NONE,
+                                              "int",
+                                              "param_value",
+                                              {} };
+
+const Expression INT2_NODE = Expression{ NodeKind::INT2,
+                                         Type::INTEGER,
+                                         Operator::NONE,
+                                         "int",
+                                         "int2_value",
+                                         {} };
+
+const Expression BOOL2_NODE = Expression{ NodeKind::BOOL2,
+                                          Type::BOOLEAN,
+                                          Operator::NONE,
+                                          "int",
+                                          "bool2_value",
+                                          {} };
+
+const Expression COND3_NODE = Expression{ NodeKind::COND3,
+                                          Type::BOOLEAN,
+                                          Operator::NONE,
+                                          "int",
+                                          "cond3_value",
+                                          {} };
 
 
 struct Location {

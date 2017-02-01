@@ -71,6 +71,13 @@ InEnvironment::~InEnvironment() {
   }
 }
 
+bool isAbstractNode(NodeKind kind) {
+  return kind == NodeKind::PARAMETER ||
+    kind == NodeKind::INT2 ||
+    kind == NodeKind::BOOL2 ||
+    kind == NodeKind::COND3;
+}
+
 NodeKind kindByString(const string &kindStr) {
   if (kindStr == "operator") {
     return NodeKind::OPERATOR;
@@ -287,16 +294,6 @@ Expression getIntegerExpression(int n) {
                      {} };
 }
 
-Expression getNullPointer() {
-  return Expression{ NodeKind::CONSTANT,
-                     Type::POINTER,
-                     Operator::NONE,
-                     "void",
-                     "0",
-                     {} };
-}
-
-
 std::string visualizeTransformationSchema(const TransformationSchema &schema) {
   switch (schema) {
   case TransformationSchema::EXPRESSION:
@@ -419,7 +416,8 @@ vector<shared_ptr<SchemaApplication>> loadSchemaApplications(const fs::path &pat
     };
 
     LocationContext context;
-    if (app["context"].GetString() == "condition") {
+    string contextStr = app["context"].GetString();
+    if (contextStr == "condition") {
       context = LocationContext::CONDITION;
     } else {
       context = LocationContext::UNKNOWN;

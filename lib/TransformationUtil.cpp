@@ -185,8 +185,7 @@ bool isTopLevelStatement(const Stmt *stmt, ASTContext *context) {
   return false;
 }
 
-bool isChildOfNonblock(const Stmt *stmt, ASTContext *context)
-{
+bool isChildOfNonblock(const Stmt *stmt, ASTContext *context) {
   auto it = context->getParents(*stmt).begin();
 
   const IfStmt* is;
@@ -208,8 +207,7 @@ bool isChildOfNonblock(const Stmt *stmt, ASTContext *context)
 }
 
 
-bool inConditionContext(const Stmt *stmt, ASTContext *context)
-{
+bool inConditionContext(const Stmt *stmt, ASTContext *context) {
   auto it = context->getParents(*stmt).begin();
 
   const IfStmt* is;

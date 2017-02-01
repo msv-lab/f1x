@@ -37,11 +37,11 @@ using std::to_string;
 
 /*
  This module is split into two namespaces:
- - synthesize for everything specific to expression synthesis 
- - generate for runtime code generation
+ - synthesis for everything specific to expression synthesis 
+ - generator for runtime code generation
  */
 
-namespace synthesize {
+namespace synthesis {
 
   // size of simple (atomic) modification
   const ulong ATOMIC_EDIT = 1;
@@ -142,7 +142,7 @@ namespace synthesize {
   }
 
 
-  vector<pair<Expression, PatchMetadata>> modifications(const Expression &expr,
+  vector<pair<Expression, PatchMetadata>> baseModifications(const Expression &expr,
                                                         const vector<Expression> &components) {
     vector<pair<Expression, PatchMetadata>> result;
     if (expr.args.size() == 0) {
@@ -152,9 +152,7 @@ namespace synthesize {
             if (c.type == Type::INTEGER)
               result.push_back(make_pair(c, PatchMetadata{ModificationKind::GENERALIZATION, ATOMIC_EDIT}));
           }
-          result.push_back(make_pair(getIntegerExpression(0),
-                                     PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
-          result.push_back(make_pair(getIntegerExpression(1),
+          result.push_back(make_pair(PARAMETER_NODE,
                                      PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
         }
       }
@@ -174,7 +172,7 @@ namespace synthesize {
             if (c.type == Type::POINTER && expr.rawType == c.rawType)
               result.push_back(make_pair(c, PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
           }
-          result.push_back(make_pair(getNullPointer(),
+          result.push_back(make_pair(NULL_NODE,
                                      PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT}));
         }
       }
@@ -194,7 +192,7 @@ namespace synthesize {
 
       // FIXME: need to avoid division by zero
       if (expr.args.size() == 1) {
-        vector<pair<Expression, PatchMetadata>> argMods = modifications(expr.args[0], components);
+        vector<pair<Expression, PatchMetadata>> argMods = baseModifications(expr.args[0], components);
         for (auto &m : argMods) {
           result.push_back(make_pair(makeArgSubs(expr, m.first), m.second));
         }
@@ -204,11 +202,11 @@ namespace synthesize {
           result.push_back(make_pair(argCopy, PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT}));
         }
       } else if (expr.args.size() == 2) {
-        vector<pair<Expression, PatchMetadata>> leftMods = modifications(expr.args[0], components);
+        vector<pair<Expression, PatchMetadata>> leftMods = baseModifications(expr.args[0], components);
         for (auto &m : leftMods) {
           result.push_back(make_pair(makeLeftSubs(expr, m.first), m.second));
         }
-        vector<pair<Expression, PatchMetadata>> rightMods = modifications(expr.args[1], components);
+        vector<pair<Expression, PatchMetadata>> rightMods = baseModifications(expr.args[1], components);
         for (auto &m : rightMods) {
           result.push_back(make_pair(makeRightSubs(expr, m.first), m.second));
         }
@@ -226,7 +224,7 @@ namespace synthesize {
 
 }
 
-namespace generate {
+namespace generator {
 
   const string POINTER_ARG_NAME = "__ptr_vals";
   const string ID_TYPE = "unsigned long";
@@ -373,15 +371,42 @@ namespace generate {
     return runtimeReprBySource;
   }
 
+  bool isAbstractExpression(const Expression &expression) {
+    if (isAbstractNode(expression.kind)) {
+      return true;
+    } else {
+      for (auto &arg : expression.args) {
+        if(isAbstractExpression(arg))
+          return true;
+      }
+    }
+    return false;
+  }
+
+  bool substituteAbstractNode(Expression &expression,
+                              NodeKind abstractKind, 
+                              const Expression &substitution) {
+    if (expression.kind == abstractKind) {
+      expression = substitution;
+      return true;
+    } else {
+      for (auto &arg : expression.args) {
+        if(substituteAbstractNode(arg, abstractKind, substitution))
+          return true;
+      }
+    }
+    return false;
+  }
 
   void modificationsAndDispatch(shared_ptr<SchemaApplication> sa,
                                 ulong &baseId,
                                 std::ostream &OS,
-                                vector<SearchSpaceElement> &ss) {
+                                vector<SearchSpaceElement> &ss,
+                                const Config &cfg) {
     unordered_map<string, string> runtimeReprBySource = runtimeRenaming(sa);
 
     vector<pair<Expression, PatchMetadata>> modifications =
-      synthesize::modifications(sa->original, sa->components);
+      synthesis::baseModifications(sa->original, sa->components);
   
     string outputType;
     if (sa->original.type == Type::POINTER) {
@@ -400,10 +425,27 @@ namespace generate {
       OS << "case " << baseId << ":" << "\n"
          << "base_value = " << castStr << expressionToString(runtimeExpr) << ";" << "\n"
          << "break;" << "\n";
-      
-      F1XID f1xid{0}; //FIXME: should assign all ids
-      f1xid.base = baseId;
-      ss.push_back(SearchSpaceElement{f1xid, sa, candidate.first, candidate.second});
+
+      if (isAbstractExpression(runtimeExpr)) {
+        ulong paramBound;
+        if (sa->context == LocationContext::CONDITION) {
+          paramBound = cfg.maxConditionParameter;
+        } else {
+          paramBound = cfg.maxExpressionParameter;
+        }
+        for (int i = 0; i <= paramBound; i++) {
+          F1XID f1xid{0}; //FIXME: should assign all ids
+          f1xid.base = baseId;
+          f1xid.param = i;
+          Expression instance = candidate.first;
+          substituteAbstractNode(instance, NodeKind::PARAMETER, getIntegerExpression(i));
+          ss.push_back(SearchSpaceElement{f1xid, sa, instance, candidate.second});
+        }
+      } else {
+        F1XID f1xid{0}; //FIXME: should assign all ids
+        f1xid.base = baseId;
+        ss.push_back(SearchSpaceElement{f1xid, sa, candidate.first, candidate.second});
+      }
 
       baseId++;
     }
@@ -425,7 +467,7 @@ namespace generate {
        << "#include <sys/mman.h>" << "\n";
 
 
-    generate::runtimeLoader(OS, cfg);
+    generator::runtimeLoader(OS, cfg);
 
     ulong baseId = 1; // because 0 is reserved:
 
@@ -439,7 +481,7 @@ namespace generate {
 
       OS << outputType << " __f1x_"
          << locationNameSuffix(sa->location)
-         << "(" << generate::parameterList(sa) << ")"
+         << "(" << generator::parameterList(sa) << ")"
          << "{" << "\n";
 
       OS << "__f1xid_t id;" << "\n"
@@ -469,7 +511,7 @@ namespace generate {
       OS << "param_value = id.param;" << "\n";
 
       OS << "switch (id.base) {" << "\n";
-      generate::modificationsAndDispatch(sa, baseId, OS, searchSpace);
+      generator::modificationsAndDispatch(sa, baseId, OS, searchSpace, cfg);
       OS << "}" << "\n";
 
       OS << "if (!output_initialized) {" << "\n"
@@ -502,18 +544,19 @@ namespace generate {
 }
 
 
-vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<SchemaApplication>> &schemaApplications,
-                                               const fs::path &workDir,
-                                               std::ostream &OS,
-                                               std::ostream &OH,
-                                               const Config &cfg) {
+vector<SearchSpaceElement> 
+generateSearchSpace(const vector<shared_ptr<SchemaApplication>> &schemaApplications,
+                    const fs::path &workDir,
+                    std::ostream &OS,
+                    std::ostream &OH,
+                    const Config &cfg) {
   
   // header
 
   OH << "#ifdef __cplusplus" << "\n"
      << "extern \"C\" {" << "\n"
      << "#endif" << "\n"
-     << "extern " << generate::ID_TYPE << " __f1xapp;" << "\n";
+     << "extern " << generator::ID_TYPE << " __f1xapp;" << "\n";
 
   for (auto sa : schemaApplications) {
     string outputType;
@@ -524,8 +567,8 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<SchemaApp
     }
 
     OH << outputType << " __f1x_" 
-       << generate::locationNameSuffix(sa->location)
-       << "(" << generate::parameterList(sa) << ")"
+       << generator::locationNameSuffix(sa->location)
+       << "(" << generator::parameterList(sa) << ")"
        << ";" << "\n";
   }
 
@@ -537,7 +580,7 @@ vector<SearchSpaceElement> generateSearchSpace(const vector<shared_ptr<SchemaApp
 
   vector<SearchSpaceElement> searchSpace;
   
-  generate::partitioningFunctions(schemaApplications, workDir, OS, searchSpace, cfg);  
+  generator::partitioningFunctions(schemaApplications, workDir, OS, searchSpace, cfg);  
 
   return searchSpace;
 }

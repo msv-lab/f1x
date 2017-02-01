@@ -50,17 +50,12 @@ struct Config {
   bool validatePatches;
   bool generateAll;
   bool dumpSearchSpace;
-  bool outputPatchMetadata;         /* UNSUPPORTED */
+  bool outputPatchMetadata; /* UNSUPPORTED */
   bool removeIntermediateData;
-  bool conditionExtension;          /* UNSUPPORTED */
-  bool initializePartitions;        /* UNSUPPORTED */
-  ulong maxConditionParameter;      /* UNSUPPORTED */
-  ulong maxExpressionParameter;     /* UNSUPPORTED */
-  ulong maxCandidatesPerLocation;   /* UNSUPPORTED */
-  ulong maxExecutionsPerLocation;   /* UNSUPPORTED */
-  ulong maxLocations;               /* UNSUPPORTED */
+  ulong maxConditionParameter;
+  ulong maxExpressionParameter;
   Exploration exploration;
-  TestPrioritization testPrioritization;      /* UNSUPPORTED */
+  TestPrioritization testPrioritization;
   std::string runtimeCompiler;
 };
 
@@ -72,14 +67,9 @@ static Config DEFAULT_CONFIG = {
   false,   /* dumpSearchSpace */
   false,   /* outputPatchMetadata */
   false,   /* removeIntermediateData */
-  true,    /* conditionExtension */
-  true,    /* initializePartitions */
-  0,       /* maxConditionParameter */
-  0,       /* maxExpressionParameter */
-  0,       /* maxCandidatesPerLocation */
-  0,       /* maxExecutionsPerLocation */
-  0,       /* maxLocations */
+  64,      /* maxConditionParameter */
+  1,       /* maxExpressionParameter */
   Exploration::SEMANTIC_PARTITIONING,
   TestPrioritization::MAX_FAILING,
-  "g++" /* runtimeCompiler */
+  "g++"    /* runtimeCompiler */
 };
