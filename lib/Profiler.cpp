@@ -19,6 +19,7 @@
 #include <string>
 #include <sstream>
 #include <cstdlib>
+#include <sys/wait.h>
 
 #include <boost/filesystem/fstream.hpp>
 
@@ -96,7 +97,7 @@ bool Profiler::compile() {
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   ulong status = std::system(cmd.str().c_str());
-  return status == 0;
+  return WEXITSTATUS(status) == 0;
 }
 
 void Profiler::clearTrace() {

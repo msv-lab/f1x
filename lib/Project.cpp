@@ -18,6 +18,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <sys/wait.h>
 
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
@@ -156,7 +157,7 @@ bool Project::buildInEnvironment(const std::map<std::string, std::string> &envir
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   ulong status = std::system(cmd.str().c_str());
 
-  return (status == 0);
+  return WEXITSTATUS(status) == 0;
 }
 
 std::pair<bool, bool> Project::initialBuild() {
@@ -292,7 +293,7 @@ bool Project::instrumentFile(const ProjectFile &file,
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   ulong status = std::system(cmd.str().c_str());
-  return status == 0;
+  return WEXITSTATUS(status) == 0;
 }
 
 ulong Project::getFileId(const ProjectFile &file) {
@@ -326,7 +327,7 @@ bool Project::applyPatch(const SearchSpaceElement &patch) {
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   ulong status = std::system(cmd.str().c_str());
-  return status == 0;
+  return WEXITSTATUS(status) == 0;
 }
 
 
@@ -357,9 +358,9 @@ TestStatus TestingFramework::execute(const std::string &testId) {
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   ulong status = std::system(cmd.str().c_str());
-  if (status == 0) {
+  if (WEXITSTATUS(status) == 0) {
     return TestStatus::PASS;
-  } else if (status == TIMEOUT_STATUS) {
+  } else if (WEXITSTATUS(status) == TIMEOUT_STATUS) {
     return TestStatus::TIMEOUT;
   } else {
     return TestStatus::FAIL;
