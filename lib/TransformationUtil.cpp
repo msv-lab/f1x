@@ -43,35 +43,35 @@ const BuiltinType::Kind DEFAULT_NUMERIC_TYPE = BuiltinType::Long;
 const string DEFAULT_POINTEE_TYPE = "void";
 
 
-uint globalFileId;
-uint globalFromLine;
-uint globalToLine;
+ulong globalFileId;
+ulong globalFromLine;
+ulong globalToLine;
 string globalOutputFile;
 string globalProfileFile;
-uint globalBeginLine;
-uint globalBeginColumn;
-uint globalEndLine;
-uint globalEndColumn;
+ulong globalBeginLine;
+ulong globalBeginColumn;
+ulong globalEndLine;
+ulong globalEndColumn;
 string globalPatch;
-uint globalBaseAppId = 0;
+ulong globalBaseAppId = 0;
 
-const uint F1XAPP_WIDTH = 32;
-const uint F1XAPP_VALUE_BITS = 10;
+const ulong F1XAPP_WIDTH = 32;
+const ulong F1XAPP_VALUE_BITS = 10;
 
 /*
   __f1xapp is a F1XID_WIDTH bit transparent schema application ID. The left F1XID_VALUE_BITS bits of this id is the file ID.
  */
 
-uint f1xapp(uint baseId, uint fileId) {
+ulong f1xapp(ulong baseId, ulong fileId) {
   assert(baseId < (1 << (F1XAPP_WIDTH - F1XAPP_VALUE_BITS)));
-  uint result = fileId;
+  ulong result = fileId;
   result <<= (F1XAPP_WIDTH - F1XAPP_VALUE_BITS);
   result += baseId;
   return result;
 }
 
 
-bool inRange(uint line) {
+bool inRange(ulong line) {
   if (globalFromLine || globalToLine) {
     return globalFromLine <= line && line <= globalToLine;
   } else {
@@ -80,7 +80,7 @@ bool inRange(uint line) {
 }
 
 
-uint getDeclExpandedLine(const Decl* decl, SourceManager &srcMgr) {
+ulong getDeclExpandedLine(const Decl* decl, SourceManager &srcMgr) {
   SourceLocation startLoc = decl->getLocStart();
   if(startLoc.isMacroID()) {
     // Get the start/end expansion locations
@@ -495,7 +495,7 @@ json::Value stmtToJSON(const clang::Stmt *stmt,
 }
 
 
-json::Value locToJSON(uint fileId, uint bl, uint bc, uint el, uint ec,
+json::Value locToJSON(ulong fileId, ulong bl, ulong bc, ulong el, ulong ec,
                       json::Document::AllocatorType &allocator) {
   json::Value entry(json::kObjectType);
   entry.AddMember("fileId", json::Value().SetInt(fileId), allocator);
@@ -609,7 +609,7 @@ json::Value varDeclToJSON(VarDecl *vd, json::Document::AllocatorType &allocator)
 
 
 vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
-                                   uint line,
+                                   ulong line,
                                    ASTContext* context,
                                    json::Document::AllocatorType &allocator) {
   vector<json::Value> result;
@@ -634,7 +634,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
           for (auto it = tu->decls_begin(); it != tu->decls_end(); ++it) {
             if (isa<VarDecl>(*it)) {
               VarDecl* vd = cast<VarDecl>(*it);
-              unsigned beginLine = getDeclExpandedLine(vd, context->getSourceManager());
+              ulong beginLine = getDeclExpandedLine(vd, context->getSourceManager());
               if (line > beginLine && isSuitableComponentType(vd->getType())) {
                 result.push_back(varDeclToJSON(vd, allocator));
               }
@@ -653,7 +653,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
         if (isa<BinaryOperator>(*it)) {
           BinaryOperator* op = cast<BinaryOperator>(*it);
           SourceRange expandedLoc = getExpandedLoc(op, context->getSourceManager());
-          uint beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
+          ulong beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
           // FIXME: support augmented assignments:
           // FIXME: is it redundant if we use collect funnction on whole statement
           if (line > beginLine &&
@@ -670,7 +670,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
         if (isa<DeclStmt>(*it)) {
           DeclStmt* dstmt = cast<DeclStmt>(*it);
           SourceRange expandedLoc = getExpandedLoc(dstmt, context->getSourceManager());
-          uint beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
+          ulong beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
           for (auto it = dstmt->decl_begin(); it != dstmt->decl_end(); ++it) {
             Decl* d = *it;
             if (isa<VarDecl>(d)) {
@@ -685,7 +685,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
 
         Stmt* stmt = cast<Stmt>(*it);
         SourceRange expandedLoc = getExpandedLoc(stmt, context->getSourceManager());
-        unsigned beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
+        ulong beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
         if (line > beginLine) {
           vector<json::Value> fromExpr = collectFromExpression(*it, allocator, true, true);
           for (auto &c : fromExpr) {
@@ -728,7 +728,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
 
 
 vector<json::Value> collectComponents(const Stmt *stmt,
-                                      uint line,
+                                      ulong line,
                                       ASTContext *context,
                                       json::Document::AllocatorType &allocator) {
   vector<json::Value> fromExpr = collectFromExpression(stmt, allocator, false, false);

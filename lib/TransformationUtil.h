@@ -27,19 +27,19 @@
 const bool INPLACE_MODIFICATION = true;
 
 // FIXME: better to pass these variable to constructors, but it requires a lot of boilerplate
-extern uint globalFileId;
-extern uint globalFromLine;
-extern uint globalToLine;
+extern ulong globalFileId;
+extern ulong globalFromLine;
+extern ulong globalToLine;
 extern std::string globalProfileFile;
 extern std::string globalOutputFile;
-extern uint globalBeginLine;
-extern uint globalBeginColumn;
-extern uint globalEndLine;
-extern uint globalEndColumn;
+extern ulong globalBeginLine;
+extern ulong globalBeginColumn;
+extern ulong globalEndLine;
+extern ulong globalEndColumn;
 extern std::string globalPatch;
-extern uint globalBaseAppId;
+extern ulong globalBaseAppId;
 
-uint getDeclExpandedLine(const clang::Decl *decl, clang::SourceManager &srcMgr);
+ulong getDeclExpandedLine(const clang::Decl *decl, clang::SourceManager &srcMgr);
 
 bool insideMacro(const clang::Stmt *expr, clang::SourceManager &srcMgr, const clang::LangOptions &langOpts);
 
@@ -66,17 +66,17 @@ rapidjson::Value stmtToJSON(const clang::Stmt *stmt,
                             rapidjson::Document::AllocatorType &allocator);
 
 
-rapidjson::Value locToJSON(uint fileId, uint bl, uint bc, uint el, uint ec,
+rapidjson::Value locToJSON(ulong fileId, ulong bl, ulong bc, ulong el, ulong ec,
                            rapidjson::Document::AllocatorType &allocator);
 
 
 std::vector<rapidjson::Value> collectComponents(const clang::Stmt *stmt,
-                                                uint line,
+                                                ulong line,
                                                 clang::ASTContext *context,
                                                 rapidjson::Document::AllocatorType &allocator);
 
 
 std::string makeArgumentList(std::vector<rapidjson::Value> &components);
 
-uint f1xapp(uint baseId, uint fileId);
-bool inRange(uint line);
+ulong f1xapp(ulong baseId, ulong fileId);
+bool inRange(ulong line);

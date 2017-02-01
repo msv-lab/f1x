@@ -20,7 +20,7 @@
 
 #include <cstdint>
 
-typedef std::uint_least32_t uint;
+typedef unsigned long ulong;
 
 
 enum class Exploration {
@@ -54,11 +54,11 @@ struct Config {
   bool removeIntermediateData;
   bool conditionExtension;          /* UNSUPPORTED */
   bool initializePartitions;        /* UNSUPPORTED */
-  uint maxConditionParameter;       /* UNSUPPORTED */
-  uint maxExpressionParameter;      /* UNSUPPORTED */
-  uint maxCandidatesPerLocation;    /* UNSUPPORTED */
-  uint maxExecutionsPerLocation;    /* UNSUPPORTED */
-  uint maxLocations;                /* UNSUPPORTED */
+  ulong maxConditionParameter;      /* UNSUPPORTED */
+  ulong maxExpressionParameter;     /* UNSUPPORTED */
+  ulong maxCandidatesPerLocation;   /* UNSUPPORTED */
+  ulong maxExecutionsPerLocation;   /* UNSUPPORTED */
+  ulong maxLocations;               /* UNSUPPORTED */
   Exploration exploration;
   TestPrioritization testPrioritization;      /* UNSUPPORTED */
   std::string runtimeCompiler;

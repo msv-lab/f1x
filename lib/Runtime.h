@@ -27,8 +27,12 @@
 #include "F1XConfig.h"
 #include "RepairUtil.h"
 
-const std::string PARTITION_IN = "partition.in";
-const std::string PARTITION_OUT = "partition.out";
+const ulong MAX_PARTITION_SIZE = 1000000;
+const std::string PARTITION_FILE_NAME = "/f1x_partition";
+const F1XID INPUT_TERMINATOR = F1XID{0, 0, 0, 0, 0};
+const F1XID OUTPUT_TERMINATOR = F1XID{0, 0, 0, 0, 1};
+
+
 const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
 const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
 
@@ -39,7 +43,6 @@ class Runtime {
 
   void setPartition(std::unordered_set<F1XID> ids);
   std::unordered_set<F1XID> getPartition();
-  void clearPartition();
   boost::filesystem::path getSource();
   boost::filesystem::path getHeader();
   bool compile();
@@ -47,4 +50,5 @@ class Runtime {
  private:
   boost::filesystem::path workDir;
   Config cfg;
+  F1XID *partition;
 };

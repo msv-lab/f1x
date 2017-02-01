@@ -44,7 +44,7 @@ using std::to_string;
 namespace synthesize {
 
   // size of simple (atomic) modification
-  const uint ATOMIC_EDIT = 1;
+  const ulong ATOMIC_EDIT = 1;
 
   vector<Operator> mutateNumericOperator(Operator op) {
     switch (op) {
@@ -260,7 +260,7 @@ namespace generate {
     return "__" + result + "_vals";
   }
 
-  void runtimeLoader(std::ostream &OUT, const fs::path &partitionFile, const Config &cfg) {
+  void runtimeLoader(std::ostream &OUT, const Config &cfg) {
     OUT << "struct __f1xid_t {" << "\n"
         << ID_TYPE << " base;" << "\n"
         << ID_TYPE << " int2;" << "\n"
@@ -274,21 +274,18 @@ namespace generate {
         << ID_TYPE << " __f1xid_int2 = strtoul(getenv(\"F1X_ID_INT2\"), (char **)NULL, 10);" << "\n"
         << ID_TYPE << " __f1xid_bool2 = strtoul(getenv(\"F1X_ID_BOOL2\"), (char **)NULL, 10);" << "\n"
         << ID_TYPE << " __f1xid_cond3 = strtoul(getenv(\"F1X_ID_COND3\"), (char **)NULL, 10);" << "\n"
-        << ID_TYPE << " __f1xid_param = strtoul(getenv(\"F1X_ID_PARAM\"), (char **)NULL, 10);" << "\n";
+        << ID_TYPE << " __f1xid_param = strtoul(getenv(\"F1X_ID_PARAM\"), (char **)NULL, 10);" << "\n"
+        << "__f1xid_t *__f1xids = NULL;" << "\n";
 
-    OUT << "std::vector<__f1xid_t> __f1x_init_runtime() {" << "\n";
+    OUT << "void __f1x_init_runtime() {" << "\n";
     if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
-      OUT << "std::ifstream ifs(\"" << partitionFile.string() << "\");" << "\n"
-          << "std::vector<__f1xid_t> ids;" << "\n"
-          << "__f1xid_t id;" << "\n"
-          << "while (ifs >> id.base) {" << "\n"
-          << "ifs >> id.int2 >> id.bool2 >> id.cond3 >> id.param;" << "\n"
-          << "ids.push_back(id);" << "\n"
-          << "}" << "\n"
-          << "return ids;" << "\n";
+      OUT << "int fd = shm_open(\"" << PARTITION_FILE_NAME << "\", O_RDWR, 0);" << "\n"
+          << "struct stat sb;" << "\n"
+          << "fstat(fd, &sb);" << "\n"
+          << "__f1xids = (__f1xid_t*) mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);" << "\n"
+          << "close(fd);" << "\n";
     }
-    OUT << "}" << "\n"
-        << "std::vector<__f1xid_t> __f1xids = __f1x_init_runtime();" << "\n";
+    OUT << "}" << "\n";
   }
 
 
@@ -378,7 +375,7 @@ namespace generate {
 
 
   void modificationsAndDispatch(shared_ptr<SchemaApplication> sa,
-                                uint &baseId,
+                                ulong &baseId,
                                 std::ostream &OS,
                                 vector<SearchSpaceElement> &ss) {
     unordered_map<string, string> runtimeReprBySource = runtimeRenaming(sa);
@@ -418,17 +415,19 @@ namespace generate {
                              vector<SearchSpaceElement> &searchSpace,
                              const Config &cfg) {
 
-    fs::path partitionInputFile = workDir / PARTITION_IN;
-    fs::path partitionOutputFile = workDir / PARTITION_OUT;
-
     OS << "#include \"rt.h\"" << "\n"
        << "#include <stdlib.h>" << "\n"
        << "#include <vector>" << "\n"
-       << "#include <fstream>" << "\n";
+       << "#include <cstddef>" << "\n"
+       << "#include <unistd.h>" << "\n"
+       << "#include <fcntl.h>" << "\n"
+       << "#include <sys/stat.h>" << "\n"
+       << "#include <sys/mman.h>" << "\n";
 
-    generate::runtimeLoader(OS, partitionInputFile, cfg);
 
-    uint baseid = 0;
+    generate::runtimeLoader(OS, cfg);
+
+    ulong baseId = 1; // because 0 is reserved:
 
     for (auto sa : schemaApplications) {
       string outputType;
@@ -457,14 +456,12 @@ namespace generate {
          << PARAM_TYPE << " param_value;" << "\n";
 
       OS << outputType << " output_value = 0;" << "\n"
-         << "bool output_initialized = false;" << "\n";
+         << "bool output_initialized = false;" << "\n"
+         << "unsigned long input_index = 0;" << "\n"
+         << "unsigned long output_index = 0;" << "\n";
 
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
-        OS << "unsigned long index = 0;" << "\n";
-        OS << "std::ofstream ofs;" << "\n"
-           << "ofs.open(" << partitionOutputFile << ", std::ofstream::out | std::ofstream::app);" << "\n";
-      } else {
-        OS << "unsigned long index = __f1xids.size();" << "\n";
+        OS << "if (__f1xids == NULL) __f1x_init_runtime();" << "\n";
       }
 
       OS << "label_" << locationNameSuffix(sa->location) << ":" << "\n";
@@ -472,7 +469,7 @@ namespace generate {
       OS << "param_value = id.param;" << "\n";
 
       OS << "switch (id.base) {" << "\n";
-      generate::modificationsAndDispatch(sa, baseid, OS, searchSpace);
+      generate::modificationsAndDispatch(sa, baseId, OS, searchSpace);
       OS << "}" << "\n";
 
       OS << "if (!output_initialized) {" << "\n"
@@ -480,19 +477,20 @@ namespace generate {
          << "output_initialized = true;" << "\n"
          << "} else if (output_value == base_value) {" << "\n";
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
-        OS << "ofs << \" \" << id.base << \" \" << id.int2 << \" \" << id.bool2 << \" \" << id.cond3 << \" \" << id.param;" << "\n";
+        OS << "__f1xids[output_index] = id;" << "\n"
+           << "output_index++;" << "\n";
       }
       OS << "}" << "\n";
 
-      OS << "if (__f1xids.size() > index) {" << "\n"
-         << "id = __f1xids[index];" << "\n"
-         << "index++;" << "\n"
+      OS << "if (__f1xids && __f1xids[input_index].base != 0) {" << "\n"
+         << "id = __f1xids[input_index];" << "\n"
+         << "input_index++;" << "\n"
          << "goto " << "label_" << locationNameSuffix(sa->location) << ";" << "\n"
          << "}" << "\n";
 
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
-        OS << "ofs << '\\n';" << "\n";
-        OS << "ofs.close();" << "\n";
+        // output terminator:
+        OS << "__f1xids[output_index] = __f1xid_t{0, 0, 0, 0, 1};" << "\n";
       }
       OS << "return output_value;" << "\n";
 

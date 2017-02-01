@@ -26,8 +26,8 @@
 // (!fromLine && !toLine) means no restriction
 struct ProjectFile {
   boost::filesystem::path relpath;
-  uint fromLine;
-  uint toLine;
+  ulong fromLine;
+  ulong toLine;
 };
 
 
@@ -72,7 +72,7 @@ class Project {
   void saveFilesWithPrefix(const std::string &prefix);
   void restoreFilesWithPrefix(const std::string &prefix);
   bool buildInEnvironment(const std::map<std::string, std::string> &env, const std::string &baseCmd);
-  uint getFileId(const ProjectFile &file);
+  ulong getFileId(const ProjectFile &file);
 };
 
 
@@ -80,7 +80,7 @@ class TestingFramework {
  public:
   TestingFramework(const Project &project,
                    const boost::filesystem::path &driver,
-                   const uint testTimeout,
+                   const ulong testTimeout,
                    const boost::filesystem::path &workDir,
                    const Config &cfg);
   
@@ -89,7 +89,7 @@ class TestingFramework {
  private:
   Project project;
   boost::filesystem::path driver;
-  uint testTimeout;
+  ulong testTimeout;
   boost::filesystem::path workDir;
   Config cfg;
 };

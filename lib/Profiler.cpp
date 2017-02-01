@@ -95,7 +95,7 @@ bool Profiler::compile() {
     cmd << " >/dev/null 2>&1";
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  uint status = std::system(cmd.str().c_str());
+  ulong status = std::system(cmd.str().c_str());
   return status == 0;
 }
 

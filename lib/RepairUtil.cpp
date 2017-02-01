@@ -406,7 +406,7 @@ vector<shared_ptr<SchemaApplication>> loadSchemaApplications(const fs::path &pat
   }
 
   for (auto &app : d.GetArray()) {
-    uint appId = app["appId"].GetUint();
+    ulong appId = app["appId"].GetUint();
 
     TransformationSchema schema = transformationSchemaByString(app["schema"].GetString());
 

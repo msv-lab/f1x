@@ -22,7 +22,8 @@ add_executable(f1x F1X.cpp)
 target_link_libraries(f1x
   f1xRepair
   ${Boost_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT})
+  ${CMAKE_THREAD_LIBS_INIT}
+  rt)
 
 ## f1x-transform target:
 

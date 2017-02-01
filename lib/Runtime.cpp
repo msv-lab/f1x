@@ -20,7 +20,10 @@
 #include <sstream>
 #include <cstdlib>
 
-#include <boost/filesystem/fstream.hpp>
+// for shared memory:
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 
 #include <boost/log/trivial.hpp>
 
@@ -31,60 +34,44 @@ namespace fs = boost::filesystem;
 using std::vector;
 using std::unordered_set;
 
+
 Runtime::Runtime(const fs::path &workDir, const Config &cfg): 
   workDir(workDir),
-  cfg(cfg) {};
+  cfg(cfg) {
 
-//NOTE: EOF must be right after the last id
+  size_t size = sizeof(F1XID) * MAX_PARTITION_SIZE;
+  int fd = shm_open(PARTITION_FILE_NAME.c_str(),
+                    O_CREAT | O_RDWR,
+                    S_IRUSR | S_IWUSR);
+  ftruncate(fd, size);
+  partition = (F1XID*) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
+  close(fd);
+  };
+
 void Runtime::setPartition(std::unordered_set<F1XID> ids) {
-  fs::path partitionFile = workDir / PARTITION_IN;
-  fs::ofstream out(partitionFile, std::ofstream::out);
-  bool first = true;
+  assert(ids.size() < MAX_PARTITION_SIZE);
+  ulong index = 0;
   for (auto &id : ids) {
-    if (first) {
-      out << id.base << " " << id.int2 << " " << id.bool2 << " " << id.cond3 << " " << id.param;
-      first = false;
-    } else {
-      out << " " << id.base << " " << id.int2 << " " << id.bool2 << " " << id.cond3 << " " << id.param;
-    }
+    partition[index] = id;
+    index++;
   }
-}
-
-void Runtime::clearPartition() {
-  fs::path partitionFile = workDir / PARTITION_OUT;
-  fs::ofstream out;
-  out.open(partitionFile, std::ofstream::out | std::ofstream::trunc);
-  out.close();
+  partition[index] = INPUT_TERMINATOR;
 }
 
 unordered_set<F1XID> Runtime::getPartition() {
   unordered_set<F1XID> result;
-  unordered_set<F1XID> aux;
-  fs::path partitionFile = workDir / PARTITION_OUT;
-  if (!fs::exists(partitionFile)) {
-    return result;
-  }
-  fs::ifstream in(partitionFile);
-  std::string line;
-  bool firstLine = true;
-  while (getline(in, line)) {
-    std::swap(result, aux);
-    result.clear();
-    std::istringstream iss(line);
-    F1XID id;
-    if (firstLine) {
-      firstLine = false;
-      while (iss >> id.base) {
-        iss >> id.int2 >> id.bool2 >> id.cond3 >> id.param;
-        result.insert(id);
-      }
-    } else {
-      while (iss >> id.base) {
-        iss >> id.int2 >> id.bool2 >> id.cond3 >> id.param;
-        if (aux.count(id))
-          result.insert(id);
-      }
+  ulong index = 0;
+  while (!(partition[index] == OUTPUT_TERMINATOR)) {
+    if (partition[index] == INPUT_TERMINATOR) {
+      BOOST_LOG_TRIVIAL(warning) << "wrongly terminated partition";
+      return unordered_set<F1XID>();
     }
+    if (index > MAX_PARTITION_SIZE) {
+      BOOST_LOG_TRIVIAL(warning) << "unterminated partition";
+      return unordered_set<F1XID>();
+    }
+    result.insert(partition[index]);
+    index++;
   }
   return result;
 }
@@ -104,6 +91,8 @@ bool Runtime::compile() {
   cmd << cfg.runtimeCompiler << " -O2 -fPIC"
       << " " << RUNTIME_SOURCE_FILE_NAME
       << " -shared"
+      << " -lrt" // this is for shared memory
+      << " -std=c++11" // this is for initializers
       << " -o libf1xrt.so";
   if (cfg.verbose) {
     cmd << " >&2";
@@ -111,6 +100,6 @@ bool Runtime::compile() {
     cmd << " >/dev/null 2>&1";
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  uint status = std::system(cmd.str().c_str());
+  ulong status = std::system(cmd.str().c_str());
   return status == 0;
 }

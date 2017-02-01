@@ -25,7 +25,7 @@ Search space elements are assigned unique identifiers. Each application of a tra
 
 f1x meta-program runtime is generated automatically and dynamically linked to the buggy program. The runtime is responsible for computing semantic partitions. It takes a candidate and a search space to partition as the arguments and outputs a subset of the given search space that have the same semantic impact as the given candidate.
 
-The repair process and the meta-program runtime interact through filesystem (files `partition.in` and `partition.out`).
+The repair process and the meta-program runtime interact through shared memory (POSIX Shared Memory).
 
 ## Transformation ##
 

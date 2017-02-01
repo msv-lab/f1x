@@ -50,13 +50,13 @@ Instrument("instrument", cl::desc("instrument search space with profile"), cl::c
 static cl::opt<bool>
 Profile("profile", cl::desc("instrument search space for profile"), cl::cat(F1XCategory));
 
-static cl::opt<uint>
+static cl::opt<unsigned>
 FileId("file-id", cl::desc("file id"), cl::cat(F1XCategory));
 
-static cl::opt<uint>
+static cl::opt<unsigned>
 FromLine("from-line", cl::desc("from line"), cl::cat(F1XCategory));
 
-static cl::opt<uint>
+static cl::opt<unsigned>
 ToLine("to-line", cl::desc("to line"), cl::cat(F1XCategory));
 
 static cl::opt<std::string>
@@ -68,16 +68,16 @@ Output("output", cl::desc("output file"), cl::cat(F1XCategory));
 static cl::opt<bool>
 Apply("apply", cl::desc("apply patch"), cl::cat(F1XCategory));
 
-static cl::opt<uint>
+static cl::opt<unsigned>
 BeginLine("bl", cl::desc("begin line"), cl::cat(F1XCategory));
 
-static cl::opt<uint>
+static cl::opt<unsigned>
 BeginColumn("bc", cl::desc("begin column"), cl::cat(F1XCategory));
 
-static cl::opt<uint>
+static cl::opt<unsigned>
 EndLine("el", cl::desc("end line"), cl::cat(F1XCategory));
 
-static cl::opt<uint>
+static cl::opt<unsigned>
 EndColumn("ec", cl::desc("end column"), cl::cat(F1XCategory));
 
 static cl::opt<std::string>

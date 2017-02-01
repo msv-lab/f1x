@@ -101,10 +101,10 @@ void dumpSearchSpace(std::vector<SearchSpaceElement> &searchSpace, const fs::pat
 }
 
 
-shared_ptr<unordered_map<uint, unordered_set<F1XID>>> getGroupable(const std::vector<SearchSpaceElement> &searchSpace) {
-  shared_ptr<unordered_map<uint, unordered_set<F1XID>>> result(new unordered_map<uint, unordered_set<F1XID>>);
+shared_ptr<unordered_map<ulong, unordered_set<F1XID>>> getGroupable(const std::vector<SearchSpaceElement> &searchSpace) {
+  shared_ptr<unordered_map<ulong, unordered_set<F1XID>>> result(new unordered_map<ulong, unordered_set<F1XID>>);
   for (auto &el : searchSpace) {
-    uint locId = el.app->appId;
+    ulong locId = el.app->appId;
     if (! result->count(locId)) {
       (*result)[locId] = unordered_set<F1XID>();
     }
@@ -222,8 +222,8 @@ bool repair(Project &project,
   
   SearchEngine engine(tests, tester, runtime, cfg, getGroupable(searchSpace), relatedTestIndexes);
 
-  uint last = 0;
-  uint patchCount = 0;
+  ulong last = 0;
+  ulong patchCount = 0;
 
   while (last < searchSpace.size()) {
     last = engine.findNext(searchSpace, last);

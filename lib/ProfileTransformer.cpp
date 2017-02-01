@@ -81,16 +81,16 @@ void ProfileStatementHandler::run(const MatchFinder::MatchResult &Result) {
 
       SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
-      uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-      uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-      uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-      uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+      ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+      ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+      ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+      ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
       
       if (!inRange(beginLine))
         return;
 
       // NOTE: to avoid extracting locations from headers:
-      std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+      std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
       if (srcMgr.getMainFileID() != decLoc.first)
         return;
 
@@ -119,16 +119,16 @@ void ProfileExpressionHandler::run(const MatchFinder::MatchResult &Result) {
 
     SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
-    uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-    uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-    uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-    uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+    ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+    ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+    ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+    ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
     if (!inRange(beginLine))
       return;
 
     // NOTE: to avoid extracting locations from headers:
-    std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+    std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 

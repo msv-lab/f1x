@@ -28,11 +28,11 @@
 
 
 struct F1XID {
-  uint base;
-  uint int2;
-  uint bool2;
-  uint cond3;
-  uint param;
+  ulong base; // base = 0 is reserved for special purpose
+  ulong int2;
+  ulong bool2;
+  ulong cond3;
+  ulong param;
 
   bool operator==(const F1XID &other) const { 
     return (base == other.base
@@ -42,6 +42,7 @@ struct F1XID {
             && param == other.param);
   }
 };
+
 
 // http://stackoverflow.com/questions/19195183/how-to-properly-hash-the-custom-struct
 template <class T>
@@ -112,11 +113,11 @@ Expression getNullPointer();
 
 
 struct Location {
-  uint fileId;
-  uint beginLine;
-  uint beginColumn;
-  uint endLine;
-  uint endColumn;
+  ulong fileId;
+  ulong beginLine;
+  ulong beginColumn;
+  ulong endLine;
+  ulong endColumn;
 
   bool operator==(const Location &other) const { 
     return (fileId == other.fileId
@@ -175,7 +176,7 @@ enum struct LocationContext {
 
 
 struct SchemaApplication {
-  uint appId;
+  ulong appId;
   TransformationSchema schema;
   Location location;
   LocationContext context;
@@ -186,7 +187,7 @@ struct SchemaApplication {
 
 struct PatchMetadata {
   ModificationKind kind;
-  uint distance;
+  ulong distance;
 };
 
 

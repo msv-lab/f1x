@@ -33,13 +33,13 @@ using std::shared_ptr;
 using std::string;
 using std::to_string;
 
-const uint SHOW_PROGRESS_STEP = 10;
+const ulong SHOW_PROGRESS_STEP = 10;
 
 SearchEngine::SearchEngine(const std::vector<std::string> &tests,
                            TestingFramework &tester,
                            Runtime &runtime,
                            const Config &cfg,
-                           shared_ptr<unordered_map<uint, unordered_set<F1XID>>> groupable,
+                           shared_ptr<unordered_map<ulong, unordered_set<F1XID>>> groupable,
                            std::unordered_map<Location, std::vector<int>> relatedTestIndexes):
   tests(tests),
   tester(tester),
@@ -61,9 +61,9 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   }
 }
 
-uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, uint fromIdx) {
+ulong SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, ulong fromIdx) {
 
-  uint candIdx = fromIdx;
+  ulong candIdx = fromIdx;
   for (; candIdx < searchSpace.size(); candIdx++) {
     stat.explorationCounter++;
     if ((100 * candIdx) / searchSpace.size() >= progress) {
@@ -76,7 +76,6 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
     if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
       if (failing.count(elem.id))
         continue;
-      runtime.setPartition((*groupable)[elem.app->appId]);
     }
 
     InEnvironment env({ { "F1X_APP", to_string(elem.app->appId) },
@@ -100,8 +99,8 @@ uint SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, 
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         if (passing[test].count(elem.id))
           continue;
-        runtime.clearPartition();
         //FIXME: select unexplored candidates
+        runtime.setPartition((*groupable)[elem.app->appId]);
       }
 
       stat.executionCounter++;

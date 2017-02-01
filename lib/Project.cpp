@@ -95,12 +95,12 @@ void adjustCompileDB(fs::path projectRoot) {
     string command = entry.GetObject()["command"].GetString();
     string includeCmd =  "-I" + F1X_CLANG_INCLUDE;
     if (command.find(includeCmd) == std::string::npos) {
-      uint index = command.find(" ");
+      ulong index = command.find(" ");
       command = command.substr(0, index) + " " + includeCmd + " " + command.substr(index);
     }
     string defineCmd =  "-D__f1xapp=0ul";
     if (command.find(defineCmd) == std::string::npos) {
-      uint index = command.find(" ");
+      ulong index = command.find(" ");
       command = command.substr(0, index) + " " + defineCmd + " " + command.substr(index);
     }
     entry.GetObject()["command"].SetString(command.c_str(), db.GetAllocator());
@@ -154,7 +154,7 @@ bool Project::buildInEnvironment(const std::map<std::string, std::string> &envir
   }
 
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  uint status = std::system(cmd.str().c_str());
+  ulong status = std::system(cmd.str().c_str());
 
   return (status == 0);
 }
@@ -256,7 +256,7 @@ void Project::computeDiff(const ProjectFile &file,
     ofs << "--- " << a.string() << "\n"
         << "+++ " << b.string() << "\n";
   }
-  uint id = getFileId(file);
+  ulong id = getFileId(file);
   
   fs::path fromFile = workDir / fs::path("original" + std::to_string(id) + ".c");
   fs::path toFile = workDir / fs::path("patched" + std::to_string(id) + ".c");
@@ -270,7 +270,7 @@ bool Project::instrumentFile(const ProjectFile &file,
                              const boost::filesystem::path *profile) {
   BOOST_LOG_TRIVIAL(info) << "instrumenting source files";
   
-  uint id = getFileId(file);
+  ulong id = getFileId(file);
 
   FromDirectory dir(root);
   std::stringstream cmd;
@@ -291,12 +291,12 @@ bool Project::instrumentFile(const ProjectFile &file,
     cmd << " >/dev/null 2>&1";
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  uint status = std::system(cmd.str().c_str());
+  ulong status = std::system(cmd.str().c_str());
   return status == 0;
 }
 
-uint Project::getFileId(const ProjectFile &file) {
-  uint id = 0;
+ulong Project::getFileId(const ProjectFile &file) {
+  ulong id = 0;
   for (auto &f : files) {
     if (file.relpath != f.relpath)
       id++;
@@ -308,10 +308,10 @@ uint Project::getFileId(const ProjectFile &file) {
 bool Project::applyPatch(const SearchSpaceElement &patch) {
   BOOST_LOG_TRIVIAL(debug) << "applying patch";
   FromDirectory dir(root);
-  uint beginLine = patch.app->location.beginLine;
-  uint beginColumn = patch.app->location.beginColumn;
-  uint endLine = patch.app->location.endLine;
-  uint endColumn = patch.app->location.endColumn;
+  ulong beginLine = patch.app->location.beginLine;
+  ulong beginColumn = patch.app->location.beginColumn;
+  ulong endLine = patch.app->location.endLine;
+  ulong endColumn = patch.app->location.endColumn;
   std::stringstream cmd;
   cmd << "f1x-transform " << files[patch.app->location.fileId].relpath.string() << " --apply"
       << " --bl " << beginLine
@@ -325,14 +325,14 @@ bool Project::applyPatch(const SearchSpaceElement &patch) {
     cmd << " >/dev/null 2>&1";
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  uint status = std::system(cmd.str().c_str());
+  ulong status = std::system(cmd.str().c_str());
   return status == 0;
 }
 
 
 TestingFramework::TestingFramework(const Project &project,
                                    const boost::filesystem::path &driver,
-                                   const uint testTimeout,
+                                   const ulong testTimeout,
                                    const boost::filesystem::path &workDir,
                                    const Config &cfg):
   project(project),
@@ -353,7 +353,7 @@ bool TestingFramework::isPassing(const std::string &testId) {
     cmd << " >/dev/null 2>&1";
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  uint status = std::system(cmd.str().c_str());
+  ulong status = std::system(cmd.str().c_str());
   return (status == 0);
 }
 

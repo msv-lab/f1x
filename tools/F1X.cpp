@@ -62,8 +62,8 @@ std::vector<ProjectFile> parseFilesArg(const boost::filesystem::path &root,
   std::vector<ProjectFile> files;
   for (auto &arg : args) {
     boost::filesystem::path file;
-    uint fromLine = 0;
-    uint toLine = 0;
+    ulong fromLine = 0;
+    ulong toLine = 0;
     auto colonIndex = arg.find(":");
     if (colonIndex == std::string::npos) {
       file = boost::filesystem::path(arg);
@@ -110,7 +110,7 @@ int main (int argc, char *argv[])
   general.add_options()
     ("files,f", po::value<vector<string>>()->multitoken()->value_name("RELPATH..."), "list of source files to repair")
     ("tests,t", po::value<vector<string>>()->multitoken()->value_name("ID..."), "list of test IDs")
-    ("test-timeout,T", po::value<uint>()->value_name("MS"), "test execution timeout")
+    ("test-timeout,T", po::value<ulong>()->value_name("MS"), "test execution timeout")
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
     ("output,o", po::value<string>()->value_name("PATH"), "output patch file or directory (default: SRC-TIME)")
@@ -215,7 +215,7 @@ int main (int argc, char *argv[])
     BOOST_LOG_TRIVIAL(error) << "test execution timeout is not specified (use --help)";
     return 1;
   }
-  uint testTimeout = vm["test-timeout"].as<uint>();
+  ulong testTimeout = vm["test-timeout"].as<ulong>();
 
   if (!vm.count("files")) {
     BOOST_LOG_TRIVIAL(error) << "files are not specified (use --help)";

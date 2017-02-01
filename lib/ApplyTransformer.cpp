@@ -69,10 +69,10 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
 
       SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
-      uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-      uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-      uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-      uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+      ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+      ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+      ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+      ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
       if (beginLine == globalBeginLine &&
           beginColumn == globalBeginColumn &&
@@ -81,7 +81,7 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
 
         std::stringstream replacement;
         
-        unsigned origLength = Rewrite.getRangeSize(expandedLoc);
+        ulong origLength = Rewrite.getRangeSize(expandedLoc);
         bool addBrackets = isChildOfNonblock(stmt, Result.Context);
         if(addBrackets)
     	    replacement << "{ ";
@@ -123,10 +123,10 @@ void ApplicationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
 
       SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
-      uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-      uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-      uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-      uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+      ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+      ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+      ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+      ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
       // FIXME: do I need to cast it to the original type (because this is the type if runtime function)
       if (beginLine == globalBeginLine &&

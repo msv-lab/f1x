@@ -29,8 +29,8 @@
 
 
 struct SearchStatistics {
-  uint explorationCounter;
-  uint executionCounter;
+  ulong explorationCounter;
+  ulong executionCounter;
 };
 
 
@@ -40,10 +40,10 @@ class SearchEngine {
                TestingFramework &tester,
                Runtime &runtime,
                const Config &cfg,
-               std::shared_ptr<std::unordered_map<uint, std::unordered_set<F1XID>>> groupable,
+               std::shared_ptr<std::unordered_map<ulong, std::unordered_set<F1XID>>> groupable,
                std::unordered_map<Location, std::vector<int>> relatedTestIndexes);
 
-  uint findNext(const std::vector<SearchSpaceElement> &searchSpace, uint fromIdx);
+  ulong findNext(const std::vector<SearchSpaceElement> &searchSpace, ulong fromIdx);
   SearchStatistics getStatistics();
 
  private:
@@ -54,8 +54,8 @@ class SearchEngine {
   Runtime runtime;
   Config cfg;
   SearchStatistics stat;
-  uint progress;
-  std::shared_ptr<std::unordered_map<uint, std::unordered_set<F1XID>>> groupable;
+  ulong progress;
+  std::shared_ptr<std::unordered_map<ulong, std::unordered_set<F1XID>>> groupable;
   std::unordered_set<F1XID> failing;
   std::unordered_map<std::string, std::unordered_set<F1XID>> passing;
   std::unordered_map<Location, std::vector<int>> relatedTestIndexes;

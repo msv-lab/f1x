@@ -51,7 +51,7 @@ void initInterestingLocations() {
   }
 }
 
-bool isInterestingLocation(uint fileId, uint beginLine, uint beginColumn, uint endLine, uint endColumn) {
+bool isInterestingLocation(ulong fileId, ulong beginLine, ulong beginColumn, ulong endLine, ulong endColumn) {
   std::ostringstream location;
   location << fileId << " "
            << beginLine << " "
@@ -126,21 +126,21 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
    
     SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
-    uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-    uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-    uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-    uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+    ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+    ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+    ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+    ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
                
     if (!inRange(beginLine) || !isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
       return;
     
     // NOTE: to avoid extracting locations from headers:
-    std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+    std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
-    uint appId = f1xapp(globalBaseAppId, globalFileId);
+    ulong appId = f1xapp(globalBaseAppId, globalFileId);
     globalBaseAppId++;
                  
     llvm::errs() << beginLine << " "
@@ -170,7 +170,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     app.AddMember("components", componentsJSON, schemaApplications.GetAllocator());
     schemaApplications.PushBack(app, schemaApplications.GetAllocator());
 
-	  unsigned origLength = Rewrite.getRangeSize(expandedLoc);
+	  ulong origLength = Rewrite.getRangeSize(expandedLoc);
     std::ostringstream stringStream;
     
     bool addBrackets = isChildOfNonblock(stmt, Result.Context);
@@ -220,20 +220,20 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
 
     SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
-    uint beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-    uint beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-    uint endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-    uint endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+    ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+    ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+    ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+    ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
     if (!inRange(beginLine) || !isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
       return;
 
     // NOTE: to avoid extracting locations from headers:
-    std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+    std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
-    uint appId = f1xapp(globalBaseAppId, globalFileId);
+    ulong appId = f1xapp(globalBaseAppId, globalFileId);
     globalBaseAppId++;
 
     llvm::errs() << beginLine << " "
