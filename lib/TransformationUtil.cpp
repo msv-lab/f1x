@@ -207,27 +207,31 @@ bool isChildOfNonblock(const Stmt *stmt, ASTContext *context) {
 }
 
 
-bool inConditionContext(const Stmt *stmt, ASTContext *context) {
-  auto it = context->getParents(*stmt).begin();
+bool inConditionContext(const Expr *expr, ASTContext *context) {
+  auto it = context->getParents(*expr).begin();
+  const ImplicitCastExpr* ic;
+  while ((ic = it->get<ImplicitCastExpr>()) != NULL) {
+    it = context->getParents(*ic).begin();
+  }
 
   const IfStmt* is;
   if ((is = it->get<IfStmt>()) != NULL) {
-    return stmt == is->getCond();
+    return expr == is->getCond();
   }
 
   const ForStmt* fs;
   if ((fs = it->get<ForStmt>()) != NULL) {
-    return stmt == fs->getCond();
+    return expr == fs->getCond();
   }
 
   const WhileStmt* ws;
   if ((ws = it->get<WhileStmt>()) != NULL) {
-    return stmt == ws->getCond();
+    return expr == ws->getCond();
   }
 
   const BinaryOperator* bo;
   if ((bo = it->get<BinaryOperator>()) != NULL) {
-    return bo->getOpcode() == clang::BO_And || bo->getOpcode() == clang::BO_Or;
+    return bo->getOpcode() == clang::BO_LAnd || bo->getOpcode() == clang::BO_LOr;
   }
 
   return false;

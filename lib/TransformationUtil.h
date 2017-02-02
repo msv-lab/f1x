@@ -60,7 +60,7 @@ bool isTopLevelStatement(const clang::Stmt *stmt, clang::ASTContext *context);
 
 bool isChildOfNonblock(const clang::Stmt *stmt, clang::ASTContext *context);
 
-bool inConditionContext(const clang::Stmt *stmt, clang::ASTContext *context);
+bool inConditionContext(const clang::Expr *expr, clang::ASTContext *context);
 
 rapidjson::Value stmtToJSON(const clang::Stmt *stmt,
                             rapidjson::Document::AllocatorType &allocator);
