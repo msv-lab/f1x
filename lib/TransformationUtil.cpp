@@ -54,6 +54,7 @@ ulong globalEndLine;
 ulong globalEndColumn;
 string globalPatch;
 ulong globalBaseAppId = 0;
+std::shared_ptr<std::vector<clang::SourceRange>> globalConditionalsPP = std::shared_ptr<std::vector<clang::SourceRange>>(new std::vector<clang::SourceRange>());
 
 const ulong F1XAPP_WIDTH = 32;
 const ulong F1XAPP_VALUE_BITS = 10;
@@ -102,6 +103,46 @@ bool insideMacro(const Stmt* expr, SourceManager &srcMgr, const LangOptions &lan
   
   if(endLoc.isMacroID() && !Lexer::isAtEndOfMacroExpansion(endLoc, srcMgr, langOpts))
     return true;
+
+  return false;
+}
+
+
+PPConditionalRecoder::PPConditionalRecoder(std::shared_ptr<std::vector<SourceRange>> conditionals):
+  conditionals(conditionals) { }
+
+void PPConditionalRecoder::Endif(SourceLocation Loc, SourceLocation IfLoc) {
+  this->conditionals->push_back(SourceRange(IfLoc, Loc));
+}
+
+
+bool intersectConditionalPP(const Stmt* stmt, 
+                            SourceManager &srcMgr, 
+                            const std::shared_ptr<std::vector<SourceRange>> conditionalsPP) {
+  BeforeThanCompare<SourceLocation> isBefore(srcMgr);
+
+  for (auto range : *conditionalsPP) {
+    // only in the main file:
+    std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(range.getBegin());
+    if (srcMgr.getMainFileID() != decLoc.first)
+      continue;
+
+    /*
+      Matching situation like this (and the opposite):
+      EXPR_BEGIN
+      #ifdef
+      EXPR_END
+      #endif
+     */
+    if ((isBefore(stmt->getLocStart(), range.getBegin()) &&
+         isBefore(range.getBegin(), stmt->getLocEnd()) &&
+         isBefore(stmt->getLocEnd(), range.getEnd())) || 
+        (isBefore(range.getBegin(), stmt->getLocStart()) && 
+         isBefore(stmt->getLocStart(), range.getEnd()) && 
+         isBefore(range.getEnd(), stmt->getLocEnd()))) {
+      return true;
+    }
+  }
 
   return false;
 }

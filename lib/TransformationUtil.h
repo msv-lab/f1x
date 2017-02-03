@@ -18,15 +18,19 @@
 
 #pragma once
 
+#include <memory>
+
 #include "clang/AST/AST.h"
 #include "clang/Rewrite/Core/Rewriter.h"
+#include "clang/Lex/PPCallbacks.h"
+
 
 #include <rapidjson/document.h>
 
 
 const bool INPLACE_MODIFICATION = true;
 
-// FIXME: better to pass these variable to constructors, but it requires a lot of boilerplate
+//FIXME: better to pass these variables to constructors, but it requires a lot of boilerplate
 extern ulong globalFileId;
 extern ulong globalFromLine;
 extern ulong globalToLine;
@@ -38,10 +42,26 @@ extern ulong globalEndLine;
 extern ulong globalEndColumn;
 extern std::string globalPatch;
 extern ulong globalBaseAppId;
+//NOTE: this is a hack to collect indef locations from preprocessor
+extern std::shared_ptr<std::vector<clang::SourceRange>> globalConditionalsPP;
 
 ulong getDeclExpandedLine(const clang::Decl *decl, clang::SourceManager &srcMgr);
 
 bool insideMacro(const clang::Stmt *expr, clang::SourceManager &srcMgr, const clang::LangOptions &langOpts);
+
+class PPConditionalRecoder : public clang::PPCallbacks {
+public:
+  PPConditionalRecoder(std::shared_ptr<std::vector<clang::SourceRange>> conditionals);
+  void Endif(clang::SourceLocation Loc, clang::SourceLocation IfLoc);
+
+private:
+  std::shared_ptr<std::vector<clang::SourceRange>> conditionals;
+};
+
+bool intersectConditionalPP(const clang::Stmt* stmt, 
+                            clang::SourceManager &srcMgr, 
+                            const std::shared_ptr<std::vector<clang::SourceRange>> conditions);
+
 
 clang::SourceRange getExpandedLoc(const clang::Stmt *expr, clang::SourceManager &srcMgr);
 

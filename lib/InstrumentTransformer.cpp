@@ -74,6 +74,11 @@ bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, Str
   }
   alreadyTransformed = true;
 
+  std::unique_ptr<PPConditionalRecoder> recorder(new PPConditionalRecoder(globalConditionalsPP));
+
+  Preprocessor &pp = CI.getPreprocessor();
+  pp.addPPCallbacks(std::move(recorder));
+
   schemaApplications.SetArray();
   initInterestingLocations();
   return true;
@@ -118,7 +123,8 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();
 
-    if (insideMacro(stmt, srcMgr, langOpts))
+    if (insideMacro(stmt, srcMgr, langOpts) || 
+        intersectConditionalPP(stmt, srcMgr, globalConditionalsPP))
       return;
 
     if(!isTopLevelStatement(stmt, Result.Context))
@@ -215,7 +221,8 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();
 
-    if (insideMacro(expr, srcMgr, langOpts))
+    if (insideMacro(expr, srcMgr, langOpts) || 
+        intersectConditionalPP(expr, srcMgr, globalConditionalsPP))
       return;
 
     SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);

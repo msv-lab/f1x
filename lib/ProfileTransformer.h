@@ -25,6 +25,8 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
+#include "clang/Lex/Preprocessor.h"
+#include "clang/Lex/PPCallbacks.h"
 
 using namespace clang;
 using namespace ast_matchers;

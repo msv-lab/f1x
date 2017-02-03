@@ -13,9 +13,10 @@ int main(int argc, char *argv[]) {
   b = atoi(argv[2]);
   if (1 ||
 #ifdef FOO
-      a > b
+      1
 #endif
-      || foo()) { // >=
+      || foo()) {}
+  if (a > b) { // >=
     printf("%d\n", 0);
   } else {
     printf("%d\n", 1);
