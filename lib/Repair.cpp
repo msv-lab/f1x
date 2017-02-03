@@ -159,8 +159,10 @@ bool repair(Project &project,
   for (int i = 0; i < tests.size(); i++) {
     auto test = tests[i];
     profiler.clearTrace();
-    bool isPassing = (tester.execute(test) == TestStatus::PASS);
-    profiler.mergeTrace(i, isPassing);
+    TestStatus status = tester.execute(test);
+    if (status == TestStatus::TIMEOUT)
+      BOOST_LOG_TRIVIAL(warning) << "test " << test << " timeout during profiling";
+    profiler.mergeTrace(i, (status == TestStatus::PASS));
   }
   
   fs::path profile = profiler.getProfile();

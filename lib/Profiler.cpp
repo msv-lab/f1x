@@ -67,13 +67,53 @@ bool Profiler::compile() {
   BOOST_LOG_TRIVIAL(debug) << "compiling profile runtime";
   {
     fs::ofstream source(getSource());
-    source << "#include <stdio.h>\n"
-           << "#include \"" << PROFILE_HEADER_FILE_NAME << "\"\n";
-    source << "void __f1x_trace(int fileId, int beginLine, int beginColumn, int endLine, int endColumn) {\n"
-           << "  FILE * file = fopen(\""<< (workDir / TRACE_FILE_NAME).string() << "\", \"a+\");\n"
-           << "  fprintf(file, \"%d %d %d %d %d\\n\", fileId, beginLine, beginColumn, endLine, endColumn);\n"
-           << "  fclose(file);\n"
-           << "}\n";
+    source << "#include <fstream>" << "\n"
+           << "#include <unordered_set>" << "\n"
+           << "#include \"" << PROFILE_HEADER_FILE_NAME << "\"" << "\n"
+           << "struct __f1x_loc {" << "\n"
+           << "  ulong fileId;" << "\n"
+           << "  ulong beginLine;" << "\n"
+           << "  ulong beginColumn;" << "\n"
+           << "  ulong endLine;" << "\n"
+           << "  ulong endColumn;" << "\n"
+           << "  bool operator==(const __f1x_loc &other) const {" << "\n"
+           << "return (fileId == other.fileId" << "\n"
+           << "&& beginLine == other.beginLine" << "\n"
+           << "&& beginColumn == other.beginColumn" << "\n"
+           << "&& endLine == other.endLine" << "\n"
+           << "&& endColumn == other.endColumn);" << "\n"
+           << "}" << "\n"
+           << "};" << "\n"
+           << "template <class T>" << "\n"
+           << "inline void hash_combine(std::size_t & s, const T & v)" << "\n"
+           << "{" << "\n"
+           << "std::hash<T> h;" << "\n"
+           << "s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);" << "\n"
+           << "}" << "\n"
+           << "namespace std {" << "\n"
+           << "template<>" << "\n"
+           << "struct hash<__f1x_loc> {" << "\n"
+           << "inline size_t operator()(const __f1x_loc& id) const {" << "\n"
+           << "size_t value = 0;" << "\n"
+           << "hash_combine(value, id.fileId);" << "\n"
+           << "hash_combine(value, id.beginLine);" << "\n"
+           << "hash_combine(value, id.beginColumn);" << "\n"
+           << "hash_combine(value, id.endLine);" << "\n"
+           << "hash_combine(value, id.endColumn);" << "\n"
+           << "return value;" << "\n"
+           << "}" << "\n"
+           << "};" << "\n"
+           << "}" << "\n"
+           << "std::unordered_set<__f1x_loc> __f1x_locs;" << "\n";
+
+    source << "void __f1x_trace(int fid, int bl, int bc, int el, int ec) {"  << "\n"
+           << "__f1x_loc loc = {fid, bl, bc, el, ec};" << "\n"
+           << "if (! __f1x_locs.count(loc)) {" << "\n"
+           << "std::ofstream ofs(\""<< (workDir / TRACE_FILE_NAME).string() << "\", std::ofstream::out | std::ofstream::app);" << "\n"
+           << "ofs << fid << \" \" << bl << \" \" <<  bc << \" \" << el << \" \" << ec << \"\\n\";" << "\n"
+           << "__f1x_locs.insert(loc);" << "\n"
+           << "}" << "\n"
+           << "}" << "\n";
 
     fs::ofstream header(getHeader());
     header << "#ifdef __cplusplus" << "\n"
@@ -89,6 +129,7 @@ bool Profiler::compile() {
   cmd << cfg.runtimeCompiler << " -O2 -fPIC"
       << " " << PROFILE_SOURCE_FILE_NAME
       << " -shared"
+      << " -std=c++11" // this is for initializers
       << " -o libf1xrt.so";
   if (cfg.verbose) {
     cmd << " >&2";
