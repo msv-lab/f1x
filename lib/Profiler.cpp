@@ -71,11 +71,11 @@ bool Profiler::compile() {
            << "#include <unordered_set>" << "\n"
            << "#include \"" << PROFILE_HEADER_FILE_NAME << "\"" << "\n"
            << "struct __f1x_loc {" << "\n"
-           << "  ulong fileId;" << "\n"
-           << "  ulong beginLine;" << "\n"
-           << "  ulong beginColumn;" << "\n"
-           << "  ulong endLine;" << "\n"
-           << "  ulong endColumn;" << "\n"
+           << "  unsigned long fileId;" << "\n"
+           << "  unsigned long beginLine;" << "\n"
+           << "  unsigned long beginColumn;" << "\n"
+           << "  unsigned long endLine;" << "\n"
+           << "  unsigned long endColumn;" << "\n"
            << "  bool operator==(const __f1x_loc &other) const {" << "\n"
            << "return (fileId == other.fileId" << "\n"
            << "&& beginLine == other.beginLine" << "\n"
@@ -106,7 +106,7 @@ bool Profiler::compile() {
            << "}" << "\n"
            << "std::unordered_set<__f1x_loc> __f1x_locs;" << "\n";
 
-    source << "void __f1x_trace(int fid, int bl, int bc, int el, int ec) {"  << "\n"
+    source << "void __f1x_trace(unsigned long fid, unsigned long bl, unsigned long bc, unsigned long el, unsigned long ec) {"  << "\n"
            << "__f1x_loc loc = {fid, bl, bc, el, ec};" << "\n"
            << "if (! __f1x_locs.count(loc)) {" << "\n"
            << "std::ofstream ofs(\""<< (workDir / TRACE_FILE_NAME).string() << "\", std::ofstream::out | std::ofstream::app);" << "\n"
@@ -119,7 +119,7 @@ bool Profiler::compile() {
     header << "#ifdef __cplusplus" << "\n"
            << "extern \"C\" {" << "\n"
            << "#endif" << "\n";
-    header << "void __f1x_trace(int fileId, int beginLine, int beginColumn, int endLine, int endColumn);\n";
+    header << "void __f1x_trace(unsigned long fid, unsigned long bl, unsigned long bc, unsigned long el, unsigned long ec);\n";
     header << "#ifdef __cplusplus" << "\n"
            << "}" << "\n"
            << "#endif" << "\n";

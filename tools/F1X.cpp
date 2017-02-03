@@ -135,8 +135,15 @@ int main (int argc, char *argv[])
   allOptions.add(general).add(hidden);
 
   po::variables_map vm;
-  po::store(po::command_line_parser(argc, argv).options(allOptions).positional(positional).run(), vm);
-  po::notify(vm);
+
+  try {
+    po::store(po::command_line_parser(argc, argv).options(allOptions).positional(positional).run(), vm);
+    po::notify(vm);
+  } catch(po::error& e) {
+    BOOST_LOG_TRIVIAL(error) << e.what() << " (use --help)";
+    return 0;
+  }
+
 
   if (vm.count("help")) {
     std::cout << general << std::endl;

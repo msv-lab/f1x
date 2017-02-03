@@ -79,6 +79,12 @@ for test in $TESTS; do
         substitute-int2)
             args="--files program.c --driver $test/test.sh --tests n1 n2 p1 --test-timeout 1000"
             ;;
+        inside-ifdef)
+            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        intersect-ifdef)
+            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
         *)
             echo "command for test $test is not defined"
             exit 1
