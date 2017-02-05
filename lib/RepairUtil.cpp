@@ -30,6 +30,7 @@
 
 #include "RepairUtil.h"
 #include "F1XConfig.h"
+#include "Typing.h"
 
 namespace fs = boost::filesystem;
 namespace json = rapidjson;
@@ -205,67 +206,12 @@ string operatorToString(const Operator &op) {
     return ">>";
   case Operator::BV_NOT:
     return "~";
-  case Operator::INT_CAST:
+  case Operator::BV_IMPLICIT_CAST:
+    return "";
+  case Operator::INT_IMPLICIT_CAST:
+    return "";
+  case Operator::INT_EXPLICIT_CAST:
     return "(int)";
-  case Operator::BV_TO_INT:
-    return ""; // implicit
-  case Operator::INT_TO_BV:
-    return ""; // implicit
-  }
-  throw std::invalid_argument("unsupported operator");
-}
-
-
-Type operatorType(const Operator &op) {
-  switch (op) {
-  case Operator::EQ:
-    return Type::BOOLEAN;
-  case Operator::NEQ:
-    return Type::BOOLEAN;
-  case Operator::LT:
-    return Type::BOOLEAN;
-  case Operator::LE:
-    return Type::BOOLEAN;
-  case Operator::GT:
-    return Type::BOOLEAN;
-  case Operator::GE:
-    return Type::BOOLEAN;
-  case Operator::OR:
-    return Type::BOOLEAN;
-  case Operator::AND:
-    return Type::BOOLEAN;
-  case Operator::ADD:
-    return Type::INTEGER;
-  case Operator::SUB:
-    return Type::INTEGER;
-  case Operator::MUL:
-    return Type::INTEGER;
-  case Operator::DIV:
-    return Type::INTEGER;
-  case Operator::MOD:
-    return Type::INTEGER;
-  case Operator::NEG:
-    return Type::INTEGER;
-  case Operator::NOT:
-    return Type::BOOLEAN;
-  case Operator::BV_AND:
-    return Type::BITVECTOR;
-  case Operator::BV_OR:
-    return Type::BITVECTOR;
-  case Operator::BV_XOR:
-    return Type::BITVECTOR;
-  case Operator::BV_SHL:
-    return Type::BITVECTOR;
-  case Operator::BV_SHR:
-    return Type::BITVECTOR;
-  case Operator::BV_NOT:
-    return Type::BITVECTOR;
-  case Operator::BV_TO_INT:
-    return Type::INTEGER;
-  case Operator::INT_TO_BV:
-    return Type::BITVECTOR;
-  case Operator::INT_CAST:
-    return Type::INTEGER;
   }
   throw std::invalid_argument("unsupported operator");
 }
@@ -285,7 +231,7 @@ std::string expressionToString(const Expression &expression) {
 }
 
 
-Expression getIntegerExpression(int n) {
+Expression makeIntegerConst(int n) {
   return Expression{ NodeKind::CONSTANT,
                      Type::INTEGER,
                      Operator::NONE,
@@ -370,10 +316,10 @@ Expression convertExpression(const json::Value &json) {
     assert(kind == NodeKind::OPERATOR);
     if (arguments.Size() == 1) {
       op = unaryOperatorByString(repr);
-      type = operatorType(op);
+      type = operatorOutputType(op);
     } else if (arguments.Size() == 2) {
       op = binaryOperatorByString(repr);
-      type = operatorType(op);      
+      type = operatorOutputType(op);      
     } else {
       throw parse_error("unsupported arguments size: " + arguments.Size());
     }

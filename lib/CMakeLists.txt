@@ -29,6 +29,7 @@ target_include_directories (f1xTransform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(f1xTransform PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exceptions" ) # this is to be compatible with llvm libraries
 
 add_library (f1xRepair
+  Typing.cpp
   RepairUtil.cpp
   Project.cpp
   Profiler.cpp

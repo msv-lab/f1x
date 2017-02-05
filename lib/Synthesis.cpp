@@ -23,6 +23,7 @@
 
 #include "Synthesis.h"
 #include "Runtime.h"
+#include "Typing.h"
 
 namespace fs = boost::filesystem;
 
@@ -35,8 +36,44 @@ using std::unordered_map;
 using std::to_string;
 
 
+const Expression NULL_NODE = Expression{ NodeKind::CONSTANT,
+                                         Type::POINTER,
+                                         Operator::NONE,
+                                         "void",
+                                         "0",
+                                         {} };
+
+const Expression PARAMETER_NODE = Expression{ NodeKind::PARAMETER,
+                                              Type::INTEGER,
+                                              Operator::NONE,
+                                              "int",
+                                              "param_value",
+                                              {} };
+
+const Expression INT2_NODE = Expression{ NodeKind::INT2,
+                                         Type::INTEGER,
+                                         Operator::NONE,
+                                         "int",
+                                         "int2_value",
+                                         {} };
+
+const Expression BOOL2_NODE = Expression{ NodeKind::BOOL2,
+                                          Type::BOOLEAN,
+                                          Operator::NONE,
+                                          "int",
+                                          "bool2_value",
+                                          {} };
+
+const Expression COND3_NODE = Expression{ NodeKind::COND3,
+                                          Type::BOOLEAN,
+                                          Operator::NONE,
+                                          "int",
+                                          "cond3_value",
+                                          {} };
+
+
 /*
- This module is split into two namespaces:
+ This module is split into three namespaces:
  - synthesis for everything specific to expression synthesis 
  - generator for runtime code generation
  */
@@ -92,6 +129,27 @@ namespace synthesis {
       return {};
     }
     return {};
+  }
+
+  ulong depthOf(const Expression &expression) {
+    if (expression.kind == NodeKind::VARIABLE ||
+        expression.kind == NodeKind::CONSTANT ||
+        expression.kind == NodeKind::PARAMETER) {
+      return 1;
+    } else if (expression.kind == NodeKind::BOOL2 ||
+               expression.kind == NodeKind::INT2 ||
+               expression.kind == NodeKind::COND3) {
+      return 2; //NODE: COND3 can be either 2 or 3, but this is unimportant
+    } else if (expression.kind == NodeKind::OPERATOR) {
+      ulong max = 0;
+      for (auto &arg : expression.args) {
+        ulong depth = depthOf(arg);
+        if (max < depth)
+          max = depth;
+      }
+      return max + 1;
+    }
+    throw std::invalid_argument("unsupported node kind");
   }
 
   vector<Operator> mutatePointerOperator(Operator op) {
@@ -162,9 +220,9 @@ namespace synthesis {
             if (c.type == Type::INTEGER)
               result.push_back(make_pair(c, PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
           }
-          result.push_back(make_pair(getIntegerExpression(0),
+          result.push_back(make_pair(makeIntegerConst(0),
                                      PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT}));
-          result.push_back(make_pair(getIntegerExpression(1),
+          result.push_back(make_pair(makeIntegerConst(1),
                                      PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT}));
         }
         if (expr.type == Type::POINTER) {
@@ -438,7 +496,7 @@ namespace generator {
           f1xid.base = baseId;
           f1xid.param = i;
           Expression instance = candidate.first;
-          substituteAbstractNode(instance, NodeKind::PARAMETER, getIntegerExpression(i));
+          substituteAbstractNode(instance, NodeKind::PARAMETER, makeIntegerConst(i));
           ss.push_back(SearchSpaceElement{f1xid, sa, instance, candidate.second});
         }
       } else {

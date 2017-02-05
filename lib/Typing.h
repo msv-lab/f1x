@@ -16,25 +16,27 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <memory>
-
-#include <boost/filesystem.hpp>
+#pragma once
 
 #include "RepairUtil.h"
+#include "F1XConfig.h"
 
 /*
-  Expression synthesizer:
+  Type inference:
 
-  BOOL2 is "x > y", "p != NULL" (there cannot be BOOL1 in our type system)
-  INT2 is "x + y"
-  COND3 is either BOOL2 or "x > INT2"
+  C exploression are lifted to a type system with the follwing types:
+  1. Boolean
+  2. Integer
+  3. Bitvector
+  4. Pointer
 
-  narrowing/tightening is done with COND3
+  Type constraints come from:
+  1. Context (condition/unknown)
+  2. Components (integer/pointer)
+  3. Operators (input/output types)
+  4. Operator overloading (arguments should be of the same type)
  */
 
-std::vector<SearchSpaceElement>
-generateSearchSpace(const std::vector<std::shared_ptr<SchemaApplication>> &schemaApplications,
-                    const boost::filesystem::path &workDir,
-                    std::ostream &OS,
-                    std::ostream &OH,
-                    const Config &cfg);
+Type operatorOutputType(const Operator &op);
+
+Type operatorInputType(const Operator &op);

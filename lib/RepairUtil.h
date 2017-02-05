@@ -80,8 +80,10 @@ enum class NodeKind {
 
 bool isAbstractNode(NodeKind kind);
 
+// BOOLEAN, BITVECTOR and INTEGER are all integer types
+// ANY is for type inference
 enum class Type {
-  BOOLEAN, INTEGER, POINTER, BITVECTOR
+  ANY, BOOLEAN, INTEGER, POINTER, BITVECTOR
 };
 
 
@@ -89,11 +91,9 @@ enum class Operator {
   NONE, // this is when node is not an operator
   EQ, NEQ, LT, LE, GT, GE, OR, AND, ADD, SUB, MUL, DIV, MOD, NEG, NOT,
   BV_AND, BV_XOR, BV_OR, BV_SHL, BV_SHR, BV_NOT,
-  BV_TO_INT, INT_TO_BV, // auxiliary operators for synthesizer to separate arithmetic and bitwise parts
-  INT_CAST // auxiliary operator for INT2 substitutions, because other types are not supported inside runtime
+  BV_IMPLICIT_CAST, INT_IMPLICIT_CAST, // auxiliary operators for synthesizer to separate arithmetic and bitwise parts
+  INT_EXPLICIT_CAST // auxiliary operator for INT2 substitutions, because other types are not supported inside runtime
 };
-
-Type operatorType(const Operator &op);
 
 Operator binaryOperatorByString(const std::string &repr);
 
@@ -102,55 +102,19 @@ Operator unaryOperatorByString(const std::string &repr);
 std::string operatorToString(const Operator &op);
 
 
+//NOTE: instead of designing hierarchy, we put everything into a single node (because of a whim)
 struct Expression {
   NodeKind kind;
-  Type type;
-  Operator op;   /* should be NONE if not of the kind OPERATOR */
-  std::string rawType; /* either innteger type (char, unsinged char, unsigned short, ...) or pointer base type */
+  Type type; /* should not be ANY */
+  Operator op; /* should be NONE if not of the kind OPERATOR */
+  std::string rawType; /* either integer type (char, unsinged char, unsigned short, ...) or pointer base type */
   std::string repr; /* 1, 2,... for constants; "x", "y",... for variables; ">=",... for ops */
   std::vector<Expression> args;
 };
 
 std::string expressionToString(const Expression &expression);
 
-Expression getIntegerExpression(int n);
-
-const Expression NULL_NODE = Expression{ NodeKind::CONSTANT,
-                                         Type::POINTER,
-                                         Operator::NONE,
-                                         "void",
-                                         "0",
-                                         {} };
-
-
-const Expression PARAMETER_NODE = Expression{ NodeKind::PARAMETER,
-                                              Type::INTEGER,
-                                              Operator::NONE,
-                                              "int",
-                                              "param_value",
-                                              {} };
-
-const Expression INT2_NODE = Expression{ NodeKind::INT2,
-                                         Type::INTEGER,
-                                         Operator::NONE,
-                                         "int",
-                                         "int2_value",
-                                         {} };
-
-const Expression BOOL2_NODE = Expression{ NodeKind::BOOL2,
-                                          Type::BOOLEAN,
-                                          Operator::NONE,
-                                          "int",
-                                          "bool2_value",
-                                          {} };
-
-const Expression COND3_NODE = Expression{ NodeKind::COND3,
-                                          Type::BOOLEAN,
-                                          Operator::NONE,
-                                          "int",
-                                          "cond3_value",
-                                          {} };
-
+Expression makeIntegerConst(int n);
 
 struct Location {
   ulong fileId;
