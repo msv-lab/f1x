@@ -156,14 +156,23 @@ bool repair(Project &project,
   project.restoreOriginalFiles();
 
   BOOST_LOG_TRIVIAL(info) << "profiling project";
+  ulong numPositive = 0;
+  ulong numNegative = 0;
   for (int i = 0; i < tests.size(); i++) {
     auto test = tests[i];
     profiler.clearTrace();
     TestStatus status = tester.execute(test);
+    if (status == TestStatus::PASS)
+      numPositive++;
+    else
+      numNegative++;
     if (status == TestStatus::TIMEOUT)
       BOOST_LOG_TRIVIAL(warning) << "test " << test << " timeout during profiling";
     profiler.mergeTrace(i, (status == TestStatus::PASS));
   }
+
+  BOOST_LOG_TRIVIAL(info) << "number of positive tests: " << numPositive;
+  BOOST_LOG_TRIVIAL(info) << "number of negative tests: " << numNegative;
   
   fs::path profile = profiler.getProfile();
   

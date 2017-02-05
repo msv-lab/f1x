@@ -64,11 +64,11 @@ unordered_set<F1XID> Runtime::getPartition() {
   ulong index = 0;
   while (!(partition[index] == OUTPUT_TERMINATOR)) {
     if (partition[index] == INPUT_TERMINATOR) {
-      BOOST_LOG_TRIVIAL(warning) << "wrongly terminated partition";
+      BOOST_LOG_TRIVIAL(debug) << "wrongly terminated partition";
       return unordered_set<F1XID>();
     }
     if (index > MAX_PARTITION_SIZE) {
-      BOOST_LOG_TRIVIAL(warning) << "unterminated partition";
+      BOOST_LOG_TRIVIAL(debug) << "unterminated partition";
       return unordered_set<F1XID>();
     }
     result.insert(partition[index]);

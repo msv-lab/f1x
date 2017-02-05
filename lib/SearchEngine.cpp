@@ -124,6 +124,11 @@ ulong SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace,
         
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         unordered_set<F1XID> partition = runtime.getPartition();
+        if (partition.empty()) {
+          BOOST_LOG_TRIVIAL(warning) << "partitioning failed for "
+                                     << visualizeF1XID(elem.id)
+                                     << " with test " << test;
+        }
         if (passAll) {
           passing[test].insert(elem.id);
           passing[test].insert(partition.begin(), partition.end());
