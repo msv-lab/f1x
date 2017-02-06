@@ -22,9 +22,11 @@
 #include "F1XConfig.h"
 
 /*
-  Type inference:
+  The aims of type inference are
+  1. Eliminate nonsensical expressions from search space
+  2. Guarantee that meta program compiles
 
-  C exploression are lifted to a type system with the follwing types:
+  C expressions are lifted to a type system with the follwing types:
   1. Boolean
   2. Integer
   3. Bitvector
@@ -40,3 +42,5 @@
 Type operatorOutputType(const Operator &op);
 
 Type operatorInputType(const Operator &op);
+
+Expression correctTypes(const Expression &expression, const Type &context);

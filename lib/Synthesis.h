@@ -29,6 +29,8 @@
   INT2 is "x + y"
   COND3 is either BOOL2 or "x > INT2"
 
+  Note that currently we cast all INT2 to EXPLICIT_INT_CAST_TYPE
+
   narrowing/tightening is done with COND3
  */
 

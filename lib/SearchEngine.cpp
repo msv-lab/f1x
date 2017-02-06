@@ -158,8 +158,7 @@ SearchStatistics SearchEngine::getStatistics() {
   return stat;
 }
 
-void SearchEngine::changeSensitivity(std::vector<int> &testOrder, int index)
-{
+void SearchEngine::changeSensitivity(std::vector<int> &testOrder, int index) {
     std::vector<int>::iterator it = testOrder.begin() + index;
     int temp = testOrder[index];
     testOrder.erase(it);

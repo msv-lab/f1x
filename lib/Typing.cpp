@@ -64,12 +64,16 @@ Type operatorOutputType(const Operator &op) {
     return Type::BITVECTOR;
   case Operator::BV_NOT:
     return Type::BITVECTOR;
-  case Operator::BV_IMPLICIT_CAST:
+  case Operator::IMPLICIT_BV_CAST:
     return Type::INTEGER;
-  case Operator::INT_IMPLICIT_CAST:
+  case Operator::IMPLICIT_INT_CAST:
     return Type::BITVECTOR;
-  case Operator::INT_EXPLICIT_CAST:
+  case Operator::EXPLICIT_BV_CAST:
+    return Type::BITVECTOR;
+  case Operator::EXPLICIT_INT_CAST:
     return Type::INTEGER;
+  case Operator::EXPLICIT_PTR_CAST:
+    return Type::POINTER;
   }
   throw std::invalid_argument("unsupported operator: " + std::to_string((ulong)op));
 }
@@ -118,12 +122,58 @@ Type operatorInputType(const Operator &op) {
     return Type::BITVECTOR;
   case Operator::BV_NOT:
     return Type::BITVECTOR;
-  case Operator::BV_IMPLICIT_CAST:
-    return Type::ANY;
-  case Operator::INT_IMPLICIT_CAST:
-    return Type::ANY;
-  case Operator::INT_EXPLICIT_CAST:
+  case Operator::IMPLICIT_BV_CAST:
+  case Operator::IMPLICIT_INT_CAST:
+  case Operator::EXPLICIT_BV_CAST:
+  case Operator::EXPLICIT_INT_CAST:
+  case Operator::EXPLICIT_PTR_CAST:
     return Type::ANY;
   }
   throw std::invalid_argument("unsupported operator: " + std::to_string((ulong)op));
+}
+
+Expression correctTypes(const Expression &expression, const Type &context) {
+  if (expression.kind == NodeKind::VARIABLE ||
+      expression.kind == NodeKind::CONSTANT ||
+      expression.kind == NodeKind::PARAMETER) {
+    switch (context) {
+    case Type::ANY:
+      return expression;
+    case Type::INTEGER:
+      if (expression.type == Type::INTEGER) {
+        return expression;
+      } else if (expression.type == Type::POINTER) {
+        return wrapWithExplicitIntCast(expression);
+      } else {
+        return wrapWithImplicitIntCast(expression);
+      }
+    case Type::BITVECTOR:
+      if (expression.type == Type::BITVECTOR) {
+        return expression;
+      } else if (expression.type == Type::POINTER) {
+        return wrapWithExplicitBVCast(expression);
+      } else {
+        return wrapWithImplicitBVCast(expression);
+      }
+    case Type::BOOLEAN:
+      if (expression.type == Type::BOOLEAN) {
+        return expression;
+      } else if (expression.type == Type::POINTER) {
+        return makeNonNULLCheck(expression);
+      } else {
+        return makeNonZeroCheck(expression);
+      }
+    case Type::POINTER:
+      if (expression.type == Type::POINTER) {
+        return expression;
+      } else {
+        return wrapWithExplicitPtrCast(expression);
+      }
+    }
+  } else if (expression.kind == NodeKind::OPERATOR) {
+    //TODO
+    for (auto &arg : expression.args) {
+    }
+  }
+  throw std::invalid_argument("unsupported node kind");
 }

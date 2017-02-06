@@ -306,7 +306,7 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << stat.explorationCounter;
   BOOST_LOG_TRIVIAL(info) << "tests executed: " << stat.executionCounter;
-  BOOST_LOG_TRIVIAL(info) << "timeouts: " << stat.timeoutCounter;
+  BOOST_LOG_TRIVIAL(info) << "number of timeouts: " << stat.timeoutCounter;
 
   return patchCount > 0;
 }

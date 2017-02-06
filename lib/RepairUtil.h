@@ -91,9 +91,14 @@ enum class Operator {
   NONE, // this is when node is not an operator
   EQ, NEQ, LT, LE, GT, GE, OR, AND, ADD, SUB, MUL, DIV, MOD, NEG, NOT,
   BV_AND, BV_XOR, BV_OR, BV_SHL, BV_SHR, BV_NOT,
-  BV_IMPLICIT_CAST, INT_IMPLICIT_CAST, // auxiliary operators for synthesizer to separate arithmetic and bitwise parts
-  INT_EXPLICIT_CAST // auxiliary operator for INT2 substitutions, because other types are not supported inside runtime
+  IMPLICIT_BV_CAST, IMPLICIT_INT_CAST, // auxiliary operators to satisfy our type system
+  EXPLICIT_BV_CAST, EXPLICIT_INT_CAST, EXPLICIT_PTR_CAST // auxiliary operators for (1) INT2 substitutions, (2) pointer arithmetics
 };
+
+const std::string DEFAULT_BOOLEAN_TYPE = "int"; // any type is OK
+const std::string EXPLICIT_INT_CAST_TYPE = "unsigned long";
+const std::string EXPLICIT_BV_CAST_TYPE = "unsigned long";
+const std::string EXPLICIT_PTR_CAST_TYPE = "void";
 
 Operator binaryOperatorByString(const std::string &repr);
 
@@ -112,9 +117,31 @@ struct Expression {
   std::vector<Expression> args;
 };
 
+const Expression NULL_NODE = Expression{ NodeKind::CONSTANT,
+                                         Type::POINTER,
+                                         Operator::NONE,
+                                         "void",
+                                         "(void*)0",
+                                         {} };
+
 std::string expressionToString(const Expression &expression);
 
 Expression makeIntegerConst(int n);
+
+Expression wrapWithImplicitIntCast(const Expression &expression);
+
+Expression wrapWithImplicitBVCast(const Expression &expression);
+
+Expression wrapWithExplicitIntCast(const Expression &expression);
+
+Expression wrapWithExplicitBVCast(const Expression &expression);
+
+Expression wrapWithExplicitPtrCast(const Expression &expression);
+
+Expression makeNonNULLCheck(const Expression &pointer);
+
+Expression makeNonZeroCheck(const Expression &expression);
+
 
 struct Location {
   ulong fileId;

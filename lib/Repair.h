@@ -25,7 +25,7 @@
 
 
 /*
-  Initializes the repair process, performs search, returns patch of found.
+  Initializes repair process, performs search, saves patch(es) if found.
  */
 bool repair(Project &project,
             TestingFramework &tester,

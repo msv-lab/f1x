@@ -206,12 +206,16 @@ string operatorToString(const Operator &op) {
     return ">>";
   case Operator::BV_NOT:
     return "~";
-  case Operator::BV_IMPLICIT_CAST:
+  case Operator::IMPLICIT_BV_CAST:
     return "";
-  case Operator::INT_IMPLICIT_CAST:
+  case Operator::IMPLICIT_INT_CAST:
     return "";
-  case Operator::INT_EXPLICIT_CAST:
-    return "(int)";
+  case Operator::EXPLICIT_BV_CAST:
+    return "(" + EXPLICIT_BV_CAST_TYPE + ")";
+  case Operator::EXPLICIT_INT_CAST:
+    return "(" + EXPLICIT_INT_CAST_TYPE + ")";
+  case Operator::EXPLICIT_PTR_CAST:
+    return "(" + EXPLICIT_PTR_CAST_TYPE + "*)";
   }
   throw std::invalid_argument("unsupported operator");
 }
@@ -230,7 +234,6 @@ std::string expressionToString(const Expression &expression) {
   throw std::invalid_argument("unsupported expression");
 }
 
-
 Expression makeIntegerConst(int n) {
   return Expression{ NodeKind::CONSTANT,
                      Type::INTEGER,
@@ -238,6 +241,69 @@ Expression makeIntegerConst(int n) {
                      "int",
                      std::to_string(n),
                      {} };
+}
+
+Expression wrapWithImplicitIntCast(const Expression &expression) {
+  return Expression{ NodeKind::OPERATOR,
+                     Type::INTEGER,
+                     Operator::IMPLICIT_INT_CAST,
+                     expression.rawType,
+                     operatorToString(Operator::IMPLICIT_INT_CAST),
+                     {expression} };
+}
+
+Expression wrapWithImplicitBVCast(const Expression &expression) {
+  return Expression{ NodeKind::OPERATOR,
+                     Type::BITVECTOR,
+                     Operator::IMPLICIT_BV_CAST,
+                     expression.rawType,
+                     operatorToString(Operator::IMPLICIT_BV_CAST),
+                     {expression} };
+}
+
+Expression wrapWithExplicitIntCast(const Expression &expression) {
+  return Expression{ NodeKind::OPERATOR,
+                     Type::INTEGER,
+                     Operator::EXPLICIT_INT_CAST,
+                     EXPLICIT_INT_CAST_TYPE,
+                     operatorToString(Operator::EXPLICIT_INT_CAST),
+                     {expression} };
+}
+
+Expression wrapWithExplicitBVCast(const Expression &expression) {
+  return Expression{ NodeKind::OPERATOR,
+                     Type::BITVECTOR,
+                     Operator::EXPLICIT_BV_CAST,
+                     EXPLICIT_BV_CAST_TYPE,
+                     operatorToString(Operator::EXPLICIT_BV_CAST),
+                     {expression} };
+}
+
+Expression wrapWithExplicitPtrCast(const Expression &expression) {
+  return Expression{ NodeKind::OPERATOR,
+                     Type::POINTER,
+                     Operator::EXPLICIT_PTR_CAST,
+                     EXPLICIT_PTR_CAST_TYPE,
+                     operatorToString(Operator::EXPLICIT_PTR_CAST),
+                     {expression} };
+}
+
+Expression makeNonNULLCheck(const Expression &pointer) {
+  return Expression{ NodeKind::OPERATOR,
+                     Type::BOOLEAN,
+                     Operator::NEQ,
+                     DEFAULT_BOOLEAN_TYPE,
+                     operatorToString(Operator::NEQ),
+                     {pointer, NULL_NODE} };
+}
+
+Expression makeNonZeroCheck(const Expression &expression) {
+  return Expression{ NodeKind::OPERATOR,
+                     Type::BOOLEAN,
+                     Operator::NEQ,
+                     DEFAULT_BOOLEAN_TYPE,
+                     operatorToString(Operator::NEQ),
+                     {expression, makeIntegerConst(0)} };
 }
 
 std::string visualizeTransformationSchema(const TransformationSchema &schema) {

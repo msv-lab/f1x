@@ -180,7 +180,7 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     std::ostringstream stringStream;
     
     bool addBrackets = isChildOfNonblock(stmt, Result.Context);
-    if(addBrackets)
+    if (addBrackets)
     	stringStream << "{ ";
 
     //FIXME: should I use location or appid for the runtime function name?
@@ -191,20 +191,19 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
                  << ") "
                  << toString(stmt);
 
-    if(addBrackets)
-    {
+    if (addBrackets) {
       stringStream << "; }";
       const char *followingData = srcMgr.getCharacterData(expandedLoc.getBegin());
       int followingDataSize = strlen(followingData);
-      for(int i=origLength; i<followingDataSize; i++)
-      {
+      for (int i = origLength; i < followingDataSize; i++) {
         origLength++;
         char curChar = *(followingData+i);
-        if(curChar == ';')
+        if (curChar == ';')
           break;
-        else if(curChar == ' ' || curChar == '\t' || curChar == '\n')
+        else if (curChar == ' ' || curChar == '\t' || curChar == '\n')
           continue;
-        else return;
+        else
+          return;
       }
     }
     std::string replacement = stringStream.str();

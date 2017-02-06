@@ -83,7 +83,7 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
         
         ulong origLength = Rewrite.getRangeSize(expandedLoc);
         bool addBrackets = isChildOfNonblock(stmt, Result.Context);
-        if(addBrackets)
+        if (addBrackets)
     	    replacement << "{ ";
     	    
         replacement << "if (" << globalPatch << ") " << toString(stmt);
@@ -92,20 +92,19 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
           << "<   " << toString(stmt) << "\n"
           << ">   " << replacement.str() << "\n";
         
-        if(addBrackets)
-        {
+        if (addBrackets) {
         	replacement << "; }";
         	const char *followingData = srcMgr.getCharacterData(expandedLoc.getBegin());
         	int followingDataSize = strlen(followingData);
-          for(int i=origLength; i<followingDataSize; i++)
-          {
+          for (int i = origLength; i < followingDataSize; i++) {
             origLength++;
             char curChar = *(followingData+i);
-            if(curChar == ';')
+            if (curChar == ';')
               break;
-            else if(curChar == ' ' || curChar == '\t' || curChar == '\n')
-                    continue;
-            else return;
+            else if (curChar == ' ' || curChar == '\t' || curChar == '\n')
+              continue;
+            else
+              return;
           }
         }
 
@@ -128,7 +127,7 @@ void ApplicationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
       ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
       ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-      // FIXME: do I need to cast it to the original type (because this is the type if runtime function)
+      //FIXME: do I need to cast here?
       if (beginLine == globalBeginLine &&
           beginColumn == globalBeginColumn &&
           endLine == globalEndLine &&

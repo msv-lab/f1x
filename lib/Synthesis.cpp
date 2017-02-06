@@ -36,41 +36,37 @@ using std::unordered_map;
 using std::to_string;
 
 
-const Expression NULL_NODE = Expression{ NodeKind::CONSTANT,
-                                         Type::POINTER,
-                                         Operator::NONE,
-                                         "void",
-                                         "0",
-                                         {} };
+const string ID_TYPE = "unsigned long";
+const string PARAMETER_TYPE = ID_TYPE; // because it is passed through ID
+
 
 const Expression PARAMETER_NODE = Expression{ NodeKind::PARAMETER,
                                               Type::INTEGER,
                                               Operator::NONE,
-                                              "int",
+                                              PARAMETER_TYPE,
                                               "param_value",
                                               {} };
 
 const Expression INT2_NODE = Expression{ NodeKind::INT2,
                                          Type::INTEGER,
                                          Operator::NONE,
-                                         "int",
+                                         EXPLICIT_INT_CAST_TYPE,
                                          "int2_value",
                                          {} };
 
 const Expression BOOL2_NODE = Expression{ NodeKind::BOOL2,
                                           Type::BOOLEAN,
                                           Operator::NONE,
-                                          "int",
+                                          DEFAULT_BOOLEAN_TYPE,
                                           "bool2_value",
                                           {} };
 
 const Expression COND3_NODE = Expression{ NodeKind::COND3,
                                           Type::BOOLEAN,
                                           Operator::NONE,
-                                          "int",
+                                          DEFAULT_BOOLEAN_TYPE,
                                           "cond3_value",
                                           {} };
-
 
 /*
  This module is split into three namespaces:
@@ -83,7 +79,8 @@ namespace synthesis {
   // size of simple (atomic) modification
   const ulong ATOMIC_EDIT = 1;
 
-  vector<Operator> mutateNumericOperator(Operator op) {
+  vector<Operator> mutateNumericOperator(const Operator &op) {
+    assert(op != Operator::NONE);
     switch (op) {
     case Operator::EQ:
       return { Operator::NEQ, Operator::LT, Operator::LE, Operator::GT, Operator::GE };
@@ -127,11 +124,30 @@ namespace synthesis {
       return { Operator::BV_SHL };
     case Operator::BV_NOT:
       return {};
+    case Operator::IMPLICIT_BV_CAST:
+    case Operator::IMPLICIT_INT_CAST:
+    case Operator::EXPLICIT_BV_CAST:
+    case Operator::EXPLICIT_INT_CAST:
+      return {};
     }
-    return {};
+    throw std::invalid_argument("unsupported operator");
   }
 
-  ulong depthOf(const Expression &expression) {
+  ulong operatorWeight(const Operator &op) {
+    assert(op != Operator::NONE);
+    switch (op) {
+    case Operator::IMPLICIT_BV_CAST:
+    case Operator::IMPLICIT_INT_CAST:
+    case Operator::EXPLICIT_BV_CAST:
+    case Operator::EXPLICIT_INT_CAST:
+    case Operator::EXPLICIT_PTR_CAST:
+      return 0;
+    default:
+      return 1;
+    } 
+  }
+
+  ulong expressionDepth(const Expression &expression) {
     if (expression.kind == NodeKind::VARIABLE ||
         expression.kind == NodeKind::CONSTANT ||
         expression.kind == NodeKind::PARAMETER) {
@@ -143,16 +159,17 @@ namespace synthesis {
     } else if (expression.kind == NodeKind::OPERATOR) {
       ulong max = 0;
       for (auto &arg : expression.args) {
-        ulong depth = depthOf(arg);
+        ulong depth = expressionDepth(arg);
         if (max < depth)
           max = depth;
       }
-      return max + 1;
+      return max + operatorWeight(expression.op);
     }
     throw std::invalid_argument("unsupported node kind");
   }
 
-  vector<Operator> mutatePointerOperator(Operator op) {
+  vector<Operator> mutatePointerOperator(const Operator &op) {
+    assert(op != Operator::NONE);
     switch (op) {
     case Operator::EQ:
       return { Operator::NEQ };
@@ -201,37 +218,42 @@ namespace synthesis {
 
 
   vector<pair<Expression, PatchMetadata>> baseModifications(const Expression &expr,
-                                                        const vector<Expression> &components) {
+                                                            const vector<Expression> &components) {
     vector<pair<Expression, PatchMetadata>> result;
     if (expr.args.size() == 0) {
       if (expr.kind == NodeKind::CONSTANT) {
         if (expr.type == Type::INTEGER) {
           for (auto &c : components) {
-            if (c.type == Type::INTEGER)
-              result.push_back(make_pair(c, PatchMetadata{ModificationKind::GENERALIZATION, ATOMIC_EDIT}));
+            if (c.type == Type::INTEGER) {
+              auto meta = PatchMetadata{ModificationKind::GENERALIZATION, ATOMIC_EDIT};
+              result.push_back(make_pair(c, meta));
+            }
           }
-          result.push_back(make_pair(PARAMETER_NODE,
-                                     PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
+          auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+          result.push_back(make_pair(PARAMETER_NODE, meta));
         }
       }
       if (expr.kind == NodeKind::VARIABLE) {
         if (expr.type == Type::INTEGER) {
           for (auto &c : components) {
-            if (c.type == Type::INTEGER)
-              result.push_back(make_pair(c, PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
+            if (c.type == Type::INTEGER) {
+              auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+              result.push_back(make_pair(c, meta));
+            }
           }
-          result.push_back(make_pair(makeIntegerConst(0),
-                                     PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT}));
-          result.push_back(make_pair(makeIntegerConst(1),
-                                     PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT}));
+          //TODO: distance computation
+          auto meta = PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT};
+          result.push_back(make_pair(PARAMETER_NODE, meta));
         }
         if (expr.type == Type::POINTER) {
           for (auto &c : components) {
-            if (c.type == Type::POINTER && expr.rawType == c.rawType)
-              result.push_back(make_pair(c, PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT}));
+            if (c.type == Type::POINTER && expr.rawType == c.rawType) {
+              auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+              result.push_back(make_pair(c, meta));
+            }
           }
-          result.push_back(make_pair(NULL_NODE,
-                                     PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT}));
+          auto meta = PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT};
+          result.push_back(make_pair(NULL_NODE, meta));
         }
       }
     } else {
@@ -245,10 +267,10 @@ namespace synthesis {
         Expression e = expr;
         e.op = m;
         e.repr = operatorToString(m);
-        result.push_back(make_pair(std::move(e), PatchMetadata{ModificationKind::OPERATOR, ATOMIC_EDIT}));
+        auto meta = PatchMetadata{ModificationKind::OPERATOR, ATOMIC_EDIT};
+        result.push_back(make_pair(std::move(e), meta));
       }
 
-      // FIXME: need to avoid division by zero
       if (expr.args.size() == 1) {
         vector<pair<Expression, PatchMetadata>> argMods = baseModifications(expr.args[0], components);
         for (auto &m : argMods) {
@@ -256,8 +278,9 @@ namespace synthesis {
         }
         if (isSimplifiable(expr)) {
           Expression argCopy = expr.args[0];
-          // FIXME: instead of ATOMIC_EDIT simplification should depend on the size of deleted subexpression
-          result.push_back(make_pair(argCopy, PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT}));
+          //TODO: distance computation
+          auto meta = PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT};
+          result.push_back(make_pair(argCopy, meta));
         }
       } else if (expr.args.size() == 2) {
         vector<pair<Expression, PatchMetadata>> leftMods = baseModifications(expr.args[0], components);
@@ -271,9 +294,11 @@ namespace synthesis {
         if (isSimplifiable(expr)) {
           Expression leftCopy = expr.args[0];
           Expression rightCopy = expr.args[1];
-          // FIXME: instead of ATOMIC_EDIT simplification should depend on the size of deleted subexpression
-          result.push_back(make_pair(leftCopy, PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT}));
-          result.push_back(make_pair(rightCopy, PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT}));
+          //TODO: distance computation
+          auto leftMeta = PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT};
+          auto rightMeta = PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT};
+          result.push_back(make_pair(leftCopy, leftMeta));
+          result.push_back(make_pair(rightCopy, rightMeta));
         }
       }
     }
@@ -285,9 +310,6 @@ namespace synthesis {
 namespace generator {
 
   const string POINTER_ARG_NAME = "__ptr_vals";
-  const string ID_TYPE = "unsigned long";
-  const string PARAM_TYPE = "int";
-  const string INT2_TYPE = "int"; //NOTE: need to cast INT2 explicitly inside patches
 
   void substituteWithRuntimeRepr(Expression &expression,
                                  unordered_map<string, string> &runtimeReprBySource) {
@@ -550,10 +572,10 @@ namespace generator {
          << "id.param = __f1xid_param;" << "\n";
 
       OS << outputType << " base_value;" << "\n"
-         << INT2_TYPE << " int2_value;" << "\n"
+         << EXPLICIT_INT_CAST_TYPE << " int2_value;" << "\n"
          << "bool bool2_value;" << "\n"
          << "bool cond3_value;" << "\n"
-         << PARAM_TYPE << " param_value;" << "\n";
+         << PARAMETER_TYPE << " param_value;" << "\n";
 
       OS << outputType << " output_value = 0;" << "\n"
          << "bool output_initialized = false;" << "\n"
@@ -614,7 +636,7 @@ generateSearchSpace(const vector<shared_ptr<SchemaApplication>> &schemaApplicati
   OH << "#ifdef __cplusplus" << "\n"
      << "extern \"C\" {" << "\n"
      << "#endif" << "\n"
-     << "extern " << generator::ID_TYPE << " __f1xapp;" << "\n";
+     << "extern " << ID_TYPE << " __f1xapp;" << "\n";
 
   for (auto sa : schemaApplications) {
     string outputType;

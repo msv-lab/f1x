@@ -42,7 +42,7 @@ extern ulong globalEndLine;
 extern ulong globalEndColumn;
 extern std::string globalPatch;
 extern ulong globalBaseAppId;
-//NOTE: this is a hack to collect indef locations from preprocessor
+//NOTE: this is a hack to collect ifdef locations from preprocessor
 extern std::shared_ptr<std::vector<clang::SourceRange>> globalConditionalsPP;
 
 ulong getDeclExpandedLine(const clang::Decl *decl, clang::SourceManager &srcMgr);
