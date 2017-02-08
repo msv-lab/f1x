@@ -22,9 +22,9 @@
 #include "llvm/Support/CommandLine.h"
 
 #include "TransformationUtil.h"
-#include "InstrumentTransformer.h"
-#include "ApplyTransformer.h"
-#include "ProfileTransformer.h"
+#include "ProfileInstrumentation.h"
+#include "SchemaApplication.h"
+#include "PatchApplication.h"
 #include "F1XConfig.h"
 
 using namespace clang::tooling;

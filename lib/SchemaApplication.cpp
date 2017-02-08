@@ -29,7 +29,7 @@
 #include "F1XConfig.h"
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
-#include "InstrumentTransformer.h"
+#include "SchemaApplication.h"
 
 using namespace clang;
 using namespace ast_matchers;

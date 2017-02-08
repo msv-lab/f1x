@@ -23,7 +23,7 @@
 #include "F1XConfig.h"
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
-#include "ProfileTransformer.h"
+#include "ProfileInstrumentation.h"
 
 using namespace clang;
 using namespace ast_matchers;

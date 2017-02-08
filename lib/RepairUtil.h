@@ -117,6 +117,20 @@ struct Expression {
   std::vector<Expression> args;
 };
 
+const Expression TRUE_NODE = Expression{ NodeKind::CONSTANT,
+                                         Type::BOOLEAN,
+                                         Operator::NONE,
+                                         "int",
+                                         "1",
+                                         {} };
+
+const Expression FALSE_NODE = Expression{ NodeKind::CONSTANT,
+                                          Type::BOOLEAN,
+                                          Operator::NONE,
+                                          "int",
+                                          "0",
+                                          {} };
+
 const Expression NULL_NODE = Expression{ NodeKind::CONSTANT,
                                          Type::POINTER,
                                          Operator::NONE,

@@ -20,7 +20,7 @@
 #include <iostream>
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
-#include "ApplyTransformer.h"
+#include "PatchApplication.h"
 #include "F1XConfig.h"
 
 using namespace clang;
