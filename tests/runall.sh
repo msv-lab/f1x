@@ -88,6 +88,9 @@ get-cmd () {
         divide-by-zero)
             echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
+        null-dereference)
+            echo "f1x $dir --files program.c:15 --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
         *)
             exit 1
             ;;

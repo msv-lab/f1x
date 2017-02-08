@@ -697,6 +697,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
           BinaryOperator* op = cast<BinaryOperator>(*it);
           SourceRange expandedLoc = getExpandedLoc(op, context->getSourceManager());
           ulong beginLine = context->getSourceManager().getExpansionLineNumber(expandedLoc.getBegin());
+          // FIXME: support declarations with initialization
           // FIXME: support augmented assignments:
           // FIXME: is it redundant if we use collect funnction on whole statement
           if (line > beginLine &&
