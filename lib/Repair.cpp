@@ -30,6 +30,7 @@
 #include <boost/log/trivial.hpp>
 
 #include "Repair.h"
+#include "Typing.h"
 #include "RepairUtil.h"
 #include "Project.h"
 #include "Runtime.h"
@@ -191,6 +192,16 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(debug) << "loading candidate locations";
   vector<shared_ptr<SchemaApplication>> sas = loadSchemaApplications(saFile);
+  
+  BOOST_LOG_TRIVIAL(debug) << "inferring types";
+  for (auto sa : sas) {
+    Type context;
+    if (sa->context == LocationContext::CONDITION)
+      context = Type::BOOLEAN;
+    else
+      context = Type::ANY;
+    sa->original = correctTypes(sa->original, context);
+  }
 
   vector<SearchSpaceElement> searchSpace;
 
@@ -242,7 +253,8 @@ bool repair(Project &project,
     if (last < searchSpace.size()) {
 
       fs::path relpath = project.getFiles()[searchSpace[last].app->location.fileId].relpath;
-      BOOST_LOG_TRIVIAL(info) << "plausible patch: " << visualizeChange(searchSpace[last]) << " in " << relpath.string() << ":" << searchSpace[last].app->location.beginLine;;
+      BOOST_LOG_TRIVIAL(info) << "plausible patch: " << visualizeChange(searchSpace[last]) 
+                              << " in " << relpath.string() << ":" << searchSpace[last].app->location.beginLine;;
       
       bool appSuccess = project.applyPatch(searchSpace[last]);
       if (! appSuccess) {

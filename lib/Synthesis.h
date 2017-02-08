@@ -32,6 +32,8 @@
   Note that currently we cast all INT2 to EXPLICIT_INT_CAST_TYPE
 
   narrowing/tightening is done with COND3
+
+  Note that the synthesizer accepts and produces only well-typed expressions
  */
 
 std::vector<SearchSpaceElement>

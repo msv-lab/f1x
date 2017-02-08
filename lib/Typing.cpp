@@ -132,47 +132,87 @@ Type operatorInputType(const Operator &op) {
   throw std::invalid_argument("unsupported operator: " + std::to_string((ulong)op));
 }
 
+/*
+  POINTER < INTEGER < ANY
+  BOOLEAN < INTEGER < ANY
+  POINTER < BOOLEAN --- this is just so that runtime compiles
+*/
+Type commonSubtype(Type a, Type b) {
+  if (a == Type::ANY)
+    return b;
+  if (b == Type::ANY)
+    return a;
+  if (a == Type::POINTER || b == Type::POINTER)
+    return Type::POINTER;
+  if (a == Type::BOOLEAN || b == Type::BOOLEAN)
+    return Type::BOOLEAN;
+  if (a == Type::INTEGER || b == Type::INTEGER)
+    return Type::INTEGER;
+  throw std::invalid_argument("unsupported type");
+}
+
+Expression correctTopNode(const Expression &expression, const Type &context) {
+  switch (context) {
+  case Type::ANY:
+    return expression;
+  case Type::INTEGER:
+    if (expression.type == Type::INTEGER) {
+      return expression;
+    } else if (expression.type == Type::POINTER) {
+      return wrapWithExplicitIntCast(expression);
+    } else {
+      return wrapWithImplicitIntCast(expression);
+    }
+  case Type::BITVECTOR:
+    if (expression.type == Type::BITVECTOR) {
+      return expression;
+    } else if (expression.type == Type::POINTER) {
+      return wrapWithExplicitBVCast(expression);
+    } else {
+      return wrapWithImplicitBVCast(expression);
+    }
+  case Type::BOOLEAN:
+    if (expression.type == Type::BOOLEAN) {
+      return expression;
+    } else if (expression.type == Type::POINTER) {
+      return makeNonNULLCheck(expression);
+    } else {
+      return makeNonZeroCheck(expression);
+    }
+  case Type::POINTER:
+    if (expression.type == Type::POINTER) {
+      return expression;
+    } else {
+      return wrapWithExplicitPtrCast(expression);
+    }
+  }
+}
+
 Expression correctTypes(const Expression &expression, const Type &context) {
   if (expression.kind == NodeKind::VARIABLE ||
       expression.kind == NodeKind::CONSTANT ||
       expression.kind == NodeKind::PARAMETER) {
-    switch (context) {
-    case Type::ANY:
-      return expression;
-    case Type::INTEGER:
-      if (expression.type == Type::INTEGER) {
-        return expression;
-      } else if (expression.type == Type::POINTER) {
-        return wrapWithExplicitIntCast(expression);
-      } else {
-        return wrapWithImplicitIntCast(expression);
-      }
-    case Type::BITVECTOR:
-      if (expression.type == Type::BITVECTOR) {
-        return expression;
-      } else if (expression.type == Type::POINTER) {
-        return wrapWithExplicitBVCast(expression);
-      } else {
-        return wrapWithImplicitBVCast(expression);
-      }
-    case Type::BOOLEAN:
-      if (expression.type == Type::BOOLEAN) {
-        return expression;
-      } else if (expression.type == Type::POINTER) {
-        return makeNonNULLCheck(expression);
-      } else {
-        return makeNonZeroCheck(expression);
-      }
-    case Type::POINTER:
-      if (expression.type == Type::POINTER) {
-        return expression;
-      } else {
-        return wrapWithExplicitPtrCast(expression);
-      }
-    }
+    return correctTopNode(expression, context);
   } else if (expression.kind == NodeKind::OPERATOR) {
-    //TODO
-    for (auto &arg : expression.args) {
+    if (expression.args.size() == 1) {
+      Type argContext = operatorInputType(expression.op);
+      Expression correctedArg = correctTypes(expression.args[0], argContext);
+      Expression copy = expression;
+      copy.args[0] = correctedArg;
+      return correctTopNode(copy, context);
+    } else if (expression.args.size() == 2) {
+      Type argContext = operatorInputType(expression.op);
+      if (argContext == Type::ANY) {
+        argContext = commonSubtype(expression.args[0].type, expression.args[1].type);
+      }
+      Expression correctedArg0 = correctTypes(expression.args[0], argContext);
+      Expression correctedArg1 = correctTypes(expression.args[1], argContext);
+      Expression copy = expression;
+      copy.args[0] = correctedArg0;
+      copy.args[1] = correctedArg1;
+      return correctTopNode(copy, context);
+    } else {
+      throw std::invalid_argument("unsupported operator");
     }
   }
   throw std::invalid_argument("unsupported node kind");
