@@ -13,7 +13,8 @@ f1x currently supports Linux-based systems; it was tested on Ubuntu 14.04 and Ub
 Install dependencies (GCC, G++, Make, Boost.Filesystem, Boost.Program_options, Boost.Log, diff):
 
     # Ubuntu:
-    sudo apt-get install build-essential libboost-filesystem-dev libboost-program-options-dev libboost-log-dev
+    sudo apt-get install build-essential zlib1g-dev libtinfo-dev
+    sudo apt-get install libboost-filesystem-dev libboost-program-options-dev libboost-log-dev
     
 Install a new version of CMake (3.4.3 or higher, version is important).
 
