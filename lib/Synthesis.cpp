@@ -231,6 +231,15 @@ namespace synthesis {
           }
           auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
           result.push_back(make_pair(PARAMETER_NODE, meta));
+        } else if (expr.type == Type::BOOLEAN) {
+          if (expr.repr == TRUE_NODE.repr) {
+            auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+            result.push_back(make_pair(FALSE_NODE, meta));
+          }
+          if (expr.repr == FALSE_NODE.repr) {
+            auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+            result.push_back(make_pair(TRUE_NODE, meta));
+          }
         }
       }
       if (expr.kind == NodeKind::VARIABLE) {

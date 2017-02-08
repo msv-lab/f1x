@@ -176,6 +176,14 @@ Expression correctTopNode(const Expression &expression, const Type &context) {
       return expression;
     } else if (expression.type == Type::POINTER) {
       return makeNonNULLCheck(expression);
+    } else if (expression.type == Type::INTEGER &&
+               expression.kind == NodeKind::CONSTANT) {
+      if (expression.repr == "0")
+        return FALSE_NODE;
+      else if (expression.repr == "1")
+        return TRUE_NODE;
+      else
+        return makeNonZeroCheck(expression);
     } else {
       return makeNonZeroCheck(expression);
     }
