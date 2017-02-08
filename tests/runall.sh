@@ -22,7 +22,68 @@ require () {
 
 require f1x
 require make
-require patch
+
+
+get-cmd () {
+    test="$1"
+    dir="$2"
+    case "$test" in
+        if-condition)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        assign-in-condition)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        guarded-assignment)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        int-assignment)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        dangling-else)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        break)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        array-subscripts)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        cast-expr)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        return)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 --test-timeout 1000"
+            ;;
+        deletion)
+            echo "f1x $dir --files program.c:11 --driver $dir/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            ;;
+        loop-condition)
+            echo "f1x $dir --files program.c:7 --driver $dir/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            ;;
+        memberexpr)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        pointer)
+            echo "f1x $dir --files program.c:25 --driver $dir/test.sh --tests n1 n2 p1 --test-timeout 1000"
+            ;;
+        replace-constant)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 n2 n3 n4 p1 p2 p3 --test-timeout 1000"
+            ;;
+        substitute-int2)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 n2 p1 --test-timeout 1000"
+            ;;
+        inside-ifdef)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        intersect-ifdef)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        *)
+            exit 1
+            ;;
+    esac
+}
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 
@@ -33,88 +94,27 @@ fi
 for test in $TESTS; do
     test=${test%%/} # removing slash in the end
     echo -n "* testing $test... "
-    case "$test" in
-        if-condition)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        assign-in-condition)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        guarded-assignment)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        int-assignment)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        dangling-else)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        break)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        array-subscripts)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        cast-expr)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        return)
-            args="--files program.c --driver $test/test.sh --tests n1 --test-timeout 1000"
-            ;;
-        deletion)
-            args="--files program.c:11 --driver $test/test.sh --tests n1 n2 n3 --test-timeout 1000"
-            ;;
-        loop-condition)
-            args="--files program.c:7 --driver $test/test.sh --tests n1 n2 n3 --test-timeout 1000"
-            ;;
-        memberexpr)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        pointer)
-            args="--files program.c:25 --driver $test/test.sh --tests n1 n2 p1 --test-timeout 1000"
-            ;;
-        replace-constant)
-            args="--files program.c --driver $test/test.sh --tests n1 n2 n3 n4 p1 p2 p3 --test-timeout 1000"
-            ;;
-        substitute-int2)
-            args="--files program.c --driver $test/test.sh --tests n1 n2 p1 --test-timeout 1000"
-            ;;
-        inside-ifdef)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        intersect-ifdef)
-            args="--files program.c --driver $test/test.sh --tests n1 p1 p2 --test-timeout 1000"
-            ;;
-        *)
-            echo "command for test $test is not defined"
-            exit 1
-            ;;
-    esac
 
-    repair_cmd="f1x $test $args --output output.patch --enable-cleanup"
+    work_dir=`mktemp -d`
+    cp -r "$test"/* "$work_dir"
 
-    repair_dir=`mktemp -d`
-    cp -r "$test" "$repair_dir"
-    (
-        cd $repair_dir
-        $repair_cmd &> log.txt
-        repair_status=$?
-        if [[ ($repair_status != 0) || (! -f output.patch) || (! -s output.patch) ]]; then
-            echo 'FAIL'
-            echo "----------------------------------------"
-            echo "repair directory: $repair_dir"
-            echo "failed command: $repair_cmd"
-            echo "----------------------------------------"
-            exit 1
-        fi
-    )
-    repair_subshell=$?
-    if [[ ($repair_subshell != 0) ]]; then
+    repair_cmd=$(get-cmd $test $work_dir)
+    if [[ ($? != 0) ]]; then
+        echo "command for test $test is not defined"
         exit 1
     fi
 
-    rm -rf "$repair_dir"
+    $repair_cmd  --output output.patch --enable-cleanup &> "$work_dir/log.txt"
+    if [[ ($? != 0) || (! -f output.patch) || (! -s output.patch) ]]; then
+        echo 'FAIL'
+        echo "----------------------------------------"
+        echo "cmd: $repair_cmd"
+        echo "log: $work_dir/log.txt"
+        echo "----------------------------------------"
+        exit 1
+    fi
 
+    rm -rf "$work_dir"
     echo 'PASS'
 done
 
