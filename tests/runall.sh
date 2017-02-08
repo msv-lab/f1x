@@ -82,6 +82,12 @@ get-cmd () {
         non-integer-member)
             echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
+        pointer-arithmetic)
+            echo "f1x $dir --files program.c:11 --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        divide-by-zero)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
         *)
             exit 1
             ;;

@@ -2,12 +2,14 @@
 #include <stdlib.h>
 
 int main(int argc, char *argv[]) {
-  int a, b, c, d;
-  a = atoi(argv[1]);
-  b = atoi(argv[2]);
-  c = atoi(argv[3]);
-  d = atoi(argv[4]);
-  if (c == d) { // a > b
+  int *a, *b;
+  int p[3];
+  p[0] = 0;
+  p[1] = atoi(argv[1]);
+  p[2] = atoi(argv[2]);
+  a = p + 1;
+  b = a - 1; // a + 1
+  if (*a >= *b) { // >=
     printf("%d\n", 0);
   } else {
     printf("%d\n", 1);
