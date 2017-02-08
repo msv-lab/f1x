@@ -74,11 +74,6 @@ bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, Str
   }
   alreadyTransformed = true;
 
-  std::unique_ptr<PPConditionalRecoder> recorder(new PPConditionalRecoder(globalConditionalsPP));
-
-  Preprocessor &pp = CI.getPreprocessor();
-  pp.addPPCallbacks(std::move(recorder));
-
   schemaApplications.SetArray();
   initInterestingLocations();
   return true;
@@ -122,13 +117,6 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
   if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();
-
-    if (insideMacro(stmt, srcMgr, langOpts) || 
-        intersectConditionalPP(stmt, srcMgr, globalConditionalsPP))
-      return;
-
-    if(!isTopLevelStatement(stmt, Result.Context))
-      return;
    
     SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
@@ -137,15 +125,14 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-               
-    if (!inRange(beginLine) || !isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
-      return;
-    
     // NOTE: to avoid extracting locations from headers:
     std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
+    if (!isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
+      return;
+    
     ulong appId = f1xapp(globalBaseAppId, globalFileId);
     globalBaseAppId++;
                  
@@ -220,10 +207,6 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();
 
-    if (insideMacro(expr, srcMgr, langOpts) || 
-        intersectConditionalPP(expr, srcMgr, globalConditionalsPP))
-      return;
-
     SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
     ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
@@ -231,12 +214,12 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-    if (!inRange(beginLine) || !isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
-      return;
-
     // NOTE: to avoid extracting locations from headers:
     std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
+      return;
+
+    if (!isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
       return;
 
     ulong appId = f1xapp(globalBaseAppId, globalFileId);

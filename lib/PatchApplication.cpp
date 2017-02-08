@@ -74,6 +74,11 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
       ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
       ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
+      // NOTE: to avoid extracting locations from headers:
+      std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+      if (srcMgr.getMainFileID() != decLoc.first)
+        return;
+
       if (beginLine == globalBeginLine &&
           beginColumn == globalBeginColumn &&
           endLine == globalEndLine &&
@@ -126,6 +131,11 @@ void ApplicationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
       ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
       ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
       ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+
+      // NOTE: to avoid extracting locations from headers:
+      std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+      if (srcMgr.getMainFileID() != decLoc.first)
+        return;
 
       //FIXME: do I need to cast here?
       if (beginLine == globalBeginLine &&
