@@ -59,7 +59,8 @@ StatementMatcher RepairableAtom =
         declRefExpr(to(namedDecl())), // NOTE: no binding because it is only for member expression
         integerLiteral().bind(BOUND),
         characterLiteral().bind(BOUND),
-        memberExpr().bind(BOUND), // TODO: I need to make sure that base is a variable here?
+        memberExpr(anyOf(hasType(isInteger()),
+                         hasType(pointerType()))).bind(BOUND), // TODO: I need to make sure that base is a variable here?
         cStyleCastExpr(hasType(isInteger()), // TODO: for now only integer
                        hasSourceExpression(implicitCastExpr(hasSourceExpression(anyOf(integerLiteral(),
                                                                                       declRefExpr(),
