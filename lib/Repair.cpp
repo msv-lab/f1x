@@ -286,9 +286,9 @@ bool repair(Project &project,
           project.restoreInstrumentedFiles();
           project.buildWithRuntime(runtime.getHeader());
         }
-        
-        project.restoreOriginalFiles();
       }
+
+      project.restoreOriginalFiles();
 
       if (!valid) {
         last++;
