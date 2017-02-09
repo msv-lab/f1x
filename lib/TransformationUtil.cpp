@@ -298,12 +298,10 @@ bool isPointerType(const QualType &type) {
 }
 
 string getPointeeType(const QualType &type) {
-  QualType canon = type.getCanonicalType();
-  assert(canon.getTypePtr());
-  if (const PointerType *pt = canon.getTypePtr()->getAs<PointerType>()) {
-    return pt->getPointeeType().getCanonicalType().getAsString();
-  } else if (const ArrayType *at = dyn_cast<ArrayType>(canon.getTypePtr())) {
-    return at->getElementType().getCanonicalType().getAsString();
+  if (const PointerType *pt = type.getTypePtr()->getAs<PointerType>()) {
+    return pt->getPointeeType().getAsString();
+  } else if (const ArrayType *at = dyn_cast<ArrayType>(type.getTypePtr())) {
+    return at->getElementType().getAsString();
   } else {
     llvm::errs() << "error: non-pointer type " << type.getAsString() << "\n";
     return DEFAULT_POINTEE_TYPE;

@@ -116,8 +116,8 @@ for test in $TESTS; do
         exit 1
     fi
 
-    $repair_cmd  --output output.patch --enable-cleanup &> "$work_dir/log.txt"
-    if [[ ($? != 0) || (! -f output.patch) || (! -s output.patch) ]]; then
+    $repair_cmd  --output "$work_dir/output.patch" --enable-cleanup &> "$work_dir/log.txt"
+    if [[ ($? != 0) || (! -f "$work_dir/output.patch") || (! -s "$work_dir/output.patch") ]]; then
         echo 'FAIL'
         echo "----------------------------------------"
         echo "cmd: $repair_cmd"
