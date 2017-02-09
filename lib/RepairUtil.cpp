@@ -82,9 +82,7 @@ bool isAbstractNode(NodeKind kind) {
 NodeKind kindByString(const string &kindStr) {
   if (kindStr == "operator") {
     return NodeKind::OPERATOR;
-  } else if (kindStr == "object") {
-    return NodeKind::VARIABLE;
-  } else if (kindStr == "pointer") {
+  } else if (kindStr == "variable") {
     return NodeKind::VARIABLE;
   } else if (kindStr == "constant") {
     return NodeKind::CONSTANT;
@@ -106,7 +104,7 @@ TransformationSchema transformationSchemaByString(const string &str) {
 }
 
 
-Operator binaryOperatorByString(const string &repr) {
+Operator binaryOperatorByString(const string &repr, const Type &outputType) {
   if (repr == "==") {
     return Operator::EQ;
   } else if (repr == "!=") {
@@ -124,9 +122,15 @@ Operator binaryOperatorByString(const string &repr) {
   } else if (repr == "&&") {
     return Operator::AND;
   } else if (repr == "+") {
-    return Operator::ADD;
+    if (outputType == Type::POINTER)
+      return Operator::PTR_ADD;
+    else 
+      return Operator::ADD;
   } else if (repr == "-") {
-    return Operator::SUB;
+    if (outputType == Type::POINTER)
+      return Operator::PTR_SUB;
+    else 
+      return Operator::SUB;
   } else if (repr == "*") {
     return Operator::MUL;
   } else if (repr == "/") {
@@ -206,6 +210,10 @@ string operatorToString(const Operator &op) {
     return ">>";
   case Operator::BV_NOT:
     return "~";
+  case Operator::PTR_ADD:
+    return "+";
+  case Operator::PTR_SUB:
+    return "-";
   case Operator::IMPLICIT_BV_CAST:
     return "";
   case Operator::IMPLICIT_INT_CAST:
@@ -372,8 +380,15 @@ std::string visualizeElement(const SearchSpaceElement &el,
 Expression convertExpression(const json::Value &json) {
   string kindStr = json["kind"].GetString();
   NodeKind kind = kindByString(kindStr);
+  string typeStr = json["type"].GetString();
+  Type approxType;
+  if (typeStr == "pointer") {
+    approxType = Type::POINTER;
+  } else {
+    approxType = Type::INTEGER;
+  }
+  string rawType = json["rawType"].GetString();
   Type type;
-  string rawType = json["type"].GetString();
   Operator op;
   string repr = json["repr"].GetString();
   vector<Expression> args;
@@ -384,7 +399,7 @@ Expression convertExpression(const json::Value &json) {
       op = unaryOperatorByString(repr);
       type = operatorOutputType(op);
     } else if (arguments.Size() == 2) {
-      op = binaryOperatorByString(repr);
+      op = binaryOperatorByString(repr, approxType);
       type = operatorOutputType(op);      
     } else {
       throw parse_error("unsupported arguments size: " + arguments.Size());
@@ -394,11 +409,7 @@ Expression convertExpression(const json::Value &json) {
     }
   } else {
     op = Operator::NONE;
-    if (kindStr == "pointer") {
-      type = Type::POINTER;
-    } else {
-      type = Type::INTEGER;
-    }
+    type = approxType;
   }
   
   return Expression{kind, type, op, rawType, repr, args};

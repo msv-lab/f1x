@@ -41,6 +41,4 @@
 
 Type operatorOutputType(const Operator &op);
 
-Type operatorInputType(const Operator &op);
-
 Expression correctTypes(const Expression &expression, const Type &context);

@@ -57,18 +57,24 @@ Each expression is represented as follows:
 
     {
         "kind": "operator",
-        "type": "int",
+        "type": "integer",
+        "rawType": "int",
         "repr": ">",
         "args": [
             {
                 "kind": "constant",
-                "type": "int",
-                "repr": 1
+                "type": "integer",
+                "rawType": "int",
+                "repr": "1"
             },
             {
-                "kind": "object",
-                "type": "unsigned int",
+                "kind": "variable",
+                "type": "integer",
+                "rawType": "unsigned int",
                 "repr": "x"
             }
         ]
     }
+    
+Kinds: `operator`, `constant`, `variable`. Types: `integer`, `pointer`. For pointers, `rawType` is the pointee type.
+

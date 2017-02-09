@@ -124,6 +124,10 @@ namespace synthesis {
       return { Operator::BV_SHL };
     case Operator::BV_NOT:
       return {};
+    case Operator::PTR_ADD:
+      return { Operator::PTR_SUB };
+    case Operator::PTR_SUB:
+      return { Operator::PTR_ADD };
     case Operator::IMPLICIT_BV_CAST:
     case Operator::IMPLICIT_INT_CAST:
     case Operator::EXPLICIT_BV_CAST:

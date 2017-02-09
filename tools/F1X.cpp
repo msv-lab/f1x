@@ -100,8 +100,7 @@ std::vector<ProjectFile> parseFilesArg(const boost::filesystem::path &root,
 }
 
 
-int main (int argc, char *argv[])
-{
+int main (int argc, char *argv[]) {
   po::positional_options_description positional;
   positional.add("source", -1);
   
@@ -122,6 +121,7 @@ int main (int argc, char *argv[])
     ("enable-cleanup", "remove intermediate files")
     ("enable-metadata", "output patch metadata")
     ("disable-analysis", "don't partition search space")
+    ("disable-synthesis", "generate only simple changes")
     ("disable-validation", "don't validate generated patches")
     ("disable-testprior", "don't prioritize tests")
     ;
@@ -143,7 +143,6 @@ int main (int argc, char *argv[])
     BOOST_LOG_TRIVIAL(error) << e.what() << " (use --help)";
     return 0;
   }
-
 
   if (vm.count("help")) {
     std::cout << general << std::endl;
@@ -188,8 +187,8 @@ int main (int argc, char *argv[])
     cfg.exploration = Exploration::GENERATE_AND_VALIDATE;
   }
 
-  if (vm.count("disable-analysis")) {
-    cfg.exploration = Exploration::GENERATE_AND_VALIDATE;
+  if (vm.count("disable-synthesis")) {
+    cfg.synthesizeExpressions = false;
   }
 
   if (vm.count("disable-testprior")) {

@@ -29,13 +29,6 @@ enum class Exploration {
 };
 
 
-enum class LocalizationFormula {
-  OCHIAI,
-  JACCARD,
-  TARANTULA  
-};
-
-
 enum class TestPrioritization {
   FIXED_ORDER,      // first run failing, then passing tests
   MAX_FAILING       // dynamically prioritize tests based on previous failures
@@ -48,6 +41,7 @@ const bool USE_GLOBAL_VARIABLES = false;
 struct Config {
   bool verbose;
   bool validatePatches;
+  bool synthesizeExpressions;
   bool generateAll;
   bool dumpSearchSpace;
   bool outputPatchMetadata; /* UNSUPPORTED */
@@ -63,6 +57,7 @@ struct Config {
 static Config DEFAULT_CONFIG = {
   false,   /* verbose */
   true,    /* validatePatches */
+  true,    /* synthesizeExpressions */
   false,   /* generateAll */
   false,   /* dumpSearchSpace */
   false,   /* outputPatchMetadata */

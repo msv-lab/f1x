@@ -367,9 +367,17 @@ public:
   void VisitBinaryOperator(BinaryOperator *Node) {
     json::Value node(json::kObjectType);
     
+    //TODO?
     node.AddMember("kind", json::Value().SetString("operator"), *allocator);
-    string t = kindToString(getBuiltinKind(Node->getType()));
-    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    if (isPointerType(Node->getType())) {
+      node.AddMember("type", json::Value().SetString("pointer"), *allocator);
+      string t = getPointeeType(Node->getType());
+      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    } else {
+      node.AddMember("type", json::Value().SetString("integer"), *allocator);
+      string t = kindToString(getBuiltinKind(Node->getType()));
+      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    }
     json::Value repr;
     string opcode_str = BinaryOperator::getOpcodeStr(Node->getOpcode()).lower();
     repr.SetString(opcode_str.c_str(), *allocator);
@@ -394,8 +402,10 @@ public:
     json::Value node(json::kObjectType);
 
     node.AddMember("kind", json::Value().SetString("operator"), *allocator);
+    node.AddMember("type", json::Value().SetString("integer"), *allocator);
+    //NOTE: assume unary operator is non-pointer
     string t = kindToString(getBuiltinKind(Node->getType()));
-    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
     string opcode_str = UnaryOperator::getOpcodeStr(Node->getOpcode());
     repr.SetString(opcode_str.c_str(), *allocator);
@@ -423,14 +433,15 @@ public:
     // *  special case for NULL
     // I need to save the cast, since it affect the semantics, but without side effects
    json::Value node(json::kObjectType);
+   node.AddMember("kind", json::Value().SetString("variable"), *allocator);
    if (isPointerType(Node->getType())) {
-     node.AddMember("kind", json::Value().SetString("pointer"), *allocator);
+     node.AddMember("type", json::Value().SetString("pointer"), *allocator);
      string t = getPointeeType(Node->getType());
-     node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+     node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
    } else {
-     node.AddMember("kind", json::Value().SetString("object"), *allocator);
+     node.AddMember("type", json::Value().SetString("integer"), *allocator);
      string t = kindToString(getBuiltinKind(Node->getType()));
-     node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+     node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
    }
    json::Value repr;
    repr.SetString(toString(Node).c_str(), *allocator);
@@ -446,14 +457,15 @@ public:
   void VisitMemberExpr(MemberExpr *Node) {
     json::Value node(json::kObjectType);
 
+    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
     if (isPointerType(Node->getType())) {
-      node.AddMember("kind", json::Value().SetString("pointer"), *allocator);
+      node.AddMember("type", json::Value().SetString("pointer"), *allocator);
       string t = getPointeeType(Node->getType());
-      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     } else {
-      node.AddMember("kind", json::Value().SetString("object"), *allocator);
+      node.AddMember("type", json::Value().SetString("integer"), *allocator);
       string t = kindToString(getBuiltinKind(Node->getType()));
-      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     }
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
@@ -466,8 +478,9 @@ public:
     json::Value node(json::kObjectType);
 
     node.AddMember("kind", json::Value().SetString("constant"), *allocator);
+    node.AddMember("type", json::Value().SetString("integer"), *allocator);
     string t = kindToString(getBuiltinKind(Node->getType()));
-    node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+    node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
@@ -479,8 +492,9 @@ public:
     json::Value node(json::kObjectType);
 
     node.AddMember("kind", json::Value().SetString("constant"), *allocator);
+    node.AddMember("type", json::Value().SetString("integer"), *allocator);
     string t = kindToString(getBuiltinKind(Node->getType()));
-    node.AddMember("type", json::Value().SetString("char"), *allocator);
+    node.AddMember("rawType", json::Value().SetString("char"), *allocator);
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
@@ -490,15 +504,15 @@ public:
 
   void VisitDeclRefExpr(DeclRefExpr *Node) {
     json::Value node(json::kObjectType);
-
+    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
     if (isPointerType(Node->getType())) {
-      node.AddMember("kind", json::Value().SetString("pointer"), *allocator);
+      node.AddMember("type", json::Value().SetString("pointer"), *allocator);
       string t = getPointeeType(Node->getType());
-      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     } else {
-      node.AddMember("kind", json::Value().SetString("object"), *allocator);
+      node.AddMember("type", json::Value().SetString("integer"), *allocator);
       string t = kindToString(getBuiltinKind(Node->getType()));
-      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     }
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
@@ -509,15 +523,15 @@ public:
 
   void VisitArraySubscriptExpr(ArraySubscriptExpr *Node) {
     json::Value node(json::kObjectType);
-
+    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
     if (isPointerType(Node->getType())) {
-      node.AddMember("kind", json::Value().SetString("pointer"), *allocator);
+      node.AddMember("type", json::Value().SetString("pointer"), *allocator);
       string t = getPointeeType(Node->getType());
-      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     } else {
-      node.AddMember("kind", json::Value().SetString("object"), *allocator);
+      node.AddMember("type", json::Value().SetString("integer"), *allocator);
       string t = kindToString(getBuiltinKind(Node->getType()));
-      node.AddMember("type", json::Value().SetString(t.c_str(), *allocator), *allocator);
+      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     }
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
@@ -634,14 +648,15 @@ vector<json::Value> collectFromExpression(const Stmt *stmt,
 
 json::Value varDeclToJSON(VarDecl *vd, json::Document::AllocatorType &allocator) {
   json::Value node(json::kObjectType);
+  node.AddMember("kind", json::Value().SetString("variable"), allocator);
   if (isPointerType(vd->getType())) {
-    node.AddMember("kind", json::Value().SetString("pointer"), allocator);
+    node.AddMember("type", json::Value().SetString("pointer"), allocator);
     string t = getPointeeType(vd->getType());
-    node.AddMember("type", json::Value().SetString(t.c_str(), allocator), allocator);
+    node.AddMember("rawType", json::Value().SetString(t.c_str(), allocator), allocator);
   } else {
-    node.AddMember("kind", json::Value().SetString("object"), allocator);
+    node.AddMember("type", json::Value().SetString("integer"), allocator);
     string t = kindToString(getBuiltinKind(vd->getType()));
-    node.AddMember("type", json::Value().SetString(t.c_str(), allocator), allocator);
+    node.AddMember("rawType", json::Value().SetString(t.c_str(), allocator), allocator);
   }
   json::Value repr;
   string name = vd->getName();
@@ -813,18 +828,18 @@ string makeArgumentList(vector<json::Value> &components) {
   vector<json::Value*> pointers;
   vector<string> types;
   for (auto &c : components) {
-    string kind = c["kind"].GetString();
-    if (kind == "pointer") {
+    string type = c["type"].GetString();
+    if (type == "pointer") {
       pointers.push_back(&c);
     } else {
-      string type = c["type"].GetString();
-      if (std::find(types.begin(), types.end(), type) == types.end()) {
-        types.push_back(type);
+      string rawType = c["rawType"].GetString();
+      if (std::find(types.begin(), types.end(), rawType) == types.end()) {
+        types.push_back(rawType);
       }
-      if (typesToValues.find(type) == typesToValues.end()) {
-        typesToValues.insert(std::make_pair(type, vector<json::Value*>()));
+      if (typesToValues.find(rawType) == typesToValues.end()) {
+        typesToValues.insert(std::make_pair(rawType, vector<json::Value*>()));
       }
-      typesToValues[type].push_back(&c);
+      typesToValues[rawType].push_back(&c);
     }
   }
   

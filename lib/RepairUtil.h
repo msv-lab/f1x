@@ -91,12 +91,13 @@ enum class Operator {
   NONE, // this is when node is not an operator
   EQ, NEQ, LT, LE, GT, GE, OR, AND, ADD, SUB, MUL, DIV, MOD, NEG, NOT,
   BV_AND, BV_XOR, BV_OR, BV_SHL, BV_SHR, BV_NOT,
+  PTR_ADD, PTR_SUB, // pointer arithmetic
   IMPLICIT_BV_CAST, IMPLICIT_INT_CAST, // auxiliary operators to satisfy our type system
   EXPLICIT_BV_CAST, EXPLICIT_INT_CAST, EXPLICIT_PTR_CAST // auxiliary operators for (1) INT2 substitutions, (2) pointer arithmetics
 };
 
 const std::string DEFAULT_BOOLEAN_TYPE = "int"; // any type is OK
-const std::string EXPLICIT_INT_CAST_TYPE = "unsigned long";
+const std::string EXPLICIT_INT_CAST_TYPE = "long";
 const std::string EXPLICIT_BV_CAST_TYPE = "unsigned long";
 const std::string EXPLICIT_PTR_CAST_TYPE = "void";
 

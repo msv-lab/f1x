@@ -29,7 +29,9 @@
   INT2 is "x + y"
   COND3 is either BOOL2 or "x > INT2"
 
-  Note that currently we cast all INT2 to EXPLICIT_INT_CAST_TYPE
+  The synthsizer currently has two limitations because of the runtime design:
+  1. We cast all INT2 to EXPLICIT_INT_CAST_TYPE, because they are representated using a single variable
+  2. We don't substitute left argument of PTR_ADD/PTR_SUB because of scaling
 
   narrowing/tightening is done with COND3
 

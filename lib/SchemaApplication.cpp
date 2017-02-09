@@ -147,7 +147,8 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     app.AddMember("schema", json::Value().SetString("if_guard"), schemaApplications.GetAllocator());
     json::Value exprJSON(json::kObjectType);
     exprJSON.AddMember("kind", json::Value().SetString("constant"), schemaApplications.GetAllocator());
-    exprJSON.AddMember("type", json::Value().SetString("int"), schemaApplications.GetAllocator());
+    exprJSON.AddMember("type", json::Value().SetString("integer"), schemaApplications.GetAllocator());
+    exprJSON.AddMember("rawType", json::Value().SetString("int"), schemaApplications.GetAllocator());
     exprJSON.AddMember("repr", json::Value().SetString("1"), schemaApplications.GetAllocator());
     app.AddMember("expression", exprJSON, schemaApplications.GetAllocator());
     app.AddMember("appId", json::Value().SetInt(appId), schemaApplications.GetAllocator());

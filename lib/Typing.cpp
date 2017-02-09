@@ -64,6 +64,10 @@ Type operatorOutputType(const Operator &op) {
     return Type::BITVECTOR;
   case Operator::BV_NOT:
     return Type::BITVECTOR;
+  case Operator::PTR_ADD:
+    return Type::POINTER;
+  case Operator::PTR_SUB:
+    return Type::POINTER;
   case Operator::IMPLICIT_BV_CAST:
     return Type::INTEGER;
   case Operator::IMPLICIT_INT_CAST:
@@ -78,7 +82,8 @@ Type operatorOutputType(const Operator &op) {
   throw std::invalid_argument("unsupported operator: " + std::to_string((ulong)op));
 }
 
-Type operatorInputType(const Operator &op) {
+//NOTE: the first and the second are the same except for pointer arithmetic
+Type operatorFirstArgType(const Operator &op) {
   switch (op) {
   case Operator::EQ:
     return Type::ANY;
@@ -122,6 +127,10 @@ Type operatorInputType(const Operator &op) {
     return Type::BITVECTOR;
   case Operator::BV_NOT:
     return Type::BITVECTOR;
+  case Operator::PTR_ADD:
+    return Type::POINTER;
+  case Operator::PTR_SUB:
+    return Type::POINTER;
   case Operator::IMPLICIT_BV_CAST:
   case Operator::IMPLICIT_INT_CAST:
   case Operator::EXPLICIT_BV_CAST:
@@ -203,13 +212,13 @@ Expression correctTypes(const Expression &expression, const Type &context) {
     return correctTopNode(expression, context);
   } else if (expression.kind == NodeKind::OPERATOR) {
     if (expression.args.size() == 1) {
-      Type argContext = operatorInputType(expression.op);
+      Type argContext = operatorFirstArgType(expression.op);
       Expression correctedArg = correctTypes(expression.args[0], argContext);
       Expression copy = expression;
       copy.args[0] = correctedArg;
       return correctTopNode(copy, context);
     } else if (expression.args.size() == 2) {
-      Type argContext = operatorInputType(expression.op);
+      Type argContext = operatorFirstArgType(expression.op);
       if (argContext == Type::ANY) {
         argContext = commonSubtype(expression.args[0].type, expression.args[1].type);
       }
