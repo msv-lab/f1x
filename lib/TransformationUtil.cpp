@@ -293,7 +293,8 @@ BuiltinType::Kind getBuiltinKind(const QualType &type) {
 bool isPointerType(const QualType &type) {
   QualType canon = type.getCanonicalType();
   assert(canon.getTypePtr());
-  return canon.getTypePtr()->isPointerType();
+  return canon.getTypePtr()->isPointerType() ||
+         canon.getTypePtr()->isArrayType();
 }
 
 string getPointeeType(const QualType &type) {
@@ -301,6 +302,8 @@ string getPointeeType(const QualType &type) {
   assert(canon.getTypePtr());
   if (const PointerType *pt = canon.getTypePtr()->getAs<PointerType>()) {
     return pt->getPointeeType().getCanonicalType().getAsString();
+  } else if (const ArrayType *at = dyn_cast<ArrayType>(canon.getTypePtr())) {
+    return at->getElementType().getCanonicalType().getAsString();
   } else {
     llvm::errs() << "error: non-pointer type " << type.getAsString() << "\n";
     return DEFAULT_POINTEE_TYPE;
@@ -821,20 +824,29 @@ vector<json::Value> collectComponents(const Stmt *stmt,
 }
 
 
+/*
+  Structure:
+  "non-pointer types arguments, pointer arguments, pointee sizes"
+*/
 string makeArgumentList(vector<json::Value> &components) {
   std::ostringstream result;
 
   map<string, vector<json::Value*>> typesToValues;
   vector<json::Value*> pointers;
-  vector<string> types;
+  vector<string> pointeeTypes;
+  vector<string> nonPointerTypes;
   for (auto &c : components) {
     string type = c["type"].GetString();
     if (type == "pointer") {
       pointers.push_back(&c);
+      string rawType = c["rawType"].GetString();
+      if (std::find(pointeeTypes.begin(), pointeeTypes.end(), rawType) == pointeeTypes.end()) {
+        pointeeTypes.push_back(rawType);
+      }
     } else {
       string rawType = c["rawType"].GetString();
-      if (std::find(types.begin(), types.end(), rawType) == types.end()) {
-        types.push_back(rawType);
+      if (std::find(nonPointerTypes.begin(), nonPointerTypes.end(), rawType) == nonPointerTypes.end()) {
+        nonPointerTypes.push_back(rawType);
       }
       if (typesToValues.find(rawType) == typesToValues.end()) {
         typesToValues.insert(std::make_pair(rawType, vector<json::Value*>()));
@@ -843,10 +855,11 @@ string makeArgumentList(vector<json::Value> &components) {
     }
   }
   
-  std::stable_sort(types.begin(), types.end());
+  std::stable_sort(nonPointerTypes.begin(), nonPointerTypes.end());
+  std::stable_sort(pointeeTypes.begin(), pointeeTypes.end());
 
   bool firstArray = true;
-  for (auto &type : types) {
+  for (auto &type : nonPointerTypes) {
     if (firstArray) {
       firstArray = false;
     } else {
@@ -871,14 +884,26 @@ string makeArgumentList(vector<json::Value> &components) {
       result << ", ";
     }
     result << "(void*[]){";
-    bool firstElement = true;
+    bool firstPointerElement = true;
     for (auto c : pointers) {
-      if (firstElement) {
-        firstElement = false;
+      if (firstPointerElement) {
+        firstPointerElement = false;
       } else {
         result << ", ";
       }
       result << (*c)["repr"].GetString();
+    }
+    result << "}";
+    result << ", ";
+    result << "(int[]){";
+    bool firstTypeElement = true;
+    for (auto t : pointeeTypes) {
+      if (firstTypeElement) {
+        firstTypeElement = false;
+      } else {
+        result << ", ";
+      }
+      result << "sizeof(" << t << ")";
     }
     result << "}";
   }

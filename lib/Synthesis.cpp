@@ -124,10 +124,6 @@ namespace synthesis {
       return { Operator::BV_SHL };
     case Operator::BV_NOT:
       return {};
-    case Operator::PTR_ADD:
-      return { Operator::PTR_SUB };
-    case Operator::PTR_SUB:
-      return { Operator::PTR_ADD };
     case Operator::IMPLICIT_BV_CAST:
     case Operator::IMPLICIT_INT_CAST:
     case Operator::EXPLICIT_BV_CAST:
@@ -135,6 +131,21 @@ namespace synthesis {
       return {};
     }
     throw std::invalid_argument("unsupported operator");
+  }
+
+  vector<Operator> mutatePointerOperator(const Operator &op) {
+    assert(op != Operator::NONE);
+    switch (op) {
+    case Operator::EQ:
+      return { Operator::NEQ };
+    case Operator::NEQ:
+      return { Operator::EQ };
+    case Operator::PTR_ADD:
+      return { Operator::PTR_SUB };
+    case Operator::PTR_SUB:
+      return { Operator::PTR_ADD };
+    }
+    return {};
   }
 
   ulong operatorWeight(const Operator &op) {
@@ -170,17 +181,6 @@ namespace synthesis {
       return max + operatorWeight(expression.op);
     }
     throw std::invalid_argument("unsupported node kind");
-  }
-
-  vector<Operator> mutatePointerOperator(const Operator &op) {
-    assert(op != Operator::NONE);
-    switch (op) {
-    case Operator::EQ:
-      return { Operator::NEQ };
-    case Operator::NEQ:
-      return { Operator::EQ };
-    }
-    return {};
   }
 
   // simplifiable are those that have arguments of the same type as the result
@@ -296,7 +296,10 @@ namespace synthesis {
           result.push_back(make_pair(argCopy, meta));
         }
       } else if (expr.args.size() == 2) {
-        vector<pair<Expression, PatchMetadata>> leftMods = baseModifications(expr.args[0], components);
+        vector<pair<Expression, PatchMetadata>> leftMods;
+        if (expr.op != Operator::PTR_ADD && expr.op != Operator::PTR_SUB) {
+          leftMods = baseModifications(expr.args[0], components);
+        }
         for (auto &m : leftMods) {
           result.push_back(make_pair(makeLeftSubs(expr, m.first), m.second));
         }
@@ -323,6 +326,7 @@ namespace synthesis {
 namespace generator {
 
   const string POINTER_ARG_NAME = "__ptr_vals";
+  const string SIZES_ARG_NAME = "__ptr_sizes";
 
   void substituteWithRuntimeRepr(Expression &expression,
                                  unordered_map<string, string> &runtimeReprBySource) {
@@ -412,7 +416,8 @@ namespace generator {
       } else {
         result << ", ";
       }
-      result << "void *" << POINTER_ARG_NAME << "[]";
+      result << "void *" << POINTER_ARG_NAME << "[], ";
+      result << "int " << SIZES_ARG_NAME << "[]";
     }
   
     return result.str();
@@ -464,6 +469,33 @@ namespace generator {
     return runtimeReprBySource;
   }
 
+  unordered_map<string, string> typeSizes(shared_ptr<SchemaApplication> sa) {
+    vector<string> pointeeTypes;
+    for (auto &c : sa->components) {
+      switch (c.type) {
+      case Type::INTEGER:
+        break;
+      case Type::POINTER:
+        if (std::find(pointeeTypes.begin(), pointeeTypes.end(), c.rawType) == pointeeTypes.end()) {
+          pointeeTypes.push_back(c.rawType);
+        }
+        break;
+      default:
+        throw std::invalid_argument("unsupported component type");
+      }
+    }
+
+    std::stable_sort(pointeeTypes.begin(), pointeeTypes.end());
+
+    unordered_map<string, string> sizeByType;
+    for (int index = 0; index < pointeeTypes.size(); index++) {
+      sizeByType[pointeeTypes[index]] =
+        SIZES_ARG_NAME + "[" + to_string(index) + "]";
+    }
+
+    return sizeByType;
+  }
+
   bool isAbstractExpression(const Expression &expression) {
     if (isAbstractNode(expression.kind)) {
       return true;
@@ -491,12 +523,30 @@ namespace generator {
     return false;
   }
 
+  string runtimeSemantics(const Expression &expression,
+                          unordered_map<string, string> &sizeByType) {
+    if (expression.op == Operator::PTR_ADD ||
+        expression.op == Operator::PTR_SUB) {
+      string sizeExpr = sizeByType[expression.args[0].rawType];
+      std::ostringstream result;
+      result << "(void*) ("
+             << "(std::size_t) " << expressionToString(expression.args[0])
+             << " " << operatorToString(expression.op) << " "
+             << sizeExpr << " * " << expressionToString(expression.args[1])
+             << ")";
+      return result.str();
+    } else {
+      return expressionToString(expression);
+    }
+  }
+
   void modificationsAndDispatch(shared_ptr<SchemaApplication> sa,
                                 ulong &baseId,
                                 std::ostream &OS,
                                 vector<SearchSpaceElement> &ss,
                                 const Config &cfg) {
     unordered_map<string, string> runtimeReprBySource = runtimeRenaming(sa);
+    unordered_map<string, string> sizeByType = typeSizes(sa);
 
     vector<pair<Expression, PatchMetadata>> modifications =
       synthesis::baseModifications(sa->original, sa->components);
@@ -511,12 +561,9 @@ namespace generator {
     for (auto &candidate : modifications) {
       Expression runtimeExpr = candidate.first;
       substituteWithRuntimeRepr(runtimeExpr, runtimeReprBySource);
-      string castStr;
-      if (runtimeExpr.type == Type::POINTER && sa->original.type != Type::POINTER)
-        castStr = "(std::size_t)"; //FIXME: this is temporary, type inference makes it irrelevent
 
       OS << "case " << baseId << ":" << "\n"
-         << "base_value = " << castStr << expressionToString(runtimeExpr) << ";" << "\n"
+         << "base_value = " << runtimeSemantics(runtimeExpr, sizeByType) << ";" << "\n"
          << "break;" << "\n";
 
       if (isAbstractExpression(runtimeExpr)) {

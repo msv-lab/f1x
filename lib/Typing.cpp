@@ -218,16 +218,25 @@ Expression correctTypes(const Expression &expression, const Type &context) {
       copy.args[0] = correctedArg;
       return correctTopNode(copy, context);
     } else if (expression.args.size() == 2) {
-      Type argContext = operatorFirstArgType(expression.op);
-      if (argContext == Type::ANY) {
-        argContext = commonSubtype(expression.args[0].type, expression.args[1].type);
+      if (expression.op == Operator::PTR_ADD ||
+          expression.op == Operator::PTR_SUB) {
+        assert(expression.args[0].type == Type::POINTER);
+        Expression correctedArg1 = correctTypes(expression.args[1], Type::INTEGER);
+        Expression copy = expression;
+        copy.args[1] = correctedArg1;
+        return correctTopNode(copy, context);
+      } else {
+        Type argContext = operatorFirstArgType(expression.op);
+        if (argContext == Type::ANY) {
+          argContext = commonSubtype(expression.args[0].type, expression.args[1].type);
+        }
+        Expression correctedArg0 = correctTypes(expression.args[0], argContext);
+        Expression correctedArg1 = correctTypes(expression.args[1], argContext);
+        Expression copy = expression;
+        copy.args[0] = correctedArg0;
+        copy.args[1] = correctedArg1;
+        return correctTopNode(copy, context);
       }
-      Expression correctedArg0 = correctTypes(expression.args[0], argContext);
-      Expression correctedArg1 = correctTypes(expression.args[1], argContext);
-      Expression copy = expression;
-      copy.args[0] = correctedArg0;
-      copy.args[1] = correctedArg1;
-      return correctTopNode(copy, context);
     } else {
       throw std::invalid_argument("unsupported operator");
     }
