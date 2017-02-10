@@ -592,9 +592,10 @@ json::Value locToJSON(ulong fileId, ulong bl, ulong bc, ulong el, ulong ec,
 
 
 bool isSuitableComponentType(const QualType &type) {
-  return type.getTypePtr()->isIntegerType()
-      || type.getTypePtr()->isCharType()
-      || type.getTypePtr()->isPointerType();
+  if (const PointerType *pt = type.getTypePtr()->getAs<PointerType>()) {
+    return !(pt->getPointeeType().getTypePtr()->isFunctionType());
+  }
+  return type.getTypePtr()->isIntegerType() || type.getTypePtr()->isCharType();
 }
 
 
