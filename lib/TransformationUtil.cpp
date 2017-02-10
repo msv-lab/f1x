@@ -297,19 +297,23 @@ bool isPointerType(const QualType &type) {
          canon.getTypePtr()->isArrayType();
 }
 
-string getPointeeType(const QualType &type) {
+// returns (name, isIncomplete)
+pair<string, bool> getPointeeType(const QualType &type) {
+  //FIXME: use getPointeeOrArrayElementType?
   if (const PointerType *pt = type.getTypePtr()->getAs<PointerType>()) {
-    return pt->getPointeeType().getAsString();
+    QualType t = pt->getPointeeType();
+    return std::make_pair(t.getAsString(), t.getTypePtr()->isIncompleteType());
   } else if (const ArrayType *at = dyn_cast<ArrayType>(type.getTypePtr())) {
-    return at->getElementType().getAsString();
+    QualType t = at->getElementType();
+    return std::make_pair(t.getAsString(), t.getTypePtr()->isIncompleteType());
   } else {
-    llvm::errs() << "error: non-pointer type " << type.getAsString() << "\n";
-    return DEFAULT_POINTEE_TYPE;
+    llvm::errs() << "error: non-pointer and non-array type " << type.getAsString() << "\n";
+    return std::make_pair(DEFAULT_POINTEE_TYPE, true);
   }
 }
 
 // TODO: support C++ types, compiler extensions
-string kindToString(const BuiltinType::Kind kind) {
+string clangKindToString(const BuiltinType::Kind kind) {
   switch (kind) {
   case BuiltinType::Char_U:
     return "char";
@@ -341,7 +345,7 @@ string kindToString(const BuiltinType::Kind kind) {
     return "long long";
   default:
     llvm::errs() << "warning: unsupported builtin type " << kind << "\n";
-    return kindToString(DEFAULT_NUMERIC_TYPE);
+    return clangKindToString(DEFAULT_NUMERIC_TYPE);
   }
 }
 
@@ -372,11 +376,12 @@ public:
     node.AddMember("kind", json::Value().SetString("operator"), *allocator);
     if (isPointerType(Node->getType())) {
       node.AddMember("type", json::Value().SetString("pointer"), *allocator);
-      string t = getPointeeType(Node->getType());
-      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
+      pair<string, bool> t = getPointeeType(Node->getType());
+      node.AddMember("rawType", json::Value().SetString(t.first.c_str(), *allocator), *allocator);
+      node.AddMember("incomplete", json::Value().SetBool(t.second), *allocator);
     } else {
       node.AddMember("type", json::Value().SetString("integer"), *allocator);
-      string t = kindToString(getBuiltinKind(Node->getType()));
+      string t = clangKindToString(getBuiltinKind(Node->getType()));
       node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     }
     json::Value repr;
@@ -405,7 +410,7 @@ public:
     node.AddMember("kind", json::Value().SetString("operator"), *allocator);
     node.AddMember("type", json::Value().SetString("integer"), *allocator);
     //NOTE: assume unary operator is non-pointer
-    string t = kindToString(getBuiltinKind(Node->getType()));
+    string t = clangKindToString(getBuiltinKind(Node->getType()));
     node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
     string opcode_str = UnaryOperator::getOpcodeStr(Node->getOpcode());
@@ -437,11 +442,12 @@ public:
    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
    if (isPointerType(Node->getType())) {
      node.AddMember("type", json::Value().SetString("pointer"), *allocator);
-     string t = getPointeeType(Node->getType());
-     node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
+     pair<string, bool> t = getPointeeType(Node->getType());     
+     node.AddMember("rawType", json::Value().SetString(t.first.c_str(), *allocator), *allocator);
+     node.AddMember("incomplete", json::Value().SetBool(t.second), *allocator);
    } else {
      node.AddMember("type", json::Value().SetString("integer"), *allocator);
-     string t = kindToString(getBuiltinKind(Node->getType()));
+     string t = clangKindToString(getBuiltinKind(Node->getType()));
      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
    }
    json::Value repr;
@@ -461,11 +467,12 @@ public:
     node.AddMember("kind", json::Value().SetString("variable"), *allocator);
     if (isPointerType(Node->getType())) {
       node.AddMember("type", json::Value().SetString("pointer"), *allocator);
-      string t = getPointeeType(Node->getType());
-      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
+      pair<string, bool> t = getPointeeType(Node->getType());
+      node.AddMember("rawType", json::Value().SetString(t.first.c_str(), *allocator), *allocator);
+      node.AddMember("incomplete", json::Value().SetBool(t.second), *allocator);
     } else {
       node.AddMember("type", json::Value().SetString("integer"), *allocator);
-      string t = kindToString(getBuiltinKind(Node->getType()));
+      string t = clangKindToString(getBuiltinKind(Node->getType()));
       node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     }
     json::Value repr;
@@ -480,7 +487,7 @@ public:
 
     node.AddMember("kind", json::Value().SetString("constant"), *allocator);
     node.AddMember("type", json::Value().SetString("integer"), *allocator);
-    string t = kindToString(getBuiltinKind(Node->getType()));
+    string t = clangKindToString(getBuiltinKind(Node->getType()));
     node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
@@ -494,7 +501,7 @@ public:
 
     node.AddMember("kind", json::Value().SetString("constant"), *allocator);
     node.AddMember("type", json::Value().SetString("integer"), *allocator);
-    string t = kindToString(getBuiltinKind(Node->getType()));
+    string t = clangKindToString(getBuiltinKind(Node->getType()));
     node.AddMember("rawType", json::Value().SetString("char"), *allocator);
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
@@ -508,11 +515,12 @@ public:
     node.AddMember("kind", json::Value().SetString("variable"), *allocator);
     if (isPointerType(Node->getType())) {
       node.AddMember("type", json::Value().SetString("pointer"), *allocator);
-      string t = getPointeeType(Node->getType());
-      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
+      pair<string, bool> t = getPointeeType(Node->getType());      
+      node.AddMember("rawType", json::Value().SetString(t.first.c_str(), *allocator), *allocator);
+      node.AddMember("incomplete", json::Value().SetBool(t.second), *allocator);
     } else {
       node.AddMember("type", json::Value().SetString("integer"), *allocator);
-      string t = kindToString(getBuiltinKind(Node->getType()));
+      string t = clangKindToString(getBuiltinKind(Node->getType()));
       node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     }
     json::Value repr;
@@ -527,11 +535,12 @@ public:
     node.AddMember("kind", json::Value().SetString("variable"), *allocator);
     if (isPointerType(Node->getType())) {
       node.AddMember("type", json::Value().SetString("pointer"), *allocator);
-      string t = getPointeeType(Node->getType());
-      node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
+      pair<string, bool> t = getPointeeType(Node->getType());
+      node.AddMember("rawType", json::Value().SetString(t.first.c_str(), *allocator), *allocator);
+      node.AddMember("incomplete", json::Value().SetBool(t.second), *allocator);
     } else {
       node.AddMember("type", json::Value().SetString("integer"), *allocator);
-      string t = kindToString(getBuiltinKind(Node->getType()));
+      string t = clangKindToString(getBuiltinKind(Node->getType()));
       node.AddMember("rawType", json::Value().SetString(t.c_str(), *allocator), *allocator);
     }
     json::Value repr;
@@ -652,11 +661,12 @@ json::Value varDeclToJSON(VarDecl *vd, json::Document::AllocatorType &allocator)
   node.AddMember("kind", json::Value().SetString("variable"), allocator);
   if (isPointerType(vd->getType())) {
     node.AddMember("type", json::Value().SetString("pointer"), allocator);
-    string t = getPointeeType(vd->getType());
-    node.AddMember("rawType", json::Value().SetString(t.c_str(), allocator), allocator);
+    pair<string, bool> t = getPointeeType(vd->getType());
+    node.AddMember("rawType", json::Value().SetString(t.first.c_str(), allocator), allocator);
+    node.AddMember("incomplete", json::Value().SetBool(t.second), allocator);
   } else {
     node.AddMember("type", json::Value().SetString("integer"), allocator);
-    string t = kindToString(getBuiltinKind(vd->getType()));
+    string t = clangKindToString(getBuiltinKind(vd->getType()));
     node.AddMember("rawType", json::Value().SetString(t.c_str(), allocator), allocator);
   }
   json::Value repr;
@@ -831,15 +841,18 @@ string makeArgumentList(vector<json::Value> &components) {
 
   map<string, vector<json::Value*>> typesToValues;
   vector<json::Value*> pointers;
-  vector<string> pointeeTypes;
+  vector<string> completePointeeTypes;
   vector<string> nonPointerTypes;
   for (auto &c : components) {
     string type = c["type"].GetString();
     if (type == "pointer") {
       pointers.push_back(&c);
-      string rawType = c["rawType"].GetString();
-      if (std::find(pointeeTypes.begin(), pointeeTypes.end(), rawType) == pointeeTypes.end()) {
-        pointeeTypes.push_back(rawType);
+      bool isIncomplete = c["incomplete"].GetBool();
+      if (! isIncomplete) {
+        string rawType = c["rawType"].GetString();
+        if (std::find(completePointeeTypes.begin(), completePointeeTypes.end(), rawType) == completePointeeTypes.end()) {
+          completePointeeTypes.push_back(rawType);
+        }
       }
     } else {
       string rawType = c["rawType"].GetString();
@@ -854,7 +867,7 @@ string makeArgumentList(vector<json::Value> &components) {
   }
   
   std::stable_sort(nonPointerTypes.begin(), nonPointerTypes.end());
-  std::stable_sort(pointeeTypes.begin(), pointeeTypes.end());
+  std::stable_sort(completePointeeTypes.begin(), completePointeeTypes.end());
 
   bool firstArray = true;
   for (auto &type : nonPointerTypes) {
@@ -895,7 +908,7 @@ string makeArgumentList(vector<json::Value> &components) {
     result << ", ";
     result << "(int[]){";
     bool firstTypeElement = true;
-    for (auto t : pointeeTypes) {
+    for (auto t : completePointeeTypes) {
       if (firstTypeElement) {
         firstTypeElement = false;
       } else {

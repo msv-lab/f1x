@@ -470,26 +470,9 @@ namespace generator {
   }
 
   unordered_map<string, string> typeSizes(shared_ptr<SchemaApplication> sa) {
-    vector<string> pointeeTypes;
-    for (auto &c : sa->components) {
-      switch (c.type) {
-      case Type::INTEGER:
-        break;
-      case Type::POINTER:
-        if (std::find(pointeeTypes.begin(), pointeeTypes.end(), c.rawType) == pointeeTypes.end()) {
-          pointeeTypes.push_back(c.rawType);
-        }
-        break;
-      default:
-        throw std::invalid_argument("unsupported component type");
-      }
-    }
-
-    std::stable_sort(pointeeTypes.begin(), pointeeTypes.end());
-
     unordered_map<string, string> sizeByType;
-    for (int index = 0; index < pointeeTypes.size(); index++) {
-      sizeByType[pointeeTypes[index]] =
+    for (int index = 0; index < sa->completePointeeTypes.size(); index++) {
+      sizeByType[sa->completePointeeTypes[index]] =
         SIZES_ARG_NAME + "[" + to_string(index) + "]";
     }
 

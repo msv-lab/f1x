@@ -74,9 +74,9 @@ InEnvironment::~InEnvironment() {
 
 bool isAbstractNode(NodeKind kind) {
   return kind == NodeKind::PARAMETER ||
-    kind == NodeKind::INT2 ||
-    kind == NodeKind::BOOL2 ||
-    kind == NodeKind::COND3;
+         kind == NodeKind::INT2 ||
+         kind == NodeKind::BOOL2 ||
+         kind == NodeKind::COND3;
 }
 
 NodeKind kindByString(const string &kindStr) {
@@ -96,7 +96,7 @@ TransformationSchema transformationSchemaByString(const string &str) {
     return TransformationSchema::EXPRESSION;
   } else if (str == "if_guard") {
     return TransformationSchema::IF_GUARD;
-  } else if (str == "array_init") {
+  } else if (str == "initialization") {
     return TransformationSchema::INITIALIZATION;
   } else {
     throw parse_error("unsupported transformation schema: " + str);
@@ -449,16 +449,29 @@ vector<shared_ptr<SchemaApplication>> loadSchemaApplications(const fs::path &pat
     Expression expression = convertExpression(app["expression"]);
 
     vector<Expression> components;
+    vector<string> completePointeeTypes;
     for (auto &c : app["components"].GetArray()) {
-      components.push_back(convertExpression(c));
+      Expression comp = convertExpression(c);
+      components.push_back(comp);
+      string typeStr = c["type"].GetString();
+      bool completePointeeType = false;
+      if (typeStr == "pointer") {
+        completePointeeType = ! ((bool) c["incomplete"].GetBool());
+      }
+      if (completePointeeType && std::find(completePointeeTypes.begin(), completePointeeTypes.end(), comp.rawType) == completePointeeTypes.end()) {
+        completePointeeTypes.push_back(comp.rawType);
+      }
     }
+
+    std::stable_sort(completePointeeTypes.begin(), completePointeeTypes.end());
 
     shared_ptr<SchemaApplication> sa(new SchemaApplication{ appId,
                                                             schema,
                                                             location,
                                                             context,
                                                             expression,
-                                                            components });
+                                                            components,
+                                                            completePointeeTypes });
     result.push_back(sa);
   }
 

@@ -75,6 +75,7 @@ enum class TestStatus {
 
 enum class NodeKind {
   OPERATOR, VARIABLE, CONSTANT,
+  DEREFERENCE, // marks "a->b" in order to add NULL checks
   PARAMETER, INT2, BOOL2, COND3 // abstract node kinds
 };
 
@@ -228,6 +229,7 @@ struct SchemaApplication {
   LocationContext context;
   Expression original;
   std::vector<Expression> components;
+  std::vector<std::string> completePointeeTypes; // for pointer arithmetic
 };
 
 
