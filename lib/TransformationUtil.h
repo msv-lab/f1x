@@ -45,6 +45,44 @@ extern ulong globalBaseAppId;
 //NOTE: this is a hack to collect ifdef locations from preprocessor
 extern std::shared_ptr<std::vector<clang::SourceRange>> globalConditionalsPP;
 
+// http://stackoverflow.com/questions/19195183/how-to-properly-hash-the-custom-struct
+template <class T>
+inline void hash_combine(std::size_t & s, const T & v) {
+  std::hash<T> h;
+  s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
+}
+
+struct Location {
+  ulong fileId;
+  ulong beginLine;
+  ulong beginColumn;
+  ulong endLine;
+  ulong endColumn;
+
+  bool operator==(const Location &other) const { 
+    return (fileId == other.fileId
+            && beginLine == other.beginLine
+            && beginColumn == other.beginColumn
+            && endLine == other.endLine
+            && endColumn == other.endColumn);
+  }
+};
+
+namespace std {
+  template<>
+    struct hash<Location> {
+    inline size_t operator()(const Location& id) const {
+      size_t value = 0;
+      hash_combine(value, id.fileId);
+      hash_combine(value, id.beginLine);
+      hash_combine(value, id.beginColumn);
+      hash_combine(value, id.endLine);
+      hash_combine(value, id.endColumn);
+      return value;
+    }
+  };
+}
+
 ulong getDeclExpandedLine(const clang::Decl *decl, clang::SourceManager &srcMgr);
 
 bool insideMacro(const clang::Stmt *expr, clang::SourceManager &srcMgr, const clang::LangOptions &langOpts);

@@ -65,10 +65,14 @@ bool isInterestingLocation(ulong fileId, ulong beginLine, ulong beginColumn, ulo
   return true;
 }
 
+/*
+  Clang sometimes (for unknown reasons) starts the same file action or matches the same location twice, which causes crashes or invalid results.
+  This is to avoid doing the same twice.
+*/
 static bool alreadyTransformed = false;
+static std::unordered_set<Location> alreadyMatched;
 
 bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
-  //NOTE: this is a wierd problem: sometimes this action is called two times that causes crash
   if (alreadyTransformed) {
     return false;
   }
@@ -124,6 +128,11 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
     ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
     ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+
+    Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
+    if (alreadyMatched.count(current))
+      return;
+    alreadyMatched.insert(current);
 
     // NOTE: to avoid extracting locations from headers:
     std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
@@ -214,6 +223,11 @@ void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Resul
     ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
     ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+
+    Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
+    if (alreadyMatched.count(current))
+      return;
+    alreadyMatched.insert(current);
 
     // NOTE: to avoid extracting locations from headers:
     std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
