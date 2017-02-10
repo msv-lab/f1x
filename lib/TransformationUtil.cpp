@@ -472,7 +472,11 @@ public:
   void VisitMemberExpr(MemberExpr *Node) {
     json::Value node(json::kObjectType);
 
-    node.AddMember("kind", json::Value().SetString("variable"), *allocator);
+    if (Node->isArrow()) {
+      node.AddMember("kind", json::Value().SetString("dereference"), *allocator);
+    } else {
+      node.AddMember("kind", json::Value().SetString("variable"), *allocator);
+    }
     if (isPointerType(Node->getType())) {
       node.AddMember("type", json::Value().SetString("pointer"), *allocator);
       pair<string, bool> t = getPointeeType(Node->getType());
@@ -486,6 +490,11 @@ public:
     json::Value repr;
     repr.SetString(toString(Node).c_str(), *allocator);
     node.AddMember("repr", repr, *allocator);
+    if (Node->isArrow()) {
+      json::Value baseRepr;
+      baseRepr.SetString(toString(Node->getBase()).c_str(), *allocator);
+      node.AddMember("base", baseRepr, *allocator);
+    }
 
     path.push(std::move(node));
   }
@@ -851,7 +860,18 @@ string makeArgumentList(vector<json::Value> &components) {
   vector<json::Value*> pointers;
   vector<string> completePointeeTypes;
   vector<string> nonPointerTypes;
+  vector<string> dereferences;
+  map<string, string> baseOfDereference;
   for (auto &c : components) {
+    string kind = c["kind"].GetString();
+    if (kind == "dereference") {
+      string repr = c["repr"].GetString();
+      if (std::find(dereferences.begin(), dereferences.end(), repr) == dereferences.end()) {
+        dereferences.push_back(repr);
+        string base = c["base"].GetString();
+        baseOfDereference[repr] = base;
+      }
+    }
     string type = c["type"].GetString();
     if (type == "pointer") {
       pointers.push_back(&c);
@@ -876,6 +896,7 @@ string makeArgumentList(vector<json::Value> &components) {
   
   std::stable_sort(nonPointerTypes.begin(), nonPointerTypes.end());
   std::stable_sort(completePointeeTypes.begin(), completePointeeTypes.end());
+  std::stable_sort(dereferences.begin(), dereferences.end());
 
   bool firstArray = true;
   for (auto &type : nonPointerTypes) {
@@ -892,7 +913,13 @@ string makeArgumentList(vector<json::Value> &components) {
       } else {
         result << ", ";
       }
-      result << (*c)["repr"].GetString();
+      string repr = (*c)["repr"].GetString();
+      if (baseOfDereference.count(repr)) {
+        result << "(!" << baseOfDereference[repr]
+               << " ? 0 : " << repr << ")";
+      } else {
+        result << repr;
+      }
     }
     result << "}";
   }
@@ -910,7 +937,13 @@ string makeArgumentList(vector<json::Value> &components) {
       } else {
         result << ", ";
       }
-      result << (*c)["repr"].GetString();
+      string repr = (*c)["repr"].GetString();
+      if (baseOfDereference.count(repr)) {
+        result << "(!" << baseOfDereference[repr]
+               << " ? (void*)0 : " << repr << ")";
+      } else {
+        result << repr;
+      }
     }
     result << "}";
     result << ", ";
@@ -923,6 +956,24 @@ string makeArgumentList(vector<json::Value> &components) {
         result << ", ";
       }
       result << "sizeof(" << t << ")";
+    }
+    result << "}";
+  }
+  if (! dereferences.empty()) {
+    if (firstArray) {
+      firstArray = false;
+    } else {
+      result << ", ";
+    }
+    result << "(int[]){";
+    bool firstNULLDereferenceCondition = true;
+    for (auto d : dereferences) {
+      if (firstNULLDereferenceCondition) {
+        firstNULLDereferenceCondition = false;
+      } else {
+        result << ", ";
+      }
+      result << "!" << baseOfDereference[d];
     }
     result << "}";
   }

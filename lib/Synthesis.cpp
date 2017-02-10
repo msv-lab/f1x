@@ -165,7 +165,8 @@ namespace synthesis {
   ulong expressionDepth(const Expression &expression) {
     if (expression.kind == NodeKind::VARIABLE ||
         expression.kind == NodeKind::CONSTANT ||
-        expression.kind == NodeKind::PARAMETER) {
+        expression.kind == NodeKind::PARAMETER ||
+        expression.kind == NodeKind::DEREFERENCE) {
       return 1;
     } else if (expression.kind == NodeKind::BOOL2 ||
                expression.kind == NodeKind::INT2 ||
@@ -246,7 +247,8 @@ namespace synthesis {
           }
         }
       }
-      if (expr.kind == NodeKind::VARIABLE) {
+      if (expr.kind == NodeKind::VARIABLE ||
+          expr.kind == NodeKind::DEREFERENCE) {
         if (expr.type == Type::INTEGER) {
           for (auto &c : components) {
             if (c.type == Type::INTEGER) {
@@ -327,10 +329,12 @@ namespace generator {
 
   const string POINTER_ARG_NAME = "__ptr_vals";
   const string SIZES_ARG_NAME = "__ptr_sizes";
+  const string NULLDEREF_ARG_NAME = "__nullderef";
 
   void substituteWithRuntimeRepr(Expression &expression,
                                  unordered_map<string, string> &runtimeReprBySource) {
-    if (expression.kind == NodeKind::VARIABLE) {
+    if (expression.kind == NodeKind::VARIABLE ||
+        expression.kind == NodeKind::DEREFERENCE) {
       expression.repr = runtimeReprBySource[expression.repr];
     } else {
       for (auto &arg : expression.args) {
@@ -389,7 +393,10 @@ namespace generator {
 
     vector<string> types;
     bool hasPointers = false;
+    bool hasDereferences = false;
     for (auto &c : sa->components) {
+      if (c.kind == NodeKind::DEREFERENCE)
+        hasDereferences = true;
       if (c.type == Type::INTEGER) {
         if(std::find(types.begin(), types.end(), c.rawType) == types.end()) {
           types.push_back(c.rawType);
@@ -418,6 +425,14 @@ namespace generator {
       }
       result << "void *" << POINTER_ARG_NAME << "[], ";
       result << "int " << SIZES_ARG_NAME << "[]";
+    }
+    if (hasDereferences) {
+      if (firstArray) {
+        firstArray = false;
+      } else {
+        result << ", ";
+      }
+      result << "int " << NULLDEREF_ARG_NAME << "[]";
     }
   
     return result.str();
@@ -479,6 +494,27 @@ namespace generator {
     return sizeByType;
   }
 
+  unordered_map<string, string> nullDerefCondition(shared_ptr<SchemaApplication> sa,
+                                                   unordered_map<string, string> &runtimeReprBySource) {
+    vector<string> dereferences;
+    for (auto &c : sa->components) {
+      if (c.kind == NodeKind::DEREFERENCE) {
+        if(std::find(dereferences.begin(), dereferences.end(), c.repr) == dereferences.end())
+          dereferences.push_back(c.repr);
+      }
+    }
+
+    std::stable_sort(dereferences.begin(), dereferences.end());
+
+    unordered_map<string, string> nullDerefByName;
+    for (int index = 0; index < dereferences.size(); index++) {
+      nullDerefByName[runtimeReprBySource[dereferences[index]]] =
+        NULLDEREF_ARG_NAME + "[" + to_string(index) + "]";
+    }
+
+    return nullDerefByName;
+  }
+
   bool isAbstractExpression(const Expression &expression) {
     if (isAbstractNode(expression.kind)) {
       return true;
@@ -507,23 +543,24 @@ namespace generator {
   }
 
   string runtimeSemantics(const Expression &expression,
-                          unordered_map<string, string> &sizeByType) {
+                          unordered_map<string, string> &sizeByType,
+                          unordered_map<string, string> &nullDerefByName) {
     if (expression.op == Operator::PTR_ADD ||
         expression.op == Operator::PTR_SUB) {
       string sizeExpr = sizeByType[expression.args[0].rawType];
       std::ostringstream result;
       result << "(void*) ("
-             << "(std::size_t) " << runtimeSemantics(expression.args[0], sizeByType)
+             << "(std::size_t) " << runtimeSemantics(expression.args[0], sizeByType, nullDerefByName)
              << " " << operatorToString(expression.op) << " "
-             << sizeExpr << " * " << runtimeSemantics(expression.args[1], sizeByType)
+             << sizeExpr << " * " << runtimeSemantics(expression.args[1], sizeByType, nullDerefByName)
              << ")";
       return result.str();
     } else if (expression.op == Operator::DIV ||
                expression.op == Operator::MOD) {
-      string denominator = runtimeSemantics(expression.args[1], sizeByType);
+      string denominator = runtimeSemantics(expression.args[1], sizeByType, nullDerefByName);
       std::ostringstream result;
       result << "(" << denominator << " != 0 ? "
-             << runtimeSemantics(expression.args[0], sizeByType)
+             << runtimeSemantics(expression.args[0], sizeByType, nullDerefByName)
              << " " << operatorToString(expression.op) << " "
              << denominator
              << " : ({ current_panic = true; 0; })"
@@ -531,13 +568,23 @@ namespace generator {
       return result.str();
     } else {
       if (expression.args.size() == 0) {
-        return expression.repr;
+        if (expression.kind == NodeKind::DEREFERENCE) {
+          
+          std::ostringstream result;
+          result << "(" << nullDerefByName[expression.repr]
+                 << " ? ({ current_panic = true; " << (expression.type == Type::POINTER ? "(void*) 0" : "0") << "; })"
+                 << " : " << expression.repr
+                 << ")";
+          return result.str();
+        } else {
+          return expression.repr;
+        }
       } else if (expression.args.size() == 1) {
-        return expression.repr + " " + runtimeSemantics(expression.args[0], sizeByType);
+        return expression.repr + " " + runtimeSemantics(expression.args[0], sizeByType, nullDerefByName);
       } if (expression.args.size() == 2) {
-        return "(" + runtimeSemantics(expression.args[0], sizeByType) + " " +
+        return "(" + runtimeSemantics(expression.args[0], sizeByType, nullDerefByName) + " " +
           expression.repr + " " +
-          runtimeSemantics(expression.args[1], sizeByType) + ")";
+          runtimeSemantics(expression.args[1], sizeByType, nullDerefByName) + ")";
       }
       throw std::invalid_argument("unsupported expression");
     }
@@ -550,6 +597,7 @@ namespace generator {
                                 const Config &cfg) {
     unordered_map<string, string> runtimeReprBySource = runtimeRenaming(sa);
     unordered_map<string, string> sizeByType = typeSizes(sa);
+    unordered_map<string, string> nullDerefByName = nullDerefCondition(sa, runtimeReprBySource);
 
     vector<pair<Expression, PatchMetadata>> modifications =
       synthesis::baseModifications(sa->original, sa->components);
@@ -566,7 +614,7 @@ namespace generator {
       substituteWithRuntimeRepr(runtimeExpr, runtimeReprBySource);
 
       OS << "case " << baseId << ":" << "\n"
-         << "base_value = " << runtimeSemantics(runtimeExpr, sizeByType) << ";" << "\n"
+         << "base_value = " << runtimeSemantics(runtimeExpr, sizeByType, nullDerefByName) << ";" << "\n"
          << "break;" << "\n";
 
       if (isAbstractExpression(runtimeExpr)) {

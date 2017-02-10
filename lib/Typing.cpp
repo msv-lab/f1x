@@ -208,7 +208,8 @@ Expression correctTopNode(const Expression &expression, const Type &context) {
 Expression correctTypes(const Expression &expression, const Type &context) {
   if (expression.kind == NodeKind::VARIABLE ||
       expression.kind == NodeKind::CONSTANT ||
-      expression.kind == NodeKind::PARAMETER) {
+      expression.kind == NodeKind::PARAMETER ||
+      expression.kind == NodeKind::DEREFERENCE) {
     return correctTopNode(expression, context);
   } else if (expression.kind == NodeKind::OPERATOR) {
     if (expression.args.size() == 1) {

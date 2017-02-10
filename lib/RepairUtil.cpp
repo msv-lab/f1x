@@ -84,6 +84,8 @@ NodeKind kindByString(const string &kindStr) {
     return NodeKind::OPERATOR;
   } else if (kindStr == "variable") {
     return NodeKind::VARIABLE;
+  } else if (kindStr == "dereference") {
+    return NodeKind::DEREFERENCE;
   } else if (kindStr == "constant") {
     return NodeKind::CONSTANT;
   } else {
