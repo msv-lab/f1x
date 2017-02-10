@@ -45,12 +45,12 @@ To test f1x, execute `./tests/runall.sh`.
 ## Resources ##
 
 * [Tutorial (small program)](doc/Tutorial.md)
-* [Tutorial (Heartbleed)](doc/Heartbleed.md)
+* [Tutorial (Heartbleed)](https://github.com/mechtaev/f1x-heartbleed)
 * [Manual](doc/Manual.md)
 * [Troubleshooting](doc/Troubleshooting.md)
 * [Development](doc/Development.md)
 * [Experiments with Genprog ICSE'12 benchmark](https://github.com/mechtaev/f1x-genprog-icse12)
-* [Experiments with IntroClass benchmark](https://github.com/mechtaev/f1x-introclass)
+* [Experiments with IntroClass benchmark](https://github.com/stan6/f1x-introclass)
 
 ## People ##
 

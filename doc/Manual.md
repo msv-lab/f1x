@@ -6,7 +6,7 @@ f1x implements a novel search space exploraton algorithm specifically designed f
 
 ## Characteristics ##
 
-The three main characteristics of a repair tool are the search space (syntactical changes that can be generated), the prioritization strategy (which patch is selected from multiple plausible ones) and the exploration speed (the number of candidate patches evaluated within a unit of time).
+The three main characteristics of an automated program repair system are the search space (syntactical changes that can be generated), the prioritization strategy (which patch is selected from multiple plausible ones) and the exploration speed (the number of candidate patches evaluated within a unit of time).
 
 ### Search space ###
 
@@ -23,11 +23,15 @@ f1x expression synthesizer is bit-precise; it supports all builtin (C99) integer
 
 ### Prioritization ###
 
-f1x currently supports only the most trivial prioritization strategy: patches that are syntactically closer to the original program are assigned higher correctness probability. f1x guarantees to generate the syntactically minimal patch (the global minimum) in the search space. The motivation behind this prioritization is that small changes are easier to understand and they are less likely to break existing functionality. Since the search space is represented explicitly and prioritization is implemented simply as an array sorting function, it is straightforward to support more sophisticated prioritization strategies.
+It is straightforward to implement prioritization strategies in f1x, since the search space is represented explicitly and prioritization is simply an array sorting function.
+
+f1x currently supports only the most trivial prioritization strategy: patches that are syntactically closer to the original program are assigned higher correctness probability. f1x guarantees to generate the syntactically minimal patch (the global minimum) in the search space. The motivation behind this prioritization is that small changes are easier to understand and they are less likely to break existing functionality.
+
+Future versions of f1x will include more intelligent prioritization strategies.
 
 ## Usage ##
 
-**Warning** f1x executes arbitrary modifications of your source code which may lead to undesirable side effects. Therefore, it is recommended to run f1x in an isolated environment. Apply f1x to a copy of your application, since it can corrupt the source code.
+**Warning!** f1x executes arbitrary modifications of your source code which may lead to undesirable side effects. Therefore, it is recommended to run f1x in an isolated environment. Apply f1x to a copy of your application, since it can corrupt the source code.
     
 In order to repair a program, f1x requires a special build configuration and an interface to the testing framework.
 
