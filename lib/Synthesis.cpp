@@ -513,13 +513,33 @@ namespace generator {
       string sizeExpr = sizeByType[expression.args[0].rawType];
       std::ostringstream result;
       result << "(void*) ("
-             << "(std::size_t) " << expressionToString(expression.args[0])
+             << "(std::size_t) " << runtimeSemantics(expression.args[0], sizeByType)
              << " " << operatorToString(expression.op) << " "
-             << sizeExpr << " * " << expressionToString(expression.args[1])
+             << sizeExpr << " * " << runtimeSemantics(expression.args[1], sizeByType)
+             << ")";
+      return result.str();
+    } else if (expression.op == Operator::DIV ||
+               expression.op == Operator::MOD) {
+      string denominator = runtimeSemantics(expression.args[1], sizeByType);
+      std::ostringstream result;
+      result << "(" << denominator << " != 0 ? "
+             << runtimeSemantics(expression.args[0], sizeByType)
+             << " " << operatorToString(expression.op) << " "
+             << denominator
+             << " : ({ current_panic = true; 0; })"
              << ")";
       return result.str();
     } else {
-      return expressionToString(expression);
+      if (expression.args.size() == 0) {
+        return expression.repr;
+      } else if (expression.args.size() == 1) {
+        return expression.repr + " " + runtimeSemantics(expression.args[0], sizeByType);
+      } if (expression.args.size() == 2) {
+        return "(" + runtimeSemantics(expression.args[0], sizeByType) + " " +
+          expression.repr + " " +
+          runtimeSemantics(expression.args[1], sizeByType) + ")";
+      }
+      throw std::invalid_argument("unsupported expression");
     }
   }
 
@@ -623,13 +643,17 @@ namespace generator {
       OS << outputType << " output_value = 0;" << "\n"
          << "bool output_initialized = false;" << "\n"
          << "unsigned long input_index = 0;" << "\n"
-         << "unsigned long output_index = 0;" << "\n";
+         << "unsigned long output_index = 0;" << "\n"
+         << "bool output_panic = false;" << "\n"
+         << "bool current_panic = false;" << "\n";
 
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         OS << "if (__f1xids == NULL) __f1x_init_runtime();" << "\n";
       }
 
       OS << "label_" << locationNameSuffix(sa->location) << ":" << "\n";
+
+      OS << "current_panic = false;" << "\n";
 
       OS << "param_value = id.param;" << "\n";
 
@@ -638,9 +662,11 @@ namespace generator {
       OS << "}" << "\n";
 
       OS << "if (!output_initialized) {" << "\n"
+         << "output_panic = current_panic;" << "\n"
          << "output_value = base_value;" << "\n"
          << "output_initialized = true;" << "\n"
-         << "} else if (output_value == base_value) {" << "\n";
+         << "} else if ((output_panic && current_panic)"
+         << " || (!output_panic && !current_panic && output_value == base_value)) {" << "\n";
       if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
         OS << "__f1xids[output_index] = id;" << "\n"
            << "output_index++;" << "\n";
@@ -657,6 +683,11 @@ namespace generator {
         // output terminator:
         OS << "__f1xids[output_index] = __f1xid_t{0, 0, 0, 0, 1};" << "\n";
       }
+
+      OS << "if (output_panic) {" << "\n"
+         << "abort();" << "\n"
+         << "}" << "\n";
+
       OS << "return output_value;" << "\n";
 
       OS << "}" << "\n";

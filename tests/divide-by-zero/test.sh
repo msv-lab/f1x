@@ -5,13 +5,13 @@ assert-equal () {
 }
 
 case "$1" in
-    p1)
+    n1)
         assert-equal "./program 1 2" '1\n'
         ;;
-    p2)
+    n2)
         assert-equal "./program 2 1" '0\n'
         ;;
-    n1)
+    n3)
         assert-equal "./program 2 2" '0\n'
         ;;
     *)
