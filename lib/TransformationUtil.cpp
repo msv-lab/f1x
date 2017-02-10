@@ -302,10 +302,18 @@ pair<string, bool> getPointeeType(const QualType &type) {
   //FIXME: use getPointeeOrArrayElementType?
   if (const PointerType *pt = type.getTypePtr()->getAs<PointerType>()) {
     QualType t = pt->getPointeeType();
-    return std::make_pair(t.getAsString(), t.getTypePtr()->isIncompleteType());
+    bool isIncomplete = t.getTypePtr()->isIncompleteType();
+    //NOTE: clang says for va_list that it is complete, but gcc fails
+    if (t.getAsString() == "struct __va_list_tag")
+      isIncomplete = true;
+    return std::make_pair(t.getAsString(), isIncomplete);
   } else if (const ArrayType *at = dyn_cast<ArrayType>(type.getTypePtr())) {
     QualType t = at->getElementType();
-    return std::make_pair(t.getAsString(), t.getTypePtr()->isIncompleteType());
+    bool isIncomplete = t.getTypePtr()->isIncompleteType();
+     //NOTE: clang says for va_list that it is complete, but gcc fails
+    if (t.getAsString() == "struct __va_list_tag")
+      isIncomplete = true;
+    return std::make_pair(t.getAsString(), isIncomplete);
   } else {
     llvm::errs() << "error: non-pointer and non-array type " << type.getAsString() << "\n";
     return std::make_pair(DEFAULT_POINTEE_TYPE, true);
