@@ -70,7 +70,7 @@ get-cmd () {
         replace-constant)
             echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 n2 n3 n4 p1 p2 p3 --test-timeout 1000"
             ;;
-        substitute-int2)
+        substitute-bool2)
             echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 n2 p1 --test-timeout 1000"
             ;;
         inside-ifdef)

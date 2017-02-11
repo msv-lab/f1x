@@ -19,6 +19,7 @@
 #include <string>
 #include <algorithm>
 #include <sstream>
+#include <stack>
 #include <unordered_map>
 
 #include "Synthesis.h"
@@ -34,6 +35,7 @@ using std::string;
 using std::shared_ptr;
 using std::unordered_map;
 using std::to_string;
+using std::stack;
 
 
 const string ID_TYPE = "unsigned long";
@@ -222,10 +224,53 @@ namespace synthesis {
     return Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {expr.args[0], subs}};
   }
 
+  vector<Expression> bool2Expressions(const vector<Expression> &components) {
+    vector<Expression> result;
+    for (auto &left : components) {
+      switch (left.type) {
+      case Type::POINTER:
+        result.push_back(makeNULLCheck(left));
+        result.push_back(makeNonNULLCheck(left));
+        for (auto &right : components) {
+          if (right.type == Type::POINTER) {
+            result.push_back(applyBoolOperator(Operator::EQ, left, right));
+            result.push_back(applyBoolOperator(Operator::NEQ, left, right));
+          }
+        }
+        break;
+      case Type::INTEGER:
+        result.push_back(applyBoolOperator(Operator::EQ, left, PARAMETER_NODE));
+        result.push_back(applyBoolOperator(Operator::NEQ, left, PARAMETER_NODE));
+        result.push_back(applyBoolOperator(Operator::LT, left, PARAMETER_NODE));
+        result.push_back(applyBoolOperator(Operator::LE, left, PARAMETER_NODE));
+        result.push_back(applyBoolOperator(Operator::GT, left, PARAMETER_NODE));
+        result.push_back(applyBoolOperator(Operator::GE, left, PARAMETER_NODE));
+        for (auto &right : components) {
+          if (right.type == Type::INTEGER) {
+            result.push_back(applyBoolOperator(Operator::EQ, left, right));
+            result.push_back(applyBoolOperator(Operator::NEQ, left, right));
+            result.push_back(applyBoolOperator(Operator::LT, left, right));
+            result.push_back(applyBoolOperator(Operator::LE, left, right));
+            result.push_back(applyBoolOperator(Operator::GT, left, right));
+            result.push_back(applyBoolOperator(Operator::GE, left, right));
+          }
+        }
+        break;
+      default:
+        throw std::invalid_argument("unsupported component type");
+      }
+    }
+    return result;
+  }
 
   vector<pair<Expression, PatchMetadata>> baseModifications(const Expression &expr,
                                                             const vector<Expression> &components) {
     vector<pair<Expression, PatchMetadata>> result;
+    if (expr.type == Type::BOOLEAN) {
+      //TODO: distance computation
+      auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+      result.push_back(make_pair(BOOL2_NODE, meta));
+    }
     if (expr.args.size() == 0) {
       if (expr.kind == NodeKind::CONSTANT) {
         if (expr.type == Type::INTEGER) {
@@ -247,9 +292,8 @@ namespace synthesis {
             result.push_back(make_pair(TRUE_NODE, meta));
           }
         }
-      }
-      if (expr.kind == NodeKind::VARIABLE ||
-          expr.kind == NodeKind::DEREFERENCE) {
+      } else if (expr.kind == NodeKind::VARIABLE ||
+                 expr.kind == NodeKind::DEREFERENCE) {
         if (expr.type == Type::INTEGER) {
           for (auto &c : components) {
             if (c.type == Type::INTEGER) {
@@ -528,15 +572,28 @@ namespace generator {
     return false;
   }
 
-  bool substituteAbstractNode(Expression &expression,
-                              NodeKind abstractKind, 
-                              const Expression &substitution) {
-    if (expression.kind == abstractKind) {
+
+  bool hasNodeOfKind(const Expression &expression, const NodeKind &kind) {
+    if (expression.kind == kind) {
+      return true;
+    } else {
+      for (auto &arg : expression.args) {
+        if(hasNodeOfKind(arg, kind))
+          return true;
+      }
+    }
+    return false;
+  }
+
+  bool substituteNodeOfKind(Expression &expression,
+                            NodeKind kind, 
+                            const Expression &substitution) {
+    if (expression.kind == kind) {
       expression = substitution;
       return true;
     } else {
       for (auto &arg : expression.args) {
-        if(substituteAbstractNode(arg, abstractKind, substitution))
+        if(substituteNodeOfKind(arg, kind, substitution))
           return true;
       }
     }
@@ -591,7 +648,14 @@ namespace generator {
     }
   }
 
-  void modificationsAndDispatch(shared_ptr<SchemaApplication> sa,
+  vector<pair<F1XID, Expression>> generateParameterInstances(const F1XID &partialId,
+                                                             const Expression &expression,
+                                                             const ulong &paramBound) {
+    vector<pair<F1XID, Expression>> result;
+    return result;
+  }
+
+  void candidateDispatch(shared_ptr<SchemaApplication> sa,
                                 ulong &baseId,
                                 std::ostream &OS,
                                 vector<SearchSpaceElement> &ss,
@@ -600,51 +664,80 @@ namespace generator {
     unordered_map<string, string> sizeByType = typeSizes(sa);
     unordered_map<string, string> nullDerefByName = nullDerefCondition(sa, runtimeReprBySource);
 
-    vector<pair<Expression, PatchMetadata>> modifications =
+    ulong paramBound;
+    if (sa->context == LocationContext::CONDITION) {
+      paramBound = cfg.maxConditionParameter;
+    } else {
+      paramBound = cfg.maxExpressionParameter;
+    }
+
+    OS << "param_value = id.param;" << "\n";
+
+    OS << "switch (id.bool2) {" << "\n"
+       << "case 0:" << "\n"
+       << "break;" << "\n";
+    vector<Expression> bool2Expressions =
+      synthesis::bool2Expressions(sa->components);
+    for (int i = 0; i < bool2Expressions.size(); i++) {
+      Expression runtimeExpr = bool2Expressions[i];
+      substituteWithRuntimeRepr(runtimeExpr, runtimeReprBySource);
+      OS << "case " << (i + 1) << ":" << "\n" // 0 means disabled
+         << "bool2_value = " << runtimeSemantics(runtimeExpr, sizeByType, nullDerefByName) << ";" << "\n"
+         << "break;" << "\n";
+    }
+    OS << "}" << "\n";
+
+    vector<pair<Expression, PatchMetadata>> baseModifications =
       synthesis::baseModifications(sa->original, sa->components);
   
-    string outputType;
-    if (sa->original.type == Type::POINTER) {
-      outputType= "void*";
-    } else {
-      outputType = sa->original.rawType;
-    }
+    OS << "switch (id.base) {" << "\n";
 
-    for (auto &candidate : modifications) {
+    for (auto &candidate : baseModifications) {
       Expression runtimeExpr = candidate.first;
+      PatchMetadata metadata = candidate.second;
       substituteWithRuntimeRepr(runtimeExpr, runtimeReprBySource);
 
-      if (isAbstractExpression(runtimeExpr) && ! cfg.synthesizeExpressions) {
+      if (isAbstractExpression(runtimeExpr) && ! cfg.synthesizeExpressions)
           continue;
-      }
 
-      OS << "case " << baseId << ":" << "\n"
+      F1XID partialId{0};
+      partialId.base = baseId;
+
+      OS << "case " << partialId.base << ":" << "\n"
          << "base_value = " << runtimeSemantics(runtimeExpr, sizeByType, nullDerefByName) << ";" << "\n"
          << "break;" << "\n";
-
-      if (isAbstractExpression(runtimeExpr)) {
-        ulong paramBound;
-        if (sa->context == LocationContext::CONDITION) {
-          paramBound = cfg.maxConditionParameter;
+      
+      stack<pair<F1XID, Expression>> parametrizedCandidates;
+      parametrizedCandidates.push(std::make_pair(partialId, candidate.first));
+      
+      while (!parametrizedCandidates.empty()) {
+        pair<F1XID, Expression> current = parametrizedCandidates.top();
+        parametrizedCandidates.pop();
+        if (hasNodeOfKind(current.second, NodeKind::BOOL2)) {
+          for (int i = 0; i < bool2Expressions.size(); i++) {
+            F1XID instanceId = current.first;
+            instanceId.bool2 = i + 1; // 0 means disabled
+            Expression instance = current.second;
+            substituteNodeOfKind(instance, NodeKind::BOOL2, bool2Expressions[i]);
+            parametrizedCandidates.push(std::make_pair(instanceId, instance));
+          }
+        } else if (hasNodeOfKind(current.second, NodeKind::PARAMETER)) {
+          for (int i = 0; i <= paramBound; i++) {
+            F1XID instanceId = current.first;
+            instanceId.param = i;
+            Expression instance = current.second;
+            substituteNodeOfKind(instance, NodeKind::PARAMETER, makeIntegerConst(i));
+            ss.push_back(SearchSpaceElement{instanceId, sa, instance, metadata});
+          }
         } else {
-          paramBound = cfg.maxExpressionParameter;
+          ss.push_back(SearchSpaceElement{current.first, sa, current.second, metadata});
         }
-        for (int i = 0; i <= paramBound; i++) {
-          F1XID f1xid{0}; //FIXME: should assign all ids
-          f1xid.base = baseId;
-          f1xid.param = i;
-          Expression instance = candidate.first;
-          substituteAbstractNode(instance, NodeKind::PARAMETER, makeIntegerConst(i));
-          ss.push_back(SearchSpaceElement{f1xid, sa, instance, candidate.second});
-        }
-      } else {
-        F1XID f1xid{0}; //FIXME: should assign all ids
-        f1xid.base = baseId;
-        ss.push_back(SearchSpaceElement{f1xid, sa, candidate.first, candidate.second});
       }
-
+      
       baseId++;
     }
+
+    OS << "}" << "\n";
   }
 
   void partitioningFunctions(const vector<shared_ptr<SchemaApplication>> &schemaApplications,
@@ -708,12 +801,8 @@ namespace generator {
 
       OS << "current_panic = false;" << "\n";
 
-      OS << "param_value = id.param;" << "\n";
-
-      OS << "switch (id.base) {" << "\n";
-      generator::modificationsAndDispatch(sa, baseId, OS, searchSpace, cfg);
-      OS << "}" << "\n";
-
+      generator::candidateDispatch(sa, baseId, OS, searchSpace, cfg);
+      
       OS << "if (!output_initialized) {" << "\n"
          << "output_panic = current_panic;" << "\n"
          << "output_value = base_value;" << "\n"

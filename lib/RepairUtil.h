@@ -28,18 +28,18 @@
 
 
 struct F1XID {
-  ulong base; // base = 0 is reserved for special purpose
-  ulong int2;
-  ulong bool2;
-  ulong cond3;
-  ulong param;
+  ulong base;  // 0 is reserved for special purpose
+  ulong int2;  // 0 means disabled
+  ulong bool2; // 0 means disabled
+  ulong cond3; // 0 means disabled
+  ulong param; // this is expression parameter
 
   bool operator==(const F1XID &other) const { 
     return (base == other.base
-            && int2 == other.int2
-            && bool2 == other.bool2
-            && cond3 == other.cond3
-            && param == other.param);
+         && int2 == other.int2
+         && bool2 == other.bool2
+         && cond3 == other.cond3
+         && param == other.param);
   }
 };
 
@@ -153,7 +153,13 @@ Expression wrapWithExplicitBVCast(const Expression &expression);
 
 Expression wrapWithExplicitPtrCast(const Expression &expression);
 
+Expression applyBoolOperator(const Operator &op, 
+                             const Expression &left,
+                             const Expression &right);
+
 Expression makeNonNULLCheck(const Expression &pointer);
+
+Expression makeNULLCheck(const Expression &pointer);
 
 Expression makeNonZeroCheck(const Expression &expression);
 

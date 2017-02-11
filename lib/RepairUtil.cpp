@@ -298,22 +298,28 @@ Expression wrapWithExplicitPtrCast(const Expression &expression) {
                      {expression} };
 }
 
-Expression makeNonNULLCheck(const Expression &pointer) {
+Expression applyBoolOperator(const Operator &op, 
+                             const Expression &left,
+                             const Expression &right) {
   return Expression{ NodeKind::OPERATOR,
                      Type::BOOLEAN,
-                     Operator::NEQ,
+                     op,
                      DEFAULT_BOOLEAN_TYPE,
-                     operatorToString(Operator::NEQ),
-                     {pointer, NULL_NODE} };
+                     operatorToString(op),
+                     {left, right} };
+}
+
+
+Expression makeNonNULLCheck(const Expression &pointer) {
+  return applyBoolOperator(Operator::NEQ, pointer, NULL_NODE);
+}
+
+Expression makeNULLCheck(const Expression &pointer) {
+  return applyBoolOperator(Operator::EQ, pointer, NULL_NODE);
 }
 
 Expression makeNonZeroCheck(const Expression &expression) {
-  return Expression{ NodeKind::OPERATOR,
-                     Type::BOOLEAN,
-                     Operator::NEQ,
-                     DEFAULT_BOOLEAN_TYPE,
-                     operatorToString(Operator::NEQ),
-                     {expression, makeIntegerConst(0)} };
+  return applyBoolOperator(Operator::EQ, expression, makeIntegerConst(0));
 }
 
 std::string visualizeTransformationSchema(const TransformationSchema &schema) {
