@@ -613,6 +613,10 @@ namespace generator {
       Expression runtimeExpr = candidate.first;
       substituteWithRuntimeRepr(runtimeExpr, runtimeReprBySource);
 
+      if (isAbstractExpression(runtimeExpr) && ! cfg.synthesizeExpressions) {
+          continue;
+      }
+
       OS << "case " << baseId << ":" << "\n"
          << "base_value = " << runtimeSemantics(runtimeExpr, sizeByType, nullDerefByName) << ";" << "\n"
          << "break;" << "\n";
