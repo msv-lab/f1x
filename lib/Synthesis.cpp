@@ -210,17 +210,17 @@ namespace synthesis {
     }
   }
 
-  Expression makeArgSubs(const Expression &expr, const Expression &subs) {
+  Expression substituteArg(const Expression &expr, const Expression &subs) {
     return Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {subs}};
   }
 
 
-  Expression makeLeftSubs(const Expression &expr, const Expression &subs) {
+  Expression substituteLeftArg(const Expression &expr, const Expression &subs) {
     return Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {subs, expr.args[1]}};
   }
 
 
-  Expression makeRightSubs(const Expression &expr, const Expression &subs) {
+  Expression substituteRightArg(const Expression &expr, const Expression &subs) {
     return Expression{expr.kind, expr.type, expr.op, expr.rawType, expr.repr, {expr.args[0], subs}};
   }
 
@@ -232,7 +232,7 @@ namespace synthesis {
         result.push_back(makeNULLCheck(left));
         result.push_back(makeNonNULLCheck(left));
         for (auto &right : components) {
-          if (right.type == Type::POINTER) {
+          if (right.type == Type::POINTER && left.rawType == right.rawType) {
             result.push_back(applyBoolOperator(Operator::EQ, left, right));
             result.push_back(applyBoolOperator(Operator::NEQ, left, right));
           }
@@ -263,8 +263,8 @@ namespace synthesis {
     return result;
   }
 
-  vector<pair<Expression, PatchMetadata>> baseModifications(const Expression &expr,
-                                                            const vector<Expression> &components) {
+  vector<pair<Expression, PatchMetadata>> baseSubstitutions(const Expression &expr,
+                                                           const vector<Expression> &components) {
     vector<pair<Expression, PatchMetadata>> result;
     if (expr.type == Type::BOOLEAN) {
       //TODO: distance computation
@@ -332,9 +332,9 @@ namespace synthesis {
       }
 
       if (expr.args.size() == 1) {
-        vector<pair<Expression, PatchMetadata>> argMods = baseModifications(expr.args[0], components);
+        vector<pair<Expression, PatchMetadata>> argMods = baseSubstitutions(expr.args[0], components);
         for (auto &m : argMods) {
-          result.push_back(make_pair(makeArgSubs(expr, m.first), m.second));
+          result.push_back(make_pair(substituteArg(expr, m.first), m.second));
         }
         if (isSimplifiable(expr)) {
           Expression argCopy = expr.args[0];
@@ -345,14 +345,14 @@ namespace synthesis {
       } else if (expr.args.size() == 2) {
         vector<pair<Expression, PatchMetadata>> leftMods;
         if (expr.op != Operator::PTR_ADD && expr.op != Operator::PTR_SUB) {
-          leftMods = baseModifications(expr.args[0], components);
+          leftMods = baseSubstitutions(expr.args[0], components);
         }
         for (auto &m : leftMods) {
-          result.push_back(make_pair(makeLeftSubs(expr, m.first), m.second));
+          result.push_back(make_pair(substituteLeftArg(expr, m.first), m.second));
         }
-        vector<pair<Expression, PatchMetadata>> rightMods = baseModifications(expr.args[1], components);
+        vector<pair<Expression, PatchMetadata>> rightMods = baseSubstitutions(expr.args[1], components);
         for (auto &m : rightMods) {
-          result.push_back(make_pair(makeRightSubs(expr, m.first), m.second));
+          result.push_back(make_pair(substituteRightArg(expr, m.first), m.second));
         }
         if (isSimplifiable(expr)) {
           Expression leftCopy = expr.args[0];
@@ -366,6 +366,35 @@ namespace synthesis {
       }
     }
     return result;
+  }
+
+  vector<pair<Expression, PatchMetadata>> baseModifications(const TransformationSchema &schema,
+                                                            const Expression &expr,
+                                                            const vector<Expression> &components) {
+    vector<pair<Expression, PatchMetadata>> baseModifications;
+    auto subsMeta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+    switch (schema) {
+    case TransformationSchema::EXPRESSION:
+      baseModifications = baseSubstitutions(expr, components);
+      if (expr.type == Type::BOOLEAN) {
+        auto looseningMeta = PatchMetadata{ModificationKind::LOOSENING, ATOMIC_EDIT};
+        baseModifications.push_back(make_pair(applyBoolOperator(Operator::OR, expr, BOOL2_NODE), looseningMeta));
+        auto tighteningMeta = PatchMetadata{ModificationKind::TIGHTENING, ATOMIC_EDIT};
+        baseModifications.push_back(make_pair(applyBoolOperator(Operator::AND, expr, BOOL2_NODE), tighteningMeta));
+      }
+      break;
+    case TransformationSchema::IF_GUARD:
+      //TODO: compute distance
+      baseModifications.push_back(make_pair(BOOL2_NODE, subsMeta));
+      break;
+    case TransformationSchema::LOOSENING:
+    case TransformationSchema::TIGHTENING:
+      //TODO: compute distance
+      
+      baseModifications.push_back(make_pair(BOOL2_NODE, subsMeta)); //TODO: should be COND3
+      break;
+    }
+    return baseModifications;
   }
 
 }
@@ -688,8 +717,8 @@ namespace generator {
     OS << "}" << "\n";
 
     vector<pair<Expression, PatchMetadata>> baseModifications =
-      synthesis::baseModifications(sa->original, sa->components);
-  
+      synthesis::baseModifications(sa->schema, sa->original, sa->components);
+
     OS << "switch (id.base) {" << "\n";
 
     for (auto &candidate : baseModifications) {

@@ -199,11 +199,10 @@ namespace std {
 
 enum class TransformationSchema {
   EXPRESSION,      // modifying side-effect free expressions (conditions, RHS of assignments, return arguments)
+  IF_GUARD,        // inserting if-guards for break, continue, function calls
   LOOSENING,       // appending `|| expr` to conditions with side effects
   TIGHTENING,      // appending `&& expr` to conditions with side effects
-  IF_GUARD,        // inserting if-guards for break, continue, function calls
-  INITIALIZATION,  // inserting memory initialization
-  FUNCTION         // replacing invoked function with another one
+  INITIALIZATION  // inserting memory initialization
 };
 
 
