@@ -128,6 +128,7 @@ StatementMatcher RepairableExpression =
 
 StatementMatcher RepairableStatement =
   anyOf(allOf(unless(hasDescendant(expr(ignoringParenImpCasts(RepairableExpression)))),
+              unless(hasDescendant(stmt(compoundStmt()))), //NOTE: this is for stmtExpr, but it is unavailable in 3.8.1
               callExpr().bind(BOUND)),
         breakStmt().bind(BOUND),
         continueStmt().bind(BOUND));
