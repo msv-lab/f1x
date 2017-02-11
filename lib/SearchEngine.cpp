@@ -68,7 +68,7 @@ ulong SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace,
   for (; candIdx < searchSpace.size(); candIdx++) {
     stat.explorationCounter++;
     if ((100 * candIdx) / searchSpace.size() >= progress) {
-      BOOST_LOG_TRIVIAL(info) << "search space explored: " << progress << "%";
+      BOOST_LOG_TRIVIAL(info) << "exploration progress: " << progress << "%";
       progress += SHOW_PROGRESS_STEP;
     }
 

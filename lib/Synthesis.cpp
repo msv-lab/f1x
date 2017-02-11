@@ -128,9 +128,10 @@ namespace synthesis {
     case Operator::IMPLICIT_INT_CAST:
     case Operator::EXPLICIT_BV_CAST:
     case Operator::EXPLICIT_INT_CAST:
+    case Operator::EXPLICIT_PTR_CAST:
       return {};
     }
-    throw std::invalid_argument("unsupported operator");
+    throw std::invalid_argument("unsupported operator: " + operatorToString(op));
   }
 
   vector<Operator> mutatePointerOperator(const Operator &op) {
