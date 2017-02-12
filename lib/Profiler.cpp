@@ -27,6 +27,7 @@
 
 #include "RepairUtil.h"
 #include "Profiler.h"
+#include "SystemConfig.h"
 
 namespace fs = boost::filesystem;
 using std::string;
@@ -126,7 +127,7 @@ bool Profiler::compile() {
   }
   FromDirectory dir(workDir);
   std::stringstream cmd;
-  cmd << cfg.runtimeCompiler << " -O2 -fPIC"
+  cmd << F1X_RUNTIME_COMPILER << " -O2 -fPIC"
       << " " << PROFILE_SOURCE_FILE_NAME
       << " -shared"
       << " -std=c++11" // this is for initializers

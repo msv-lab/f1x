@@ -113,11 +113,14 @@ int main (int argc, char *argv[]) {
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
     ("output,o", po::value<string>()->value_name("PATH"), "output patch file or directory (default: SRC-TIME)")
-    ("all,a", "generate all patches")
+    ("all,a", "explore whole search space")
     ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
-    ("enable-dump", "dump search space")
+    ("dump-profile", po::value<string>()->value_name("PATH"), "save project profile")
+    ("load-profile", po::value<string>()->value_name("PATH"), "load project profile")
+    ("dump-space", po::value<string>()->value_name("PATH"), "output search space")
+    ("enable-exhaustive", "--all + output all patches")
     ("enable-cleanup", "remove intermediate files")
     ("enable-metadata", "output patch metadata")
     ("disable-analysis", "don't partition search space")
@@ -164,15 +167,16 @@ int main (int argc, char *argv[]) {
   initializeTrivialLogger(cfg.verbose);
 
   if (vm.count("all")) {
-    cfg.generateAll = true;
+    cfg.exploreAll = true;
+  }
+
+  if (vm.count("enable-exhaustive")) {
+    cfg.exploreAll = true;
+    cfg.exhaustive = true;
   }
 
   if (vm.count("enable-metadata")) {
     cfg.outputPatchMetadata = true;
-  }
-
-  if (vm.count("enable-dump")) {
-    cfg.dumpSearchSpace = true;
   }
 
   if (vm.count("enable-cleanup")) {
@@ -265,7 +269,7 @@ int main (int argc, char *argv[]) {
         dirname = e.string();
     std::stringstream name;
     name << dirname << timeRepr;
-    if (!cfg.generateAll)
+    if (!cfg.exploreAll)
       name << ".patch";
     output = fs::path(name.str());
   } else {
@@ -296,7 +300,7 @@ int main (int argc, char *argv[]) {
   }
 
   if (found) {
-    if (cfg.generateAll) {
+    if (cfg.exploreAll) {
       BOOST_LOG_TRIVIAL(info) << "patches successfully generated: " << output;
     } else {
       BOOST_LOG_TRIVIAL(info) << "patch successfully generated: " << output;

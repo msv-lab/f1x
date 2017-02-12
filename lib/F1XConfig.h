@@ -42,15 +42,15 @@ struct Config {
   bool verbose;
   bool validatePatches;
   bool synthesizeExpressions;
-  bool generateAll;
-  bool dumpSearchSpace;
+  bool exploreAll;
+  bool exhaustive;
+  bool dumpSearchSpace; /* UNSUPPORTED */
   bool outputPatchMetadata; /* UNSUPPORTED */
   bool removeIntermediateData;
   ulong maxConditionParameter;
   ulong maxExpressionParameter;
   Exploration exploration;
   TestPrioritization testPrioritization;
-  std::string runtimeCompiler;
 };
 
 
@@ -58,7 +58,8 @@ static Config DEFAULT_CONFIG = {
   false,   /* verbose */
   true,    /* validatePatches */
   true,    /* synthesizeExpressions */
-  false,   /* generateAll */
+  false,   /* exploreAll */
+  false,   /* exhaustive */
   false,   /* dumpSearchSpace */
   false,   /* outputPatchMetadata */
   false,   /* removeIntermediateData */
@@ -66,5 +67,4 @@ static Config DEFAULT_CONFIG = {
   1,       /* maxExpressionParameter */
   Exploration::SEMANTIC_PARTITIONING,
   TestPrioritization::MAX_FAILING,
-  "g++"    /* runtimeCompiler */
 };

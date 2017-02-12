@@ -30,6 +30,7 @@
 
 #include "RepairUtil.h"
 #include "Runtime.h"
+#include "SystemConfig.h"
 
 namespace fs = boost::filesystem;
 using std::vector;
@@ -89,7 +90,7 @@ bool Runtime::compile() {
   BOOST_LOG_TRIVIAL(info) << "compiling meta program runtime";
   FromDirectory dir(workDir);
   std::stringstream cmd;
-  cmd << cfg.runtimeCompiler << " -O2 -fPIC"
+  cmd << F1X_RUNTIME_COMPILER << " -O2 -fPIC"
       << " " << RUNTIME_SOURCE_FILE_NAME
       << " -shared"
       << " -lrt" // this is for shared memory

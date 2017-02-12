@@ -246,12 +246,18 @@ bool repair(Project &project,
 
   ulong last = 0;
   ulong patchCount = 0;
+  unordered_set<ulong> fixLocations;
 
   while (last < searchSpace.size()) {
     last = engine.findNext(searchSpace, last);
 
     if (last < searchSpace.size()) {
-
+      if (! cfg.exhaustive && fixLocations.count(searchSpace[last].app->appId)) {
+        last++;
+        patchCount++;
+        continue;
+      }
+      
       fs::path relpath = project.getFiles()[searchSpace[last].app->location.fileId].relpath;
       BOOST_LOG_TRIVIAL(info) << "plausible patch: " << visualizeChange(searchSpace[last]) 
                               << " in " << relpath.string() << ":" << searchSpace[last].app->location.beginLine;;
@@ -282,7 +288,7 @@ bool repair(Project &project,
           }
         }
 
-        if (cfg.generateAll) {
+        if (cfg.exploreAll) {
           project.restoreInstrumentedFiles();
           project.buildWithRuntime(runtime.getHeader());
         }
@@ -296,7 +302,7 @@ bool repair(Project &project,
       }
 
       fs::path patchFile = patchOutput;
-      if (cfg.generateAll) {
+      if (cfg.exploreAll) {
         if (! fs::exists(patchFile)) {
           fs::create_directory(patchFile);
         }
@@ -304,10 +310,11 @@ bool repair(Project &project,
       }
 
       patchCount++;
+      fixLocations.insert(searchSpace[last].app->appId);
 
       project.computeDiff(project.getFiles()[0], patchFile);
       
-      if (!cfg.generateAll)
+      if (!cfg.exploreAll)
         break;
     }
 
@@ -319,6 +326,8 @@ bool repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << stat.explorationCounter;
   BOOST_LOG_TRIVIAL(info) << "tests executed: " << stat.executionCounter;
   BOOST_LOG_TRIVIAL(info) << "number of timeouts: " << stat.timeoutCounter;
+  BOOST_LOG_TRIVIAL(info) << "found plausible patches: " << patchCount;
+  BOOST_LOG_TRIVIAL(info) << "found fix locations: " << fixLocations.size();
 
   return patchCount > 0;
 }

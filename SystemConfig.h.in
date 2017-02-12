@@ -23,3 +23,5 @@ const ulong F1X_VERSION_MINOR = @F1X_VERSION_MINOR@;
 const ulong F1X_VERSION_PATCH = @F1X_VERSION_PATCH@;
 
 const std::string F1X_CLANG_INCLUDE = "@F1X_CLANG_INCLUDE@";
+
+const std::string F1X_RUNTIME_COMPILER = "g++";
