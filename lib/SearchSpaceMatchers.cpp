@@ -75,6 +75,14 @@ StatementMatcher RepairableNode =
 StatementMatcher NonRepairableNode =
   unless(RepairableNode);
 
+/*
+  Matches 
+  - integer and pointer variables
+  - literals
+  - arrays subscripts
+  - memeber expressions
+  - supported binary and pointer operators
+ */
 StatementMatcher BaseRepairableExpression =
   allOf(RepairableNode,
         unless(hasDescendant(expr(ignoringParenImpCasts(NonRepairableNode)))));
@@ -95,12 +103,18 @@ auto hasSplittableCondition =
   anyOf(hasCondition(ignoringParenImpCasts(BaseRepairableExpression)),
         eachOf(hasCondition(Splittable), hasCondition(forEachDescendant(Splittable))));
 
+/*
+  Matches condition (if, while, for) a part of which is BaseRepairableExpression
+ */
 StatementMatcher RepairableCondition = 
   anyOf(ifStmt(hasSplittableCondition),
         whileStmt(hasSplittableCondition),
         forStmt(hasSplittableCondition));
 
-// FIXME: why to restrict to variables, members and arrays?
+/*
+  Matches RHS of assignments and compound assignments if it is BaseRepairableExpression
+  FIXME: why to restrict to variables, members and arrays?
+ */
 StatementMatcher RepairableAssignment =
   binaryOperator(anyOf(hasOperatorName("="),
                        hasOperatorName("+="),
@@ -121,14 +135,14 @@ StatementMatcher RepairableAssignment =
 StatementMatcher RepairableReturn =
   returnStmt(has(expr(ignoringParenImpCasts(BaseRepairableExpression))));
 
-StatementMatcher RepairableExpression =
+StatementMatcher ExpressionSchemaMatcher =
   anyOf(RepairableCondition,
         RepairableAssignment,
         RepairableReturn);
 
-StatementMatcher RepairableStatement =
-  anyOf(allOf(unless(hasDescendant(expr(ignoringParenImpCasts(RepairableExpression)))),
-              unless(hasDescendant(stmt(compoundStmt()))), //NOTE: this is for stmtExpr, but it is unavailable in 3.8.1
+StatementMatcher IfGuardSchemaMatcher =
+  anyOf(allOf(unless(hasDescendant(expr(ignoringParenImpCasts(ExpressionSchemaMatcher)))),
+              unless(hasDescendant(stmt(compoundStmt()))), //NOTE: should be stmtExpr, but it is unavailable in Clang 3.8.1
               callExpr().bind(BOUND)),
         breakStmt().bind(BOUND),
         continueStmt().bind(BOUND));

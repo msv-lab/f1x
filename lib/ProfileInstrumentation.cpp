@@ -37,7 +37,7 @@ using namespace ast_matchers;
 static bool alreadyTransformed = false;
 static std::unordered_set<Location> alreadyMatched;
 
-bool ProfileAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
+bool ProfileInstrumentationAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
   if (alreadyTransformed) {
     return false;
   }
@@ -51,7 +51,7 @@ bool ProfileAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filena
   return true;
 }
 
-void ProfileAction::EndSourceFileAction() {
+void ProfileInstrumentationAction::EndSourceFileAction() {
   FileID ID = TheRewriter.getSourceMgr().getMainFileID();
   if (INPLACE_MODIFICATION) {
     overwriteMainChangedFile(TheRewriter);
@@ -62,25 +62,27 @@ void ProfileAction::EndSourceFileAction() {
   }
 }
 
-std::unique_ptr<ASTConsumer> ProfileAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
+std::unique_ptr<ASTConsumer> ProfileInstrumentationAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
     TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-    return llvm::make_unique<ProfileASTConsumer>(TheRewriter);
+    return llvm::make_unique<ProfileInstrumentationASTConsumer>(TheRewriter);
 }
 
 
-ProfileASTConsumer::ProfileASTConsumer(Rewriter &R) : ExpressionHandler(R), StatementHandler(R) {
-  Matcher.addMatcher(RepairableExpression, &ExpressionHandler);    
-  Matcher.addMatcher(RepairableStatement, &StatementHandler);
+ProfileInstrumentationASTConsumer::ProfileInstrumentationASTConsumer(Rewriter &R) :
+  ExpressionSchemaHandler(R),
+  IfGuardSchemaHandler(R) {
+  Matcher.addMatcher(ExpressionSchemaMatcher, &ExpressionSchemaHandler);    
+  Matcher.addMatcher(IfGuardSchemaMatcher, &IfGuardSchemaHandler);
 }
 
-void ProfileASTConsumer::HandleTranslationUnit(ASTContext &Context) {
+void ProfileInstrumentationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
   Matcher.matchAST(Context);
 }
 
 
-ProfileStatementHandler::ProfileStatementHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
+IfGuardSchemaProfileHandler::IfGuardSchemaProfileHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
-void ProfileStatementHandler::run(const MatchFinder::MatchResult &Result) {
+void IfGuardSchemaProfileHandler::run(const MatchFinder::MatchResult &Result) {
   if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {
       SourceManager &srcMgr = Rewrite.getSourceMgr();
       
@@ -125,9 +127,9 @@ void ProfileStatementHandler::run(const MatchFinder::MatchResult &Result) {
 }
 
 
-ProfileExpressionHandler::ProfileExpressionHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
+ExpressionSchemaProfileHandler::ExpressionSchemaProfileHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
-void ProfileExpressionHandler::run(const MatchFinder::MatchResult &Result) {
+void ExpressionSchemaProfileHandler::run(const MatchFinder::MatchResult &Result) {
   if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>(BOUND)) {
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();

@@ -35,7 +35,7 @@ using namespace ast_matchers;
 static bool alreadyTransformed = false;
 static std::unordered_set<Location> alreadyMatched;
 
-void ApplyPatchAction::EndSourceFileAction() {
+void PatchApplicationAction::EndSourceFileAction() {
   if (alreadyTransformed) {
     return;
   }
@@ -51,25 +51,27 @@ void ApplyPatchAction::EndSourceFileAction() {
   }
 }
 
-std::unique_ptr<ASTConsumer> ApplyPatchAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
+std::unique_ptr<ASTConsumer> PatchApplicationAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
     TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-    return llvm::make_unique<ApplicationASTConsumer>(TheRewriter);
+    return llvm::make_unique<PatchApplicationASTConsumer>(TheRewriter);
 }
 
 
-ApplicationASTConsumer::ApplicationASTConsumer(Rewriter &R) : ExpressionHandler(R), StatementHandler(R) {
-  Matcher.addMatcher(RepairableExpression, &ExpressionHandler);    
-  Matcher.addMatcher(RepairableStatement, &StatementHandler);
+PatchApplicationASTConsumer::PatchApplicationASTConsumer(Rewriter &R) : 
+  ExpressionSchemaHandler(R),
+  IfGuardSchemaHandler(R) {
+  Matcher.addMatcher(ExpressionSchemaMatcher, &ExpressionSchemaHandler);    
+  Matcher.addMatcher(IfGuardSchemaMatcher, &IfGuardSchemaHandler);
 }
 
-void ApplicationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
+void PatchApplicationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
   Matcher.matchAST(Context);
 }
 
 
-ApplicationStatementHandler::ApplicationStatementHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
+IfGuardPatchApplicationHandler::IfGuardPatchApplicationHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
-void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
+void IfGuardPatchApplicationHandler::run(const MatchFinder::MatchResult &Result) {
   if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {
       SourceManager &srcMgr = Rewrite.getSourceMgr();
 
@@ -130,9 +132,9 @@ void ApplicationStatementHandler::run(const MatchFinder::MatchResult &Result) {
 }
 
 
-ApplicationExpressionHandler::ApplicationExpressionHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
+ExpressionPatchApplicationHandler::ExpressionPatchApplicationHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
-void ApplicationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
+void ExpressionPatchApplicationHandler::run(const MatchFinder::MatchResult &Result) {
   if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>(BOUND)) {
       SourceManager &srcMgr = Rewrite.getSourceMgr();
 

@@ -32,9 +32,9 @@ using namespace clang;
 using namespace ast_matchers;
 
 
-class ProfileStatementHandler : public MatchFinder::MatchCallback {
+class IfGuardSchemaProfileHandler : public MatchFinder::MatchCallback {
 public:
-  ProfileStatementHandler(Rewriter &Rewrite);
+  IfGuardSchemaProfileHandler(Rewriter &Rewrite);
 
   virtual void run(const MatchFinder::MatchResult &Result);
 
@@ -43,9 +43,9 @@ private:
 };
 
 
-class ProfileExpressionHandler : public MatchFinder::MatchCallback {
+class ExpressionSchemaProfileHandler : public MatchFinder::MatchCallback {
 public:
-  ProfileExpressionHandler(Rewriter &Rewrite);
+  ExpressionSchemaProfileHandler(Rewriter &Rewrite);
 
   virtual void run(const MatchFinder::MatchResult &Result);
 
@@ -54,22 +54,22 @@ private:
 };
 
 
-class ProfileASTConsumer : public ASTConsumer {
+class ProfileInstrumentationASTConsumer : public ASTConsumer {
 public:
-  ProfileASTConsumer(Rewriter &R);
+  ProfileInstrumentationASTConsumer(Rewriter &R);
 
   void HandleTranslationUnit(ASTContext &Context) override;
 
 private:
-  ProfileExpressionHandler ExpressionHandler;
-  ProfileStatementHandler StatementHandler;
+  ExpressionSchemaProfileHandler ExpressionSchemaHandler;
+  IfGuardSchemaProfileHandler IfGuardSchemaHandler;
   MatchFinder Matcher;
 };
 
 
-class ProfileAction : public ASTFrontendAction {
+class ProfileInstrumentationAction : public ASTFrontendAction {
 public:
-  ProfileAction(){}
+  ProfileInstrumentationAction(){}
 
   bool BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) override;
   void EndSourceFileAction() override;

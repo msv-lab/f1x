@@ -30,9 +30,9 @@ using namespace clang;
 using namespace ast_matchers;
 
 
-class ApplicationStatementHandler : public MatchFinder::MatchCallback {
+class IfGuardPatchApplicationHandler : public MatchFinder::MatchCallback {
 public:
-  ApplicationStatementHandler(Rewriter &Rewrite);
+  IfGuardPatchApplicationHandler(Rewriter &Rewrite);
 
   virtual void run(const MatchFinder::MatchResult &Result);
 
@@ -41,9 +41,9 @@ private:
 };
 
 
-class ApplicationExpressionHandler : public MatchFinder::MatchCallback {
+class ExpressionPatchApplicationHandler : public MatchFinder::MatchCallback {
 public:
-  ApplicationExpressionHandler(Rewriter &Rewrite);
+  ExpressionPatchApplicationHandler(Rewriter &Rewrite);
 
   virtual void run(const MatchFinder::MatchResult &Result);
 
@@ -52,22 +52,22 @@ private:
 };
 
 
-class ApplicationASTConsumer : public ASTConsumer {
+class PatchApplicationASTConsumer : public ASTConsumer {
 public:
-  ApplicationASTConsumer(Rewriter &R);
+  PatchApplicationASTConsumer(Rewriter &R);
 
   void HandleTranslationUnit(ASTContext &Context) override;
 
 private:
-  ApplicationExpressionHandler ExpressionHandler;
-  ApplicationStatementHandler StatementHandler;
+  ExpressionPatchApplicationHandler ExpressionSchemaHandler;
+  IfGuardPatchApplicationHandler IfGuardSchemaHandler;
   MatchFinder Matcher;
 };
 
 
-class ApplyPatchAction : public ASTFrontendAction {
+class PatchApplicationAction : public ASTFrontendAction {
 public:
-  ApplyPatchAction() {}
+  PatchApplicationAction() {}
 
   void EndSourceFileAction() override;
 

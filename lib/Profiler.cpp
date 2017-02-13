@@ -212,4 +212,3 @@ fs::path Profiler::getProfile() {
 
   return profileFile;
 }
- 

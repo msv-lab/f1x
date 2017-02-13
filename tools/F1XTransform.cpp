@@ -103,11 +103,11 @@ int main(int argc, const char **argv) {
   globalPatch = Patch;
 
   if (Apply)
-    FrontendFactory = newFrontendActionFactory<ApplyPatchAction>();
+    FrontendFactory = newFrontendActionFactory<PatchApplicationAction>();
   else if(Profile)
-    FrontendFactory = newFrontendActionFactory<ProfileAction>();
+    FrontendFactory = newFrontendActionFactory<ProfileInstrumentationAction>();
   else if (Instrument != "")
-    FrontendFactory = newFrontendActionFactory<InstrumentRepairableAction>();
+    FrontendFactory = newFrontendActionFactory<SchemaApplicationAction>();
   else {
     errs() << "error: specify -profile -instrument FILE or -apply options\n";
     return 1;

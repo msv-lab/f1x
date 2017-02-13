@@ -24,33 +24,12 @@
 
 
 /*
-  Matches 
-  - integer and pointer variables
-  - literals
-  - arrays subscripts
-  - memeber expressions
-  - supported binary and pointer operators
+  Matcher for EXPRESSION transformation schema
  */
-extern clang::ast_matchers::StatementMatcher BaseRepairableExpression;
+extern clang::ast_matchers::StatementMatcher ExpressionSchemaMatcher;
 
 /*
-  Matches condition (if, while, for) a part of which is BaseRepairableExpression
+  Matcher for IF_GUARD transformation schema
+  NOTE: need to manually check if is it top level statement
  */
-extern clang::ast_matchers::StatementMatcher RepairableCondition;
-
-/*
-  Matches RHS of assignments and compound assignments if it is BaseRepairableExpression
-  Note: need to manually check if is it top level statement
- */
-extern clang::ast_matchers::StatementMatcher RepairableAssignment;
-
-/*
-  BaseRepairableExpression in relevant context
- */
-extern clang::ast_matchers::StatementMatcher RepairableExpression;
-
-/*
-  Matches call, break and continue statements
-  Note: need to manually check if is it top level statement
- */
-extern clang::ast_matchers::StatementMatcher RepairableStatement;
+extern clang::ast_matchers::StatementMatcher IfGuardSchemaMatcher;

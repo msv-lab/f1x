@@ -72,7 +72,7 @@ bool isInterestingLocation(ulong fileId, ulong beginLine, ulong beginColumn, ulo
 static bool alreadyTransformed = false;
 static std::unordered_set<Location> alreadyMatched;
 
-bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
+bool SchemaApplicationAction::BeginSourceFileAction(CompilerInstance &CI, StringRef Filename) {
   if (alreadyTransformed) {
     return false;
   }
@@ -83,7 +83,7 @@ bool InstrumentRepairableAction::BeginSourceFileAction(CompilerInstance &CI, Str
   return true;
 }
 
-void InstrumentRepairableAction::EndSourceFileAction() {
+void SchemaApplicationAction::EndSourceFileAction() {
   FileID ID = TheRewriter.getSourceMgr().getMainFileID();
   if (INPLACE_MODIFICATION) {
     overwriteMainChangedFile(TheRewriter);
@@ -99,25 +99,25 @@ void InstrumentRepairableAction::EndSourceFileAction() {
   schemaApplications.Accept(writer);
 }
 
-std::unique_ptr<ASTConsumer> InstrumentRepairableAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
+std::unique_ptr<ASTConsumer> SchemaApplicationAction::CreateASTConsumer(CompilerInstance &CI, StringRef file) {
     TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-    return llvm::make_unique<InstrumentationASTConsumer>(TheRewriter);
+    return llvm::make_unique<SchemaApplicationASTConsumer>(TheRewriter);
 }
 
 
-InstrumentationASTConsumer::InstrumentationASTConsumer(Rewriter &R) : ExpressionHandler(R), StatementHandler(R) {
-  Matcher.addMatcher(RepairableExpression, &ExpressionHandler);    
-  Matcher.addMatcher(RepairableStatement, &StatementHandler);
+SchemaApplicationASTConsumer::SchemaApplicationASTConsumer(Rewriter &R) : ExpressionSchemaHandler(R), IfGuardSchemaHandler(R) {
+  Matcher.addMatcher(ExpressionSchemaMatcher, &ExpressionSchemaHandler);    
+  Matcher.addMatcher(IfGuardSchemaMatcher, &IfGuardSchemaHandler);
 }
 
-void InstrumentationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
+void SchemaApplicationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
   Matcher.matchAST(Context);
 }
 
 
-InstrumentationStatementHandler::InstrumentationStatementHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
+IfGuardSchemaApplicationHandler::IfGuardSchemaApplicationHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
-void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result) {
+void IfGuardSchemaApplicationHandler::run(const MatchFinder::MatchResult &Result) {
   if (const Stmt *stmt = Result.Nodes.getNodeAs<clang::Stmt>(BOUND)) {
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();
@@ -210,9 +210,9 @@ void InstrumentationStatementHandler::run(const MatchFinder::MatchResult &Result
 }
 
 
-InstrumentationExpressionHandler::InstrumentationExpressionHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
+ExpressionSchemaApplicationHandler::ExpressionSchemaApplicationHandler(Rewriter &Rewrite) : Rewrite(Rewrite) {}
 
-void InstrumentationExpressionHandler::run(const MatchFinder::MatchResult &Result) {
+void ExpressionSchemaApplicationHandler::run(const MatchFinder::MatchResult &Result) {
   if (const Expr *expr = Result.Nodes.getNodeAs<clang::Expr>(BOUND)) {
     SourceManager &srcMgr = Rewrite.getSourceMgr();
     const LangOptions &langOpts = Rewrite.getLangOpts();
