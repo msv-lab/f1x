@@ -71,7 +71,7 @@ const Expression COND3_NODE = Expression{ NodeKind::COND3,
                                           {} };
 
 /*
- This module is split into three namespaces:
+ This module is split into two namespaces:
  - synthesis for everything specific to expression synthesis 
  - generator for runtime code generation
  */
@@ -263,12 +263,16 @@ namespace synthesis {
     return result;
   }
 
+  ulong substitutionDistance(const Expression &from, const Expression &to) {
+    return expressionDepth(from) + expressionDepth(to) - 1;
+  }
+
   vector<pair<Expression, PatchMetadata>> baseSubstitutions(const Expression &expr,
                                                            const vector<Expression> &components) {
     vector<pair<Expression, PatchMetadata>> result;
     if (expr.type == Type::BOOLEAN) {
       //TODO: distance computation
-      auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+      auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, substitutionDistance(expr, BOOL2_NODE)};
       result.push_back(make_pair(BOOL2_NODE, meta));
     }
     if (expr.args.size() == 0) {
@@ -282,15 +286,6 @@ namespace synthesis {
           }
           auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
           result.push_back(make_pair(PARAMETER_NODE, meta));
-        } else if (expr.type == Type::BOOLEAN) {
-          if (expr.repr == TRUE_NODE.repr) {
-            auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
-            result.push_back(make_pair(FALSE_NODE, meta));
-          }
-          if (expr.repr == FALSE_NODE.repr) {
-            auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
-            result.push_back(make_pair(TRUE_NODE, meta));
-          }
         }
       } else if (expr.kind == NodeKind::VARIABLE ||
                  expr.kind == NodeKind::DEREFERENCE) {
@@ -301,7 +296,6 @@ namespace synthesis {
               result.push_back(make_pair(c, meta));
             }
           }
-          //TODO: distance computation
           auto meta = PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT};
           result.push_back(make_pair(PARAMETER_NODE, meta));
         }
@@ -358,8 +352,8 @@ namespace synthesis {
           Expression leftCopy = expr.args[0];
           Expression rightCopy = expr.args[1];
           //TODO: distance computation
-          auto leftMeta = PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT};
-          auto rightMeta = PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT};
+          auto leftMeta = PatchMetadata{ModificationKind::SIMPLIFICATION, expressionDepth(rightCopy)};
+          auto rightMeta = PatchMetadata{ModificationKind::SIMPLIFICATION, expressionDepth(leftCopy)};
           result.push_back(make_pair(leftCopy, leftMeta));
           result.push_back(make_pair(rightCopy, rightMeta));
         }
@@ -372,26 +366,34 @@ namespace synthesis {
                                                             const Expression &expr,
                                                             const vector<Expression> &components) {
     vector<pair<Expression, PatchMetadata>> baseModifications;
-    auto subsMeta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+    auto bool2Meta = PatchMetadata{ModificationKind::SUBSTITUTION, expressionDepth(BOOL2_NODE)};
     switch (schema) {
     case TransformationSchema::EXPRESSION:
       baseModifications = baseSubstitutions(expr, components);
       if (expr.type == Type::BOOLEAN) {
-        auto looseningMeta = PatchMetadata{ModificationKind::LOOSENING, ATOMIC_EDIT};
+        auto looseningMeta = PatchMetadata{ModificationKind::LOOSENING, expressionDepth(BOOL2_NODE)};
         baseModifications.push_back(make_pair(applyBoolOperator(Operator::OR, expr, BOOL2_NODE), looseningMeta));
-        auto tighteningMeta = PatchMetadata{ModificationKind::TIGHTENING, ATOMIC_EDIT};
+        auto tighteningMeta = PatchMetadata{ModificationKind::TIGHTENING, expressionDepth(BOOL2_NODE)};
         baseModifications.push_back(make_pair(applyBoolOperator(Operator::AND, expr, BOOL2_NODE), tighteningMeta));
       }
       break;
     case TransformationSchema::IF_GUARD:
+      if (expr.repr == TRUE_NODE.repr) {
+        auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+        baseModifications.push_back(make_pair(FALSE_NODE, meta));
+      }
+      if (expr.repr == FALSE_NODE.repr) {
+        auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+        baseModifications.push_back(make_pair(TRUE_NODE, meta));
+      }
       //TODO: compute distance
-      baseModifications.push_back(make_pair(BOOL2_NODE, subsMeta));
+      baseModifications.push_back(make_pair(BOOL2_NODE, bool2Meta));
       break;
     case TransformationSchema::LOOSENING:
     case TransformationSchema::TIGHTENING:
       //TODO: compute distance
       
-      baseModifications.push_back(make_pair(BOOL2_NODE, subsMeta)); //TODO: should be COND3
+      baseModifications.push_back(make_pair(BOOL2_NODE, bool2Meta)); //TODO: should be COND3
       break;
     }
     return baseModifications;

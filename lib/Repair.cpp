@@ -51,33 +51,41 @@ const string SCHEMA_APPLICATIONS_FILE_NAME = "applications.json";
 
 double simplicityScore(const SearchSpaceElement &el) {
   double result = (double) el.meta.distance;
-  const double GOOD = 0.3;
-  const double OK = 0.2;
-  const double BAD = 0.1;
-  switch (el.meta.kind) {
-  case ModificationKind::OPERATOR:
-    result -= OK;
+  const double GOOD = 0.2;
+  const double OK = 0.1;
+  switch (el.app->schema) {
+  case TransformationSchema::EXPRESSION:
+    switch (el.meta.kind) {
+    case ModificationKind::OPERATOR:
+      result -= GOOD;
+      break;
+    case ModificationKind::SWAPING:
+      result -= GOOD;
+      break;
+    case ModificationKind::SIMPLIFICATION:
+      result -= GOOD;
+      break;
+    case ModificationKind::GENERALIZATION:
+      result -= GOOD;
+      break;
+    case ModificationKind::SUBSTITUTION:
+      result -= GOOD;
+      break;
+    case ModificationKind::LOOSENING:
+      result -= OK;
+      break;
+    case ModificationKind::TIGHTENING:
+      result -= OK;
+      break;
+    default:
+      break; // everything else is bad
+    }
     break;
-  case ModificationKind::SWAPING:
+  case TransformationSchema::IF_GUARD:
     result -= GOOD;
-    break;
-  case ModificationKind::SIMPLIFICATION:
-    result -= GOOD;
-    break;
-  case ModificationKind::GENERALIZATION:
-    result -= GOOD;
-    break;
-  case ModificationKind::SUBSTITUTION:
-    result -= BAD;
-    break;
-  case ModificationKind::LOOSENING:
-    result -= BAD;
-    break;
-  case ModificationKind::TIGHTENING:
-    result -= BAD;
     break;
   default:
-    break; // everything else is very bad
+    break;
   }
   return result;
 }
@@ -170,6 +178,11 @@ bool repair(Project &project,
     if (status == TestStatus::TIMEOUT)
       BOOST_LOG_TRIVIAL(warning) << "test " << test << " timeout during profiling";
     profiler.mergeTrace(i, (status == TestStatus::PASS));
+  }
+
+  if (numNegative == 0) {
+    BOOST_LOG_TRIVIAL(error) << "no negative tests";
+    return false;
   }
 
   BOOST_LOG_TRIVIAL(info) << "number of positive tests: " << numPositive;

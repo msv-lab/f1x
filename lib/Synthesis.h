@@ -36,6 +36,12 @@
   narrowing/tightening is done with COND3
 
   Note that the synthesizer accepts and produces only well-typed expressions
+
+  Distance computation:
+  replace operator = 1
+  simplify (remove subtree A) = depth(A)
+  substitute A -> B = depth(A) + depth(B) - 1
+  append || A (&& A) = depth(A) 
  */
 
 std::vector<SearchSpaceElement>

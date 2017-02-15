@@ -33,3 +33,9 @@ extern clang::ast_matchers::StatementMatcher ExpressionSchemaMatcher;
   NOTE: need to manually check if is it top level statement
  */
 extern clang::ast_matchers::StatementMatcher IfGuardSchemaMatcher;
+
+
+/*
+  Matcher for REFINEMENT transformation schema. Matches conditions not matched by ExpressionSchemaMatcher
+ */
+extern clang::ast_matchers::StatementMatcher RefinementSchemaMatcher;

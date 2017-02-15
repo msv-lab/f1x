@@ -146,3 +146,13 @@ StatementMatcher IfGuardSchemaMatcher =
               callExpr().bind(BOUND)),
         breakStmt().bind(BOUND),
         continueStmt().bind(BOUND));
+
+//TODO: support other kinds of conditions
+StatementMatcher RefinementSchemaMatcher =
+  anyOf(ifStmt(allOf(unless(hasSplittableCondition),
+                     hasCondition(expr().bind(BOUND)))),
+        whileStmt(allOf(unless(hasSplittableCondition),
+                        hasCondition(expr().bind(BOUND)))),
+        forStmt(allOf(unless(hasSplittableCondition),
+                      hasCondition(expr().bind(BOUND)))));
+  

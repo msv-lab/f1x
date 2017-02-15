@@ -202,7 +202,7 @@ enum class TransformationSchema {
   IF_GUARD,        // inserting if-guards for break, continue, function calls
   LOOSENING,       // appending `|| expr` to conditions with side effects
   TIGHTENING,      // appending `&& expr` to conditions with side effects
-  INITIALIZATION  // inserting memory initialization
+  INITIALIZATION   // inserting memory initialization
 };
 
 
