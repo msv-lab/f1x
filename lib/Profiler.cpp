@@ -127,7 +127,9 @@ bool Profiler::compile() {
   }
   FromDirectory dir(workDir);
   std::stringstream cmd;
-  cmd << F1X_RUNTIME_COMPILER << " -O2 -fPIC"
+  cmd << F1X_RUNTIME_COMPILER 
+      << " " << F1X_RUNTIME_OPTIMIZATION
+      << " -fPIC"
       << " " << PROFILE_SOURCE_FILE_NAME
       << " -shared"
       << " -std=c++11" // this is for initializers

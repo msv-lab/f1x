@@ -185,10 +185,13 @@ bool repair(Project &project,
     return false;
   }
 
-  BOOST_LOG_TRIVIAL(info) << "number of positive tests: " << numPositive;
-  BOOST_LOG_TRIVIAL(info) << "number of negative tests: " << numNegative;
+  BOOST_LOG_TRIVIAL(info) << "positive tests: " << numPositive;
+  BOOST_LOG_TRIVIAL(info) << "negative tests: " << numNegative;
   
   fs::path profile = profiler.getProfile();
+
+  auto relatedTestIndexes = profiler.getRelatedTestIndexes();
+  BOOST_LOG_TRIVIAL(info) << "locations: " << relatedTestIndexes.size();
   
   fs::path saFile = workDir / SCHEMA_APPLICATIONS_FILE_NAME;
 
@@ -227,6 +230,8 @@ bool repair(Project &project,
     searchSpace = generateSearchSpace(sas, workDir, os, oh, cfg);
   }
 
+  BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();
+
   bool runtimeSuccess = runtime.compile();
 
   if (! runtimeSuccess) {
@@ -250,11 +255,6 @@ bool repair(Project &project,
     dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
   }
 
-  auto relatedTestIndexes = profiler.getRelatedTestIndexes();
-
-  BOOST_LOG_TRIVIAL(info) << "number of locations: " << relatedTestIndexes.size();
-  BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();
-  
   SearchEngine engine(tests, tester, runtime, cfg, getGroupable(searchSpace), relatedTestIndexes);
 
   ulong last = 0;
@@ -338,7 +338,7 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << stat.explorationCounter;
   BOOST_LOG_TRIVIAL(info) << "tests executed: " << stat.executionCounter;
-  BOOST_LOG_TRIVIAL(info) << "number of timeouts: " << stat.timeoutCounter;
+  BOOST_LOG_TRIVIAL(info) << "timeouts: " << stat.timeoutCounter;
   BOOST_LOG_TRIVIAL(info) << "plausible patches: " << patchCount;
   BOOST_LOG_TRIVIAL(info) << "fix locations: " << fixLocations.size();
 

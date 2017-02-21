@@ -269,18 +269,19 @@ void Project::computeDiff(const ProjectFile &file,
 bool Project::instrumentFile(const ProjectFile &file,
                              const boost::filesystem::path &outputFile,
                              const boost::filesystem::path *profile) {
-  BOOST_LOG_TRIVIAL(info) << "instrumenting source files";
-  
   ulong id = getFileId(file);
 
   FromDirectory dir(root);
   std::stringstream cmd;
   cmd << "f1x-transform " << file.relpath.string();
   
-  if(! profile)
+  if(! profile) {
+    BOOST_LOG_TRIVIAL(info) << "instrumenting source files for profiling";
     cmd << " --profile";
-  else
+  } else {
+    BOOST_LOG_TRIVIAL(info) << "applying transfomation schemas to source files";
     cmd << " --instrument " << *profile;
+  }
 
   cmd << " --from-line " << file.fromLine
       << " --to-line " << file.toLine

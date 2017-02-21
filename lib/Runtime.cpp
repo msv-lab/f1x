@@ -90,7 +90,9 @@ bool Runtime::compile() {
   BOOST_LOG_TRIVIAL(info) << "compiling meta program runtime";
   FromDirectory dir(workDir);
   std::stringstream cmd;
-  cmd << F1X_RUNTIME_COMPILER << " -O2 -fPIC"
+  cmd << F1X_RUNTIME_COMPILER 
+      << " " << F1X_RUNTIME_OPTIMIZATION
+      << " -fPIC"
       << " " << RUNTIME_SOURCE_FILE_NAME
       << " -shared"
       << " -lrt" // this is for shared memory
