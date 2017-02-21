@@ -165,6 +165,7 @@ bool repair(Project &project,
   project.restoreOriginalFiles();
 
   BOOST_LOG_TRIVIAL(info) << "profiling project";
+  vector<string> negativeTests;
   ulong numPositive = 0;
   ulong numNegative = 0;
   for (int i = 0; i < tests.size(); i++) {
@@ -173,20 +174,33 @@ bool repair(Project &project,
     TestStatus status = tester.execute(test);
     if (status == TestStatus::PASS)
       numPositive++;
-    else
+    else {
       numNegative++;
+      negativeTests.push_back(test);
+    }
     if (status == TestStatus::TIMEOUT)
       BOOST_LOG_TRIVIAL(warning) << "test " << test << " timeout during profiling";
     profiler.mergeTrace(i, (status == TestStatus::PASS));
   }
-
   if (numNegative == 0) {
     BOOST_LOG_TRIVIAL(error) << "no negative tests";
     return false;
   }
 
   BOOST_LOG_TRIVIAL(info) << "positive tests: " << numPositive;
-  BOOST_LOG_TRIVIAL(info) << "negative tests: " << numNegative;
+  const ulong MAX_PRINT_TESTS = 5;
+  std::stringstream printTests;
+  bool firstTest = true;
+  for (int i=0; i<std::min(negativeTests.size(), MAX_PRINT_TESTS); i++) {
+    if (!firstTest)
+      printTests << ", ";
+    firstTest = false;
+    printTests << negativeTests[i];
+  }
+  if (MAX_PRINT_TESTS < negativeTests.size())
+    printTests << ", ...";
+  
+  BOOST_LOG_TRIVIAL(info) << "negative tests: " << numNegative << " (" << printTests.str() << ")";
   
   fs::path profile = profiler.getProfile();
 
