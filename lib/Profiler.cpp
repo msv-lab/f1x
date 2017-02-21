@@ -190,6 +190,14 @@ void Profiler::mergeTrace(int testIndex, bool isPassing) {
           newInteresting.insert(loc);
         }
       }
+      auto it = relatedTestIndexes.begin();
+      while (it != relatedTestIndexes.end()) {
+        if (! covered.count(locToString(it->first))) {
+          it = relatedTestIndexes.erase(it);
+        } else {
+          it++;
+        }
+      }
       std::swap(interestingLocations, newInteresting);
     }
   }
