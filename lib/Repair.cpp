@@ -187,7 +187,7 @@ bool repair(Project &project,
     return false;
   }
 
-  BOOST_LOG_TRIVIAL(info) << "positive tests: " << numPositive;
+  BOOST_LOG_TRIVIAL(info) << "number of positive tests: " << numPositive;
   const ulong MAX_PRINT_TESTS = 5;
   std::stringstream printTests;
   bool firstTest = true;
@@ -200,12 +200,13 @@ bool repair(Project &project,
   if (MAX_PRINT_TESTS < negativeTests.size())
     printTests << ", ...";
   
-  BOOST_LOG_TRIVIAL(info) << "negative tests: " << numNegative << " (" << printTests.str() << ")";
+  BOOST_LOG_TRIVIAL(info) << "number of negative tests: " << numNegative;
+  BOOST_LOG_TRIVIAL(info) << "negative tests: [" << printTests.str() << "]";
   
   fs::path profile = profiler.getProfile();
 
   auto relatedTestIndexes = profiler.getRelatedTestIndexes();
-  BOOST_LOG_TRIVIAL(info) << "locations: " << relatedTestIndexes.size();
+  BOOST_LOG_TRIVIAL(info) << "number of locations: " << relatedTestIndexes.size();
   
   fs::path saFile = workDir / SCHEMA_APPLICATIONS_FILE_NAME;
 
@@ -291,7 +292,7 @@ bool repair(Project &project,
       
       bool appSuccess = project.applyPatch(searchSpace[last]);
       if (! appSuccess) {
-        BOOST_LOG_TRIVIAL(warning) << "patch application failed";
+        BOOST_LOG_TRIVIAL(warning) << "patch application returned non-zero code";
       }
 
       project.savePatchedFiles();

@@ -211,9 +211,10 @@ fs::path Profiler::getProfile() {
   unordered_map<Location, vector<int>>::iterator it = relatedTestIndexes.begin();
   while(it != relatedTestIndexes.end()) {
     if(interestingLocations.find(locToString(it->first)) == interestingLocations.end()) {
-      relatedTestIndexes.erase(it);
+      it = relatedTestIndexes.erase(it);
+    } else {
+      it++;
     }
-    it++;
   }
 
   for (auto &loc : interestingLocations) {
