@@ -1,6 +1,6 @@
 # Comparison with Angelix #
 
-f1x is the successor of [Angelix](http://angelix.io). We recommend f1x for general use, since it represent a more practical trade-off between efficiency, effectiveness and usability. However, Angelix also provides several unique capabilities not available in f1x.
+f1x is the successor of [Angelix](http://angelix.io). We recommend f1x for general use, since it represents a more practical trade-off between efficiency, effectiveness and usability. However, Angelix also provides several unique capabilities not available in f1x.
 
 The advantages of f1x:
 
