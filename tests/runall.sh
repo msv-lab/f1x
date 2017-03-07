@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #  This file is part of f1x.
-#  Copyright (C) 2016  Sergey Mechtaev, Shin Hwei Tan, Abhik Roychoudhury
+#  Copyright (C) 2016  Sergey Mechtaev, Gao Xiang, Abhik Roychoudhury
 #
 #  f1x is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -17,10 +17,91 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require () {
-    hash "$1" 2>/dev/null || { echo >&2 "command $1 is not found"; exit 1; }
+    hash "$1" 2>/dev/null || { echo "command $1 is not found"; exit 1; }
 }
 
 require f1x
+require make
+
+
+get-cmd () {
+    test="$1"
+    dir="$2"
+    case "$test" in
+        if-condition)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        assign-in-condition)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        guarded-assignment)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        int-assignment)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        dangling-else)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        break)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        array-subscripts)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        cast-expr)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        return)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 --test-timeout 1000"
+            ;;
+        deletion)
+            echo "f1x $dir --files program.c:11 --driver $dir/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            ;;
+        loop-condition)
+            echo "f1x $dir --files program.c:7 --driver $dir/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            ;;
+        memberexpr)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        pointer)
+            echo "f1x $dir --files program.c:25 --driver $dir/test.sh --tests n1 n2 p1 --test-timeout 1000"
+            ;;
+        replace-constant)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 n2 n3 n4 p1 p2 p3 --test-timeout 1000"
+            ;;
+        substitute-bool2)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 n2 p1 --test-timeout 1000"
+            ;;
+        inside-ifdef)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        intersect-ifdef)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        non-integer-member)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        pointer-arithmetic)
+            echo "f1x $dir --files program.c:11 --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        divide-by-zero)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            ;;
+        null-dereference)
+            echo "f1x $dir --files program.c:15 --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        incomplete-pointee)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        refine-condition)
+            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            ;;
+        *)
+            exit 1
+            ;;
+    esac
+}
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 
@@ -31,33 +112,27 @@ fi
 for test in $TESTS; do
     test=${test%%/} # removing slash in the end
     echo -n "* testing $test... "
-    case "$test" in
-        if-condition)
-            args="--files program.c --tests 1 2 3 --test-timeout 1000"
-            ;;
-    esac
 
-    dir=`mktemp -d`
-    cp -r "$test" "$dir"
-    (
-        cd $dir
-        f1x "$test" $args --output output.patch &> log.txt
-        status=$?
-        if [[ ($status != 0) || (! -f output.patch) || (! -s output.patch) ]]; then
-            echo 'FAIL'
-            echo "----------------------------------------"
-            echo "failed test: $test"
-            echo "directory: $dir"
-            echo "command: f1x $test $args --output output.patch"
-            echo "----------------------------------------"
-            exit 1
-        fi
-    )
-    subshell=$?
-    if [[ ($subshell != 0) ]]; then
+    work_dir=`mktemp -d`
+    cp -r "$test"/* "$work_dir"
+
+    repair_cmd=$(get-cmd $test $work_dir)
+    if [[ ($? != 0) ]]; then
+        echo "command for test $test is not defined"
         exit 1
     fi
-    rm -rf "$dir"
+
+    $repair_cmd  --output "$work_dir/output.patch" --enable-cleanup &> "$work_dir/log.txt"
+    if [[ ($? != 0) || (! -f "$work_dir/output.patch") || (! -s "$work_dir/output.patch") ]]; then
+        echo 'FAIL'
+        echo "----------------------------------------"
+        echo "cmd: $repair_cmd"
+        echo "log: $work_dir/log.txt"
+        echo "----------------------------------------"
+        exit 1
+    fi
+
+    rm -rf "$work_dir"
     echo 'PASS'
 done
 

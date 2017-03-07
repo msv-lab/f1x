@@ -1,6 +1,6 @@
 /*
   This file is part of f1x.
-  Copyright (C) 2016  Sergey Mechtaev, Shin Hwei Tan, Abhik Roychoudhury
+  Copyright (C) 2016  Sergey Mechtaev, Gao Xiang, Abhik Roychoudhury
 
   f1x is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,37 +23,19 @@
 #define BOUND "repairable"
 
 
-using namespace clang;
-using namespace ast_matchers;
+/*
+  Matcher for EXPRESSION transformation schema
+ */
+extern clang::ast_matchers::StatementMatcher ExpressionSchemaMatcher;
 
 /*
-  Matches 
-  - integer and pointer variables
-  - literals
-  - arrays subscripts
-  - memeber expressions
-  - supported binary and pointer operators
+  Matcher for IF_GUARD transformation schema
+  NOTE: need to manually check if is it top level statement
  */
-extern StatementMatcher BaseRepairableExpression;
+extern clang::ast_matchers::StatementMatcher IfGuardSchemaMatcher;
+
 
 /*
-  Matches condition (if, while, for) a part of which is BaseRepairableExpression
+  Matcher for REFINEMENT transformation schema. Matches conditions not matched by ExpressionSchemaMatcher
  */
-extern StatementMatcher RepairableCondition;
-
-/*
-  Matches RHS of assignments and compound assignments if it is BaseRepairableExpression
-  Note: need to manually check if is it top level statement
- */
-extern StatementMatcher RepairableAssignment;
-
-/*
-  BaseRepairableExpression in relevant context
- */
-extern StatementMatcher RepairableExpression;
-
-/*
-  Matches call, break and continue statements
-  Note: need to manually check if is it top level statement
- */
-extern StatementMatcher RepairableStatement;
+extern clang::ast_matchers::StatementMatcher RefinementSchemaMatcher;

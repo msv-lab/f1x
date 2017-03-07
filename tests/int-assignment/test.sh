@@ -14,4 +14,7 @@ case "$1" in
     n1)
         assert-equal "./program 2 2" '0\n'
         ;;
+    *)
+        exit 1
+        ;;
 esac

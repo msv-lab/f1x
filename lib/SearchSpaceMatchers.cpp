@@ -1,6 +1,6 @@
 /*
   This file is part of f1x.
-  Copyright (C) 2016  Sergey Mechtaev, Shin Hwei Tan, Abhik Roychoudhury
+  Copyright (C) 2016  Sergey Mechtaev, Gao Xiang, Abhik Roychoudhury
 
   f1x is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -18,7 +18,11 @@
 
 #include "SearchSpaceMatchers.h"
 
+using namespace clang;
+using namespace ast_matchers;
 
+
+// FIXME: how about unary negation?
 StatementMatcher RepairableOperator = 
   anyOf(binaryOperator(anyOf(hasOperatorName("=="),
                              hasOperatorName("!="),
@@ -36,7 +40,7 @@ StatementMatcher RepairableOperator =
         unaryOperator(hasOperatorName("!")).bind(BOUND),
         binaryOperator(anyOf(hasOperatorName("&"),
                              hasOperatorName("|"),
-                             hasOperatorName("~"),
+                             hasOperatorName("^"),
                              hasOperatorName("<<"),
                              hasOperatorName(">>"))).bind(BOUND),
         unaryOperator(hasOperatorName("~")).bind(BOUND));
@@ -55,8 +59,13 @@ StatementMatcher RepairableAtom =
         declRefExpr(to(namedDecl())), // NOTE: no binding because it is only for member expression
         integerLiteral().bind(BOUND),
         characterLiteral().bind(BOUND),
-        memberExpr().bind(BOUND), // TODO: I need to make sure that base is a variable here
-        castExpr(hasType(asString("void *")), hasDescendant(integerLiteral(equals(0)))).bind(BOUND)); // NULL
+        memberExpr(anyOf(hasType(isInteger()),
+                         hasType(pointerType()))).bind(BOUND), // TODO: I need to make sure that base is a variable here?
+        cStyleCastExpr(hasType(isInteger()), // TODO: for now only integer
+                       hasSourceExpression(implicitCastExpr(hasSourceExpression(anyOf(integerLiteral(),
+                                                                                      declRefExpr(),
+                                                                                      memberExpr()))))).bind(BOUND),
+        castExpr(hasType(asString("void *")), hasDescendant(integerLiteral(equals(0)))).bind(BOUND)); // NULL, redundant?
                
 StatementMatcher RepairableNode =
   anyOf(RepairableOperator,
@@ -66,6 +75,14 @@ StatementMatcher RepairableNode =
 StatementMatcher NonRepairableNode =
   unless(RepairableNode);
 
+/*
+  Matches 
+  - integer and pointer variables
+  - literals
+  - arrays subscripts
+  - memeber expressions
+  - supported binary and pointer operators
+ */
 StatementMatcher BaseRepairableExpression =
   allOf(RepairableNode,
         unless(hasDescendant(expr(ignoringParenImpCasts(NonRepairableNode)))));
@@ -86,12 +103,18 @@ auto hasSplittableCondition =
   anyOf(hasCondition(ignoringParenImpCasts(BaseRepairableExpression)),
         eachOf(hasCondition(Splittable), hasCondition(forEachDescendant(Splittable))));
 
+/*
+  Matches condition (if, while, for) a part of which is BaseRepairableExpression
+ */
 StatementMatcher RepairableCondition = 
   anyOf(ifStmt(hasSplittableCondition),
         whileStmt(hasSplittableCondition),
         forStmt(hasSplittableCondition));
 
-// FIXME: why to restrict to variables, members and arrays?
+/*
+  Matches RHS of assignments and compound assignments if it is BaseRepairableExpression
+  FIXME: why to restrict to variables, members and arrays?
+ */
 StatementMatcher RepairableAssignment =
   binaryOperator(anyOf(hasOperatorName("="),
                        hasOperatorName("+="),
@@ -109,11 +132,27 @@ StatementMatcher RepairableAssignment =
                        hasLHS(ignoringParenImpCasts(arraySubscriptExpr()))),
                  hasRHS(ignoringParenImpCasts(BaseRepairableExpression)));
 
-StatementMatcher RepairableExpression =
-  anyOf(RepairableCondition,
-        RepairableAssignment);
+StatementMatcher RepairableReturn =
+  returnStmt(has(expr(ignoringParenImpCasts(BaseRepairableExpression))));
 
-StatementMatcher RepairableStatement =
-  anyOf(callExpr().bind(BOUND),
+StatementMatcher ExpressionSchemaMatcher =
+  anyOf(RepairableCondition,
+        RepairableAssignment,
+        RepairableReturn);
+
+StatementMatcher IfGuardSchemaMatcher =
+  anyOf(allOf(unless(hasDescendant(expr(ignoringParenImpCasts(ExpressionSchemaMatcher)))),
+              unless(hasDescendant(stmt(compoundStmt()))), //NOTE: should be stmtExpr, but it is unavailable in Clang 3.8.1
+              callExpr().bind(BOUND)),
         breakStmt().bind(BOUND),
         continueStmt().bind(BOUND));
+
+//TODO: support other kinds of conditions
+StatementMatcher RefinementSchemaMatcher =
+  anyOf(ifStmt(allOf(unless(hasSplittableCondition),
+                     hasCondition(expr().bind(BOUND)))),
+        whileStmt(allOf(unless(hasSplittableCondition),
+                        hasCondition(expr().bind(BOUND)))),
+        forStmt(allOf(unless(hasSplittableCondition),
+                      hasCondition(expr().bind(BOUND)))));
+  

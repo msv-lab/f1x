@@ -1,5 +1,5 @@
 #  This file is part of f1x.
-#  Copyright (C) 2016  Sergey Mechtaev, Shin Hwei Tan, Abhik Roychoudhury
+#  Copyright (C) 2016  Sergey Mechtaev, Gao Xiang, Abhik Roychoudhury
 #
 #  f1x is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -60,15 +60,23 @@ set (F1X_VERSION_PATCH 0)
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
-  "${PROJECT_SOURCE_DIR}/F1XConfig.h.in"
-  "${PROJECT_BINARY_DIR}/F1XConfig.h"
+  "${PROJECT_SOURCE_DIR}/SystemConfig.h.in"
+  "${PROJECT_BINARY_DIR}/SystemConfig.h"
   )
 
 # add the binary tree to the search path for include files
-# so that we will find F1XConfig.h
+# so that we will find Config.h
 include_directories("${PROJECT_BINARY_DIR}")
+
+# JSON library
+include_directories(thirdparty)
 
 include_directories(lib)
 
 add_subdirectory(lib)
 add_subdirectory(tools)
+
+set (F1X_TOOLS_DIR "${PROJECT_BINARY_DIR}/tools/")
+set (F1X_LIBEAR_DIR "${PROJECT_BINARY_DIR}/thirdparty/bear/libear/")
+
+add_subdirectory(thirdparty/bear)

@@ -1,5 +1,5 @@
 #  This file is part of f1x.
-#  Copyright (C) 2016  Sergey Mechtaev, Shin Hwei Tan, Abhik Roychoudhury
+#  Copyright (C) 2016  Sergey Mechtaev, Gao Xiang, Abhik Roychoudhury
 #
 #  f1x is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,23 +14,29 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-add_library (f1xInstrument
+add_library (f1xTransform
   TransformationUtil.cpp
   SearchSpaceMatchers.cpp
-  Transformer.cpp
+  ProfileInstrumentation.cpp
+  SchemaApplication.cpp
+  PatchApplication.cpp
   )
 
 # Make sure the compiler can find include files for our Hello library
 # when other libraries or executables link to Hello
-target_include_directories (f1xInstrument PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories (f1xTransform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-set_target_properties(f1xInstrument PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exceptions" ) # this is to be compatible with llvm libraries
+set_target_properties(f1xTransform PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exceptions" ) # this is to be compatible with llvm libraries
 
 add_library (f1xRepair
-  F1XCommon.cpp
-  Expression.cpp
-  MetaProgram.cpp
+  Typing.cpp
+  RepairUtil.cpp
+  Project.cpp
+  Profiler.cpp
+  Runtime.cpp
+  Synthesis.cpp
   SearchEngine.cpp
+  Repair.cpp
   )
 
 target_include_directories (f1xRepair PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
