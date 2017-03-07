@@ -2,7 +2,7 @@
 
 f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs. It automatically finds and fixes software bugs by analyzing behaviour of passing and failing tests. f1x aims to be reliable, efficient and easy-to-use.
 
-f1x implements a novel search space exploraton algorithm specifically designed for prioritized search spaces (in which correctness probability is assigned to candidate patches). This algorithm combines existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. As a result, f1x is the first system that achieves both reliability and efficiency. First, f1x guarantees to generate the most reliable patch in the search space according to a given prioritization strategy. Second, f1x generates patches 10 times faster compared to previous approaches when repairing large programs such as PHP and Libtiff.
+f1x implements a novel search space exploraton algorithm specifically designed for prioritized search spaces (in which correctness probability is assigned to candidate patches). This algorithm combines existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. As a result, f1x is the first system that achieves both reliability and efficiency. First, f1x guarantees to generate the most reliable patch (the global maximum) in the search space according to a given prioritization strategy. Second, f1x generates patches significantly faster compared with previous approaches when repairing large programs such as PHP and Libtiff.
 
 More details about f1x can be found in our publication.
 
@@ -44,8 +44,7 @@ To test f1x, execute `./tests/runall.sh`.
 
 ## Resources ##
 
-* [Tutorial (small program)](doc/Tutorial.md)
-* [Tutorial (Heartbleed)](https://github.com/mechtaev/f1x-heartbleed)
+* [Tutorial](doc/Tutorial.md)
 * [Manual](doc/Manual.md)
 * [Troubleshooting](doc/Troubleshooting.md)
 * [Development](doc/Development.md)
