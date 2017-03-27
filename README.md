@@ -2,13 +2,13 @@
 
 f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs. It automatically finds and fixes software bugs by analyzing behaviour of passing and failing tests. f1x aims to be reliable, efficient and easy-to-use.
 
-f1x implements a novel search space exploraton algorithm specifically designed for prioritized search spaces (in which correctness probability is assigned to candidate patches). This algorithm combines existing syntax-based and semantics-based techniques in a mutually reinforcing fashion by performing semantic search space partitioning during test execution. As a result, f1x is the first system that achieves both reliability and efficiency. First, f1x guarantees to generate the most reliable patch (the global maximum) in the search space according to a given prioritization strategy. Second, f1x generates patches significantly faster compared with previous approaches when repairing large programs such as PHP and Libtiff.
-
 More details about f1x can be found in our publication.
 
-## Installation ##
+### Status ###
 
-f1x currently supports Linux-based systems; it was tested on Ubuntu 14.04 and Ubuntu 16.04.
+f1x is under active development and maintenance. It provides a reasonable support for C language (tested on large projects such as PHP, Python, etc.) and an initial C++ support (tested on small programs). f1x currently works on Linux-based systems (tested on Ubuntu 14.04 and Ubuntu 16.04).
+
+## Installation ##
 
 Install dependencies (GCC, G++, Make, Boost.Filesystem, Boost.Program_options, Boost.Log, diff):
 
@@ -18,7 +18,7 @@ Install dependencies (GCC, G++, Make, Boost.Filesystem, Boost.Program_options, B
     
 Install a new version of CMake (3.4.3 or higher, version is important).
 
-Download LLVM and Clang 3.8.1 (version is important):
+[Download](http://releases.llvm.org/download.html) LLVM and Clang 3.8.1 (version is important):
 
     # Ubuntu 14.04 x86_64:
     wget http://releases.llvm.org/3.8.1/clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz
