@@ -280,7 +280,8 @@ bool repair(Project &project,
     last = engine.findNext(searchSpace, last);
 
     if (last < searchSpace.size()) {
-      if (! cfg.exhaustive && fixLocations.count(searchSpace[last].app->appId)) {
+      //FIXME: this logic with --all may be incorrect, needs to be simplified
+      if (! cfg.exploreAll && fixLocations.count(searchSpace[last].app->appId)) {
         last++;
         patchCount++;
         continue;

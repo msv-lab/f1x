@@ -113,14 +113,13 @@ int main (int argc, char *argv[]) {
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
     ("output,o", po::value<string>()->value_name("PATH"), "output patch file or directory (default: SRC-TIME)")
-    ("all,a", "explore whole search space")
+    ("all,a", "generate all patches")
     ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
     ("dump-profile", po::value<string>()->value_name("PATH"), "save project profile")
     ("load-profile", po::value<string>()->value_name("PATH"), "load project profile")
     ("dump-space", po::value<string>()->value_name("PATH"), "output search space")
-    ("enable-exhaustive", "--all + output all patches")
     ("enable-cleanup", "remove intermediate files")
     ("enable-metadata", "output patch metadata")
     ("disable-analysis", "don't partition search space")
@@ -168,11 +167,6 @@ int main (int argc, char *argv[]) {
 
   if (vm.count("all")) {
     cfg.exploreAll = true;
-  }
-
-  if (vm.count("enable-exhaustive")) {
-    cfg.exploreAll = true;
-    cfg.exhaustive = true;
   }
 
   if (vm.count("enable-metadata")) {

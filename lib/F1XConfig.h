@@ -43,7 +43,6 @@ struct Config {
   bool validatePatches;
   bool synthesizeExpressions;
   bool exploreAll;
-  bool exhaustive;
   bool dumpSearchSpace; /* UNSUPPORTED */
   bool outputPatchMetadata; /* UNSUPPORTED */
   bool removeIntermediateData;
@@ -59,7 +58,6 @@ static Config DEFAULT_CONFIG = {
   true,    /* validatePatches */
   true,    /* synthesizeExpressions */
   false,   /* exploreAll */
-  false,   /* exhaustive */
   false,   /* dumpSearchSpace */
   false,   /* outputPatchMetadata */
   false,   /* removeIntermediateData */

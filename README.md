@@ -4,9 +4,7 @@ f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs.
 
 More details about f1x can be found in our publication.
 
-### Status ###
-
-f1x is under active development and maintenance. It provides a reasonable support for C language (tested on large projects such as PHP, Python, etc.) and an initial C++ support (tested on small programs). f1x currently works on Linux-based systems (tested on Ubuntu 14.04 and Ubuntu 16.04).
+**Status:** f1x is under active development and maintenance. It provides good support for C language (tested on real-world projects such as PHP, Python, etc.) and initial C++ support (tested on small programs). f1x currently works on Linux-based systems (tested on Ubuntu 14.04 and Ubuntu 16.04).
 
 ## Installation ##
 
