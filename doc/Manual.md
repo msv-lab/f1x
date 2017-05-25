@@ -91,7 +91,7 @@ The path to the output patch (or directory when used with `--all`). If omitted, 
 
 #### -a [ --all ] ####
 
-Enables exploration of whole search space. By default, one patch per location is generated.
+Enables exploration of whole search space.
 
 #### -v [ --verbose ] ####
 
@@ -105,10 +105,6 @@ Prints help message and exits.
 
 Prints version and exits.
 
-### Advanced configuration ###
-
-TODO
-    
 ## Related publications ##
 
 **Angelix: Scalable Multiline Program Patch Synthesis via Symbolic Analysis.** [\[pdf\]](http://www.comp.nus.edu.sg/~abhik/pdf/ICSE16-angelix.pdf)  
