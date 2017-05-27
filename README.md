@@ -9,12 +9,12 @@ f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs.
 The main goals that motivated the design of f1x are
 
 - **Efficiency:** f1x generates patches for large programs (PHP, Wireshark, ...) around 10 times faster compared with previous tools without sacrificing effectiveness.
-- **Predictability:** f1x is exhaustive and deterministic. It guarentees to find the best patch (the global maximum) in its search space according to a given prioritization.
+- **Predictability:** f1x is exhaustive and deterministic. It guarantees to find the best patch (the global maximum) in its search space according to a given prioritization.
 - **Usability:** f1x requires essentially no configuration. It has a hackable implementation (around 5000 LOC) and minimum dependencies.
 
 In order to install f1x you can either [build it from source](doc/BuildFromSource.md) (recommended) or try an older version [available on VirtualBox VM](doc/VirtualBox.md).
 
-The quickest way to get started with f1x is to go though our [tutorial](doc/Tutorial.md). More detailed information about the tool and the underlying algorithms is given in the [manual](doc/Manual.md). If you encourter a problem while using f1x, please consult the [troubleshooting guide](doc/Troubleshooting.md) or ask us by email (contact: Sergey Mechtaev, `mechtaev@comp.nus.edu.sg`). If you plan to modify f1x, please refer to the [developer guide](doc/Development.md).
+The quickest way to get started with f1x is to go though our [tutorial](doc/Tutorial.md). More detailed information about the tool and the underlying algorithms is given in the [manual](doc/Manual.md). If you encounter a problem while using f1x, please consult the [troubleshooting guide](doc/Troubleshooting.md) or ask us by email (contact: Sergey Mechtaev, `mechtaev@comp.nus.edu.sg`). If you plan to modify f1x, please refer to the [developer guide](doc/Development.md).
 
 f1x have been evaluated on several automated program repair benchmarks. We provide scripts for reproducing [experiments with Genprog ICSE'12 benchmark](https://github.com/mechtaev/f1x-genprog-icse12) and [experiments with IntroClass benchmark](https://github.com/stan6/f1x-introclass).
 
