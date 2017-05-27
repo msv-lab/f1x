@@ -4,20 +4,6 @@ f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs.
 
 f1x implements a novel search space exploraton algorithm based on test-equivalence relation (two programs are test-equivalent wrt a given test if they either both pass of both fail this test). This algorithm combines existing syntax-based and semantics-based patch generation techniques in a mutually reinforcing fashion by semantically partitioning search space into test-equivalence classes during test execution. Apart from that, our algorithm is specifically designed for prioritized search spaces (in which correctness probability is assigned to candidate patches). As a result, f1x is the first system that is both efficient and predictable. First, f1x generates patches significantly faster compared with previous approaches when repairing large programs such as PHP and Libtiff (around 10 times faster in our experiments). Second, f1x guarantees to generate the most reliable patch (the global maximum) in the search space according to a given prioritization strategy.
 
-More information can be found in our publications:
-
-**Angelix: Scalable Multiline Program Patch Synthesis via Symbolic Analysis.** [\[pdf\]](http://www.comp.nus.edu.sg/~abhik/pdf/ICSE16-angelix.pdf)  
-S. Mechtaev, J. Yi, A. Roychoudhury.  
-International Conference on Software Engineering (ICSE) 2016.  
-
-**DirectFix: Looking for Simple Program Repairs.**  [\[pdf\]](https://www.comp.nus.edu.sg/~abhik/pdf/ICSE15-directfix.pdf)  
-S. Mechtaev, J. Yi, A. Roychoudhury.  
-International Conference on Software Engineering (ICSE) 2015.  
-
-**SemFix: Program Repair via Semantic Analysis.** [\[pdf\]](https://www.comp.nus.edu.sg/~abhik/pdf/ICSE13-SEMFIX.pdf)  
-H.D.T. Nguyen, D. Qi, A. Roychoudhury, S. Chandra.  
-International Conference on Software Engineering (ICSE) 2013.  
-
 ## Characteristics ##
 
 f1x relies on Clang LibTooling to perform source code analysis and transformation. f1x is primarily designed to repair C programs, but it also provides initial support for C++.
@@ -118,3 +104,17 @@ Prints help message and exits.
 #### --version ####
 
 Prints version and exits.
+
+## Related publications ##
+
+**Angelix: Scalable Multiline Program Patch Synthesis via Symbolic Analysis.** [\[pdf\]](http://www.comp.nus.edu.sg/~abhik/pdf/ICSE16-angelix.pdf)  
+S. Mechtaev, J. Yi, A. Roychoudhury.  
+International Conference on Software Engineering (ICSE) 2016.  
+
+**DirectFix: Looking for Simple Program Repairs.**  [\[pdf\]](https://www.comp.nus.edu.sg/~abhik/pdf/ICSE15-directfix.pdf)  
+S. Mechtaev, J. Yi, A. Roychoudhury.  
+International Conference on Software Engineering (ICSE) 2015.  
+
+**SemFix: Program Repair via Semantic Analysis.** [\[pdf\]](https://www.comp.nus.edu.sg/~abhik/pdf/ICSE13-SEMFIX.pdf)  
+H.D.T. Nguyen, D. Qi, A. Roychoudhury, S. Chandra.  
+International Conference on Software Engineering (ICSE) 2013.  
