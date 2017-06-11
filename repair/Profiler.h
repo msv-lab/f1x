@@ -23,7 +23,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "F1XConfig.h"
+#include "Config.h"
 #include "RepairUtil.h"
 
 const std::string TRACE_FILE_NAME = "trace.txt";
@@ -39,14 +39,14 @@ class Profiler {
   boost::filesystem::path getHeader();
   boost::filesystem::path getSource();
   bool compile();
-  std::unordered_map<Location, std::vector<int>> getRelatedTestIndexes();
+  std::unordered_map<Location, std::vector<unsigned>> getRelatedTestIndexes();
   boost::filesystem::path getProfile();
-  void mergeTrace(int testIndex, bool isPassing);
+  void mergeTrace(unsigned testIndex, bool isPassing);
   void clearTrace();
 
  private:
   boost::filesystem::path workDir;
   Config cfg;
-  std::unordered_map<Location, std::vector<int>> relatedTestIndexes;
+  std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes;
   std::set<std::string> interestingLocations; //NOTE: set of string to make more deterministic
 };

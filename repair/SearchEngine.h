@@ -29,9 +29,9 @@
 
 
 struct SearchStatistics {
-  ulong explorationCounter;
-  ulong executionCounter;
-  ulong timeoutCounter;
+  unsigned long explorationCounter;
+  unsigned long executionCounter;
+  unsigned long timeoutCounter;
 };
 
 
@@ -41,23 +41,23 @@ class SearchEngine {
                TestingFramework &tester,
                Runtime &runtime,
                const Config &cfg,
-               std::shared_ptr<std::unordered_map<ulong, std::unordered_set<F1XID>>> groupable,
-               std::unordered_map<Location, std::vector<int>> relatedTestIndexes);
+               std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<F1XID>>> partitionable,
+               std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes);
 
-  ulong findNext(const std::vector<SearchSpaceElement> &searchSpace, ulong fromIdx);
+  unsigned long findNext(const std::vector<SearchSpaceElement> &searchSpace, unsigned long fromIdx);
   SearchStatistics getStatistics();
 
  private:
  
-  void changeSensitivity(std::vector<int> &testOrder, int index);
+  void prioritizeTest(std::vector<unsigned> &testOrder, unsigned index);
   std::vector<std::string> tests;
   TestingFramework tester;
   Runtime runtime;
   Config cfg;
   SearchStatistics stat;
-  ulong progress;
-  std::shared_ptr<std::unordered_map<ulong, std::unordered_set<F1XID>>> groupable;
+  unsigned long progress;
+  std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<F1XID>>> partitionable;
   std::unordered_set<F1XID> failing;
   std::unordered_map<std::string, std::unordered_set<F1XID>> passing;
-  std::unordered_map<Location, std::vector<int>> relatedTestIndexes;
+  std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes;
 };

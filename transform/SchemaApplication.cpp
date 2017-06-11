@@ -26,7 +26,7 @@
 #include <rapidjson/writer.h>
 #include <map>
 
-#include "F1XConfig.h"
+#include "Config.h"
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "SchemaApplication.h"
@@ -51,7 +51,7 @@ void initInterestingLocations() {
   }
 }
 
-bool isInterestingLocation(ulong fileId, ulong beginLine, ulong beginColumn, ulong endLine, ulong endColumn) {
+bool isInterestingLocation(unsigned fileId, unsigned beginLine, unsigned beginColumn, unsigned endLine, unsigned endColumn) {
   std::ostringstream location;
   location << fileId << " "
            << beginLine << " "
@@ -124,10 +124,10 @@ void IfGuardSchemaApplicationHandler::run(const MatchFinder::MatchResult &Result
    
     SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
-    ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-    ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-    ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-    ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+    unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+    unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+    unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+    unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
     Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
     if (alreadyMatched.count(current))
@@ -135,14 +135,14 @@ void IfGuardSchemaApplicationHandler::run(const MatchFinder::MatchResult &Result
     alreadyMatched.insert(current);
 
     // NOTE: to avoid extracting locations from headers:
-    std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+    std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
     if (!isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
       return;
     
-    ulong appId = f1xapp(globalBaseAppId, globalFileId);
+    unsigned long appId = f1xapp(globalBaseAppId, globalFileId);
     globalBaseAppId++;
                  
     llvm::errs() << beginLine << " "
@@ -173,7 +173,7 @@ void IfGuardSchemaApplicationHandler::run(const MatchFinder::MatchResult &Result
     app.AddMember("components", componentsJSON, schemaApplications.GetAllocator());
     schemaApplications.PushBack(app, schemaApplications.GetAllocator());
 
-	  ulong origLength = Rewrite.getRangeSize(expandedLoc);
+	  unsigned long origLength = Rewrite.getRangeSize(expandedLoc);
     std::ostringstream stringStream;
     
     bool addBrackets = isChildOfNonblock(stmt, Result.Context);
@@ -219,10 +219,10 @@ void ExpressionSchemaApplicationHandler::run(const MatchFinder::MatchResult &Res
 
     SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
-    ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-    ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-    ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-    ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+    unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+    unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+    unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+    unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
     Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
     if (alreadyMatched.count(current))
@@ -230,14 +230,14 @@ void ExpressionSchemaApplicationHandler::run(const MatchFinder::MatchResult &Res
     alreadyMatched.insert(current);
 
     // NOTE: to avoid extracting locations from headers:
-    std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+    std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
     if (!isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
       return;
 
-    ulong appId = f1xapp(globalBaseAppId, globalFileId);
+    unsigned long appId = f1xapp(globalBaseAppId, globalFileId);
     globalBaseAppId++;
 
     llvm::errs() << beginLine << " "

@@ -18,11 +18,27 @@
 
 #pragma once
 
-const ulong F1X_VERSION_MAJOR = @F1X_VERSION_MAJOR@;
-const ulong F1X_VERSION_MINOR = @F1X_VERSION_MINOR@;
-const ulong F1X_VERSION_PATCH = @F1X_VERSION_PATCH@;
+#include "RepairUtil.h"
+#include "Config.h"
 
-const std::string F1X_CLANG_INCLUDE = "@F1X_CLANG_INCLUDE@";
+/*
+  The aims of type inference are
+  1. Eliminate nonsensical expressions from search space
+  2. Guarantee that meta program compiles
 
-const std::string F1X_RUNTIME_COMPILER = "g++";
-const std::string F1X_RUNTIME_OPTIMIZATION = "-O1";
+  C expressions are lifted to a type system with the follwing types:
+  1. Boolean
+  2. Integer
+  3. Bitvector
+  4. Pointer
+
+  Type constraints come from:
+  1. Context (condition/unknown)
+  2. Components (integer/pointer)
+  3. Operators (input/output types)
+  4. Operator overloading (arguments should be of the same type)
+ */
+
+Type operatorOutputType(const Operator &op);
+
+Expression correctTypes(const Expression &expression, const Type &context);

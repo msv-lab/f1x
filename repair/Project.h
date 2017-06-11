@@ -19,15 +19,15 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
-#include "F1XConfig.h"
+#include "Config.h"
 #include "RepairUtil.h"
 
 
 // (!fromLine && !toLine) means no restriction
 struct ProjectFile {
   boost::filesystem::path relpath;
-  ulong fromLine;
-  ulong toLine;
+  unsigned fromLine;
+  unsigned toLine;
 };
 
 
@@ -72,7 +72,7 @@ class Project {
   void saveFilesWithPrefix(const std::string &prefix);
   void restoreFilesWithPrefix(const std::string &prefix);
   bool buildInEnvironment(const std::map<std::string, std::string> &env, const std::string &baseCmd);
-  ulong getFileId(const ProjectFile &file);
+  unsigned getFileId(const ProjectFile &file);
 };
 
 
@@ -80,7 +80,7 @@ class TestingFramework {
  public:
   TestingFramework(const Project &project,
                    const boost::filesystem::path &driver,
-                   const ulong testTimeout,
+                   const unsigned long testTimeout,
                    const boost::filesystem::path &workDir,
                    const Config &cfg);
   
@@ -89,7 +89,7 @@ class TestingFramework {
  private:
   Project project;
   boost::filesystem::path driver;
-  ulong testTimeout;
+  unsigned testTimeout;
   boost::filesystem::path workDir;
   Config cfg;
 };

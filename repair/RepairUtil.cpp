@@ -29,7 +29,7 @@
 #include <rapidjson/istreamwrapper.h>
 
 #include "RepairUtil.h"
-#include "F1XConfig.h"
+#include "Config.h"
 #include "Typing.h"
 
 namespace fs = boost::filesystem;
@@ -434,7 +434,7 @@ vector<shared_ptr<SchemaApplication>> loadSchemaApplications(const fs::path &pat
   }
 
   for (auto &app : d.GetArray()) {
-    ulong appId = app["appId"].GetUint();
+    unsigned long appId = app["appId"].GetUint();
 
     TransformationSchema schema = transformationSchemaByString(app["schema"].GetString());
 

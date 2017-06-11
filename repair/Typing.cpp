@@ -79,7 +79,7 @@ Type operatorOutputType(const Operator &op) {
   case Operator::EXPLICIT_PTR_CAST:
     return Type::POINTER;
   }
-  throw std::invalid_argument("unsupported operator: " + std::to_string((ulong)op));
+  throw std::invalid_argument("unsupported operator: " + std::to_string((unsigned long)op));
 }
 
 //NOTE: the first and the second are the same except for pointer arithmetic
@@ -138,7 +138,7 @@ Type operatorFirstArgType(const Operator &op) {
   case Operator::EXPLICIT_PTR_CAST:
     return Type::ANY;
   }
-  throw std::invalid_argument("unsupported operator: " + std::to_string((ulong)op));
+  throw std::invalid_argument("unsupported operator: " + std::to_string((unsigned long)op));
 }
 
 /*

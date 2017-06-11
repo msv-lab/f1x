@@ -28,8 +28,7 @@
 #include <rapidjson/ostreamwrapper.h>
 #include <rapidjson/writer.h>
 
-#include "SystemConfig.h"
-#include "F1XConfig.h"
+#include "Config.h"
 #include "Project.h"
 #include "RepairUtil.h"
 
@@ -96,12 +95,12 @@ void adjustCompileDB(fs::path projectRoot) {
     string command = entry.GetObject()["command"].GetString();
     string includeCmd =  "-I" + F1X_CLANG_INCLUDE;
     if (command.find(includeCmd) == std::string::npos) {
-      ulong index = command.find(" ");
+      unsigned index = command.find(" ");
       command = command.substr(0, index) + " " + includeCmd + " " + command.substr(index);
     }
     string defineCmd =  "-D__f1xapp=0ul";
     if (command.find(defineCmd) == std::string::npos) {
-      ulong index = command.find(" ");
+      unsigned long index = command.find(" ");
       command = command.substr(0, index) + " " + defineCmd + " " + command.substr(index);
     }
     entry.GetObject()["command"].SetString(command.c_str(), db.GetAllocator());
@@ -155,7 +154,7 @@ bool Project::buildInEnvironment(const std::map<std::string, std::string> &envir
   }
 
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  ulong status = std::system(cmd.str().c_str());
+  unsigned long status = std::system(cmd.str().c_str());
 
   return WEXITSTATUS(status) == 0;
 }
@@ -257,7 +256,7 @@ void Project::computeDiff(const ProjectFile &file,
     ofs << "--- " << a.string() << "\n"
         << "+++ " << b.string() << "\n";
   }
-  ulong id = getFileId(file);
+  unsigned id = getFileId(file);
   
   fs::path fromFile = workDir / fs::path("original" + std::to_string(id) + ".c");
   fs::path toFile = workDir / fs::path("patched" + std::to_string(id) + ".c");
@@ -269,7 +268,7 @@ void Project::computeDiff(const ProjectFile &file,
 bool Project::instrumentFile(const ProjectFile &file,
                              const boost::filesystem::path &outputFile,
                              const boost::filesystem::path *profile) {
-  ulong id = getFileId(file);
+  unsigned id = getFileId(file);
 
   FromDirectory dir(root);
   std::stringstream cmd;
@@ -293,12 +292,12 @@ bool Project::instrumentFile(const ProjectFile &file,
     cmd << " >/dev/null 2>&1";
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  ulong status = std::system(cmd.str().c_str());
+  unsigned long status = std::system(cmd.str().c_str());
   return WEXITSTATUS(status) == 0;
 }
 
-ulong Project::getFileId(const ProjectFile &file) {
-  ulong id = 0;
+unsigned Project::getFileId(const ProjectFile &file) {
+  unsigned id = 0;
   for (auto &f : files) {
     if (file.relpath != f.relpath)
       id++;
@@ -310,10 +309,10 @@ ulong Project::getFileId(const ProjectFile &file) {
 bool Project::applyPatch(const SearchSpaceElement &patch) {
   BOOST_LOG_TRIVIAL(debug) << "applying patch";
   FromDirectory dir(root);
-  ulong beginLine = patch.app->location.beginLine;
-  ulong beginColumn = patch.app->location.beginColumn;
-  ulong endLine = patch.app->location.endLine;
-  ulong endColumn = patch.app->location.endColumn;
+  unsigned beginLine = patch.app->location.beginLine;
+  unsigned beginColumn = patch.app->location.beginColumn;
+  unsigned endLine = patch.app->location.endLine;
+  unsigned endColumn = patch.app->location.endColumn;
   std::stringstream cmd;
   cmd << "f1x-transform " << files[patch.app->location.fileId].relpath.string() << " --apply"
       << " --bl " << beginLine
@@ -327,14 +326,14 @@ bool Project::applyPatch(const SearchSpaceElement &patch) {
     cmd << " >/dev/null 2>&1";
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  ulong status = std::system(cmd.str().c_str());
+  unsigned long status = std::system(cmd.str().c_str());
   return WEXITSTATUS(status) == 0;
 }
 
 
 TestingFramework::TestingFramework(const Project &project,
                                    const boost::filesystem::path &driver,
-                                   const ulong testTimeout,
+                                   const unsigned long testTimeout,
                                    const boost::filesystem::path &workDir,
                                    const Config &cfg):
   project(project),
@@ -344,7 +343,7 @@ TestingFramework::TestingFramework(const Project &project,
   cfg(cfg) {}
 
 
-const ulong TIMEOUT_STATUS = 124;
+const unsigned TIMEOUT_STATUS = 124;
 
 TestStatus TestingFramework::execute(const std::string &testId) {
   FromDirectory dir(project.getRoot());
@@ -358,7 +357,7 @@ TestStatus TestingFramework::execute(const std::string &testId) {
     cmd << " >/dev/null 2>&1";
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  ulong status = std::system(cmd.str().c_str());
+  unsigned long status = std::system(cmd.str().c_str());
   if (WEXITSTATUS(status) == 0) {
     return TestStatus::PASS;
   } else if (WEXITSTATUS(status) == TIMEOUT_STATUS) {

@@ -23,7 +23,7 @@
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "PatchApplication.h"
-#include "F1XConfig.h"
+#include "Config.h"
 
 using namespace clang;
 using namespace ast_matchers;
@@ -77,10 +77,10 @@ void IfGuardPatchApplicationHandler::run(const MatchFinder::MatchResult &Result)
 
       SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
-      ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-      ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-      ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-      ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+      unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+      unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+      unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+      unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
       Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
       if (alreadyMatched.count(current))
@@ -88,7 +88,7 @@ void IfGuardPatchApplicationHandler::run(const MatchFinder::MatchResult &Result)
       alreadyMatched.insert(current);
 
       // NOTE: to avoid extracting locations from headers:
-      std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+      std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
       if (srcMgr.getMainFileID() != decLoc.first)
         return;
 
@@ -99,7 +99,7 @@ void IfGuardPatchApplicationHandler::run(const MatchFinder::MatchResult &Result)
 
         std::stringstream replacement;
         
-        ulong origLength = Rewrite.getRangeSize(expandedLoc);
+        unsigned origLength = Rewrite.getRangeSize(expandedLoc);
         bool addBrackets = isChildOfNonblock(stmt, Result.Context);
         if (addBrackets)
     	    replacement << "{ ";
@@ -113,10 +113,10 @@ void IfGuardPatchApplicationHandler::run(const MatchFinder::MatchResult &Result)
         if (addBrackets) {
         	replacement << "; }";
         	const char *followingData = srcMgr.getCharacterData(expandedLoc.getBegin());
-        	int followingDataSize = strlen(followingData);
+        	unsigned followingDataSize = strlen(followingData);
           for (int i = origLength; i < followingDataSize; i++) {
             origLength++;
-            char curChar = *(followingData+i);
+            char curChar = *(followingData + i);
             if (curChar == ';')
               break;
             else if (curChar == ' ' || curChar == '\t' || curChar == '\n')
@@ -140,10 +140,10 @@ void ExpressionPatchApplicationHandler::run(const MatchFinder::MatchResult &Resu
 
       SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
-      ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-      ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-      ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-      ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+      unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+      unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+      unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+      unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
       Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
       if (alreadyMatched.count(current))
@@ -151,7 +151,7 @@ void ExpressionPatchApplicationHandler::run(const MatchFinder::MatchResult &Resu
       alreadyMatched.insert(current);
 
       // NOTE: to avoid extracting locations from headers:
-      std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+      std::pair<FileID, unsigned long> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
       if (srcMgr.getMainFileID() != decLoc.first)
         return;
 

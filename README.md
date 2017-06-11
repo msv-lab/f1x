@@ -2,18 +2,6 @@
 
 f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs. It automatically finds and fixes software bugs by analyzing behaviour of passing and failing tests. f1x aims to be efficient, predictable and easy-to-use.
 
-**Status:** f1x is under active development and maintenance. It provides good support for C language (tested on real-world projects such as PHP, Python, etc.) and initial C++ support (tested on small programs). f1x currently works on Linux-based systems (tested on Ubuntu 14.04 and Ubuntu 16.04).
-
-The main goals that motivated the design of f1x are
-
-- **Efficiency:** f1x generates patches for large programs (PHP, Wireshark, ...) around 10 times faster compared with previous tools without sacrificing effectiveness.
-- **Predictability:** f1x is exhaustive and deterministic. It guarantees to find the best patch (the global maximum) in its search space according to a given prioritization.
-- **Usability:** f1x requires essentially no configuration. It has a hackable implementation (around 5000 LOC) and minimum dependencies.
-
-More information can be found in our publication:
-
-TBA
-
 ## Documentation ##
 
 In order to install f1x you can either [build it from source](doc/BuildFromSource.md) (recommended) or try an older version [available on VirtualBox VM](doc/VirtualBox.md).

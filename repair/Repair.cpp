@@ -110,10 +110,10 @@ void dumpSearchSpace(std::vector<SearchSpaceElement> &searchSpace, const fs::pat
 }
 
 
-shared_ptr<unordered_map<ulong, unordered_set<F1XID>>> getGroupable(const std::vector<SearchSpaceElement> &searchSpace) {
-  shared_ptr<unordered_map<ulong, unordered_set<F1XID>>> result(new unordered_map<ulong, unordered_set<F1XID>>);
+shared_ptr<unordered_map<unsigned long, unordered_set<F1XID>>> getPartitionable(const std::vector<SearchSpaceElement> &searchSpace) {
+  shared_ptr<unordered_map<unsigned long, unordered_set<F1XID>>> result(new unordered_map<ulong, unordered_set<F1XID>>);
   for (auto &el : searchSpace) {
-    ulong locId = el.app->appId;
+    unsigned long locId = el.app->appId;
     if (! result->count(locId)) {
       (*result)[locId] = unordered_set<F1XID>();
     }
@@ -166,8 +166,8 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "profiling project";
   vector<string> negativeTests;
-  ulong numPositive = 0;
-  ulong numNegative = 0;
+  unsigned long numPositive = 0;
+  unsigned long numNegative = 0;
   for (int i = 0; i < tests.size(); i++) {
     auto test = tests[i];
     profiler.clearTrace();
@@ -188,7 +188,7 @@ bool repair(Project &project,
   }
 
   BOOST_LOG_TRIVIAL(info) << "number of positive tests: " << numPositive;
-  const ulong MAX_PRINT_TESTS = 5;
+  const unsigned long MAX_PRINT_TESTS = 5;
   std::stringstream printTests;
   bool firstTest = true;
   for (int i=0; i<std::min(negativeTests.size(), MAX_PRINT_TESTS); i++) {
@@ -270,11 +270,11 @@ bool repair(Project &project,
     dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
   }
 
-  SearchEngine engine(tests, tester, runtime, cfg, getGroupable(searchSpace), relatedTestIndexes);
+  SearchEngine engine(tests, tester, runtime, cfg, getPartitionable(searchSpace), relatedTestIndexes);
 
-  ulong last = 0;
-  ulong patchCount = 0;
-  unordered_set<ulong> fixLocations;
+  unsigned long last = 0;
+  unsigned long patchCount = 0;
+  unordered_set<unsigned long> fixLocations;
 
   while (last < searchSpace.size()) {
     last = engine.findNext(searchSpace, last);

@@ -79,7 +79,7 @@ const Expression COND3_NODE = Expression{ NodeKind::COND3,
 namespace synthesis {
 
   // size of simple (atomic) modification
-  const ulong ATOMIC_EDIT = 1;
+  const unsigned long ATOMIC_EDIT = 1;
 
   vector<Operator> mutateNumericOperator(const Operator &op) {
     assert(op != Operator::NONE);
@@ -151,7 +151,7 @@ namespace synthesis {
     return {};
   }
 
-  ulong operatorWeight(const Operator &op) {
+  unsigned long operatorWeight(const Operator &op) {
     assert(op != Operator::NONE);
     switch (op) {
     case Operator::IMPLICIT_BV_CAST:
@@ -165,7 +165,7 @@ namespace synthesis {
     } 
   }
 
-  ulong expressionDepth(const Expression &expression) {
+  unsigned long expressionDepth(const Expression &expression) {
     if (expression.kind == NodeKind::VARIABLE ||
         expression.kind == NodeKind::CONSTANT ||
         expression.kind == NodeKind::PARAMETER ||
@@ -176,9 +176,9 @@ namespace synthesis {
                expression.kind == NodeKind::COND3) {
       return 2; //NODE: COND3 can be either 2 or 3, but this is unimportant
     } else if (expression.kind == NodeKind::OPERATOR) {
-      ulong max = 0;
+      unsigned long max = 0;
       for (auto &arg : expression.args) {
-        ulong depth = expressionDepth(arg);
+        unsigned long depth = expressionDepth(arg);
         if (max < depth)
           max = depth;
       }
@@ -263,7 +263,7 @@ namespace synthesis {
     return result;
   }
 
-  ulong substitutionDistance(const Expression &from, const Expression &to) {
+  unsigned long substitutionDistance(const Expression &from, const Expression &to) {
     return expressionDepth(from) + expressionDepth(to) - 1;
   }
 
@@ -453,7 +453,7 @@ namespace generator {
         << "__f1xid_t *__f1xids = NULL;" << "\n";
 
     OUT << "void __f1x_init_runtime() {" << "\n";
-    if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+    if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
       OUT << "int fd = shm_open(\"" << PARTITION_FILE_NAME << "\", O_RDWR, 0);" << "\n"
           << "struct stat sb;" << "\n"
           << "fstat(fd, &sb);" << "\n"
@@ -681,13 +681,13 @@ namespace generator {
 
   vector<pair<F1XID, Expression>> generateParameterInstances(const F1XID &partialId,
                                                              const Expression &expression,
-                                                             const ulong &paramBound) {
+                                                             const unsigned long &paramBound) {
     vector<pair<F1XID, Expression>> result;
     return result;
   }
 
   void candidateDispatch(shared_ptr<SchemaApplication> sa,
-                                ulong &baseId,
+                                unsigned long &baseId,
                                 std::ostream &OS,
                                 vector<SearchSpaceElement> &ss,
                                 const Config &cfg) {
@@ -695,7 +695,7 @@ namespace generator {
     unordered_map<string, string> sizeByType = typeSizes(sa);
     unordered_map<string, string> nullDerefByName = nullDerefCondition(sa, runtimeReprBySource);
 
-    ulong paramBound;
+    unsigned long paramBound;
     if (sa->context == LocationContext::CONDITION) {
       paramBound = cfg.maxConditionParameter;
     } else {
@@ -727,9 +727,6 @@ namespace generator {
       Expression runtimeExpr = candidate.first;
       PatchMetadata metadata = candidate.second;
       substituteWithRuntimeRepr(runtimeExpr, runtimeReprBySource);
-
-      if (isAbstractExpression(runtimeExpr) && ! cfg.synthesizeExpressions)
-          continue;
 
       F1XID partialId{0};
       partialId.base = baseId;
@@ -789,7 +786,7 @@ namespace generator {
 
     generator::runtimeLoader(OS, cfg);
 
-    ulong baseId = 1; // because 0 is reserved:
+    unsigned long baseId = 1; // because 0 is reserved:
 
     for (auto sa : schemaApplications) {
       string outputType;
@@ -824,7 +821,7 @@ namespace generator {
          << "bool output_panic = false;" << "\n"
          << "bool current_panic = false;" << "\n";
 
-      if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+      if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
         OS << "if (__f1xids == NULL) __f1x_init_runtime();" << "\n";
       }
 
@@ -840,7 +837,7 @@ namespace generator {
          << "output_initialized = true;" << "\n"
          << "} else if ((output_panic && current_panic)"
          << " || (!output_panic && !current_panic && output_value == base_value)) {" << "\n";
-      if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+      if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
         OS << "__f1xids[output_index] = id;" << "\n"
            << "output_index++;" << "\n";
       }
@@ -852,7 +849,7 @@ namespace generator {
          << "goto " << "label_" << locationNameSuffix(sa->location) << ";" << "\n"
          << "}" << "\n";
 
-      if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+      if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
         // output terminator:
         OS << "__f1xids[output_index] = __f1xid_t{0, 0, 0, 0, 1};" << "\n";
       }

@@ -18,14 +18,19 @@
 
 #pragma once
 
-#include <cstdint>
+const ulong F1X_VERSION_MAJOR = @F1X_VERSION_MAJOR@;
+const ulong F1X_VERSION_MINOR = @F1X_VERSION_MINOR@;
+const ulong F1X_VERSION_PATCH = @F1X_VERSION_PATCH@;
 
-typedef unsigned long ulong;
+const std::string F1X_CLANG_INCLUDE = "@F1X_CLANG_INCLUDE@";
 
+const std::string F1X_RUNTIME_COMPILER = "g++";
+const std::string F1X_RUNTIME_OPTIMIZATION = "-O1";
 
 enum class Exploration {
   GENERATE_AND_VALIDATE, // evaluate patches one-by-one
-  SEMANTIC_PARTITIONING  // group patches into semantic partitions
+  TEST_EQUIVALENCE,      // one-the-fly group patches based on test-equivalence
+  PATH_EXPLORATION       // UNSUPPORTED explore paths, then synthesize patches
 };
 
 
@@ -41,7 +46,6 @@ const bool USE_GLOBAL_VARIABLES = false;
 struct Config {
   bool verbose;
   bool validatePatches;
-  bool synthesizeExpressions;
   bool exploreAll;
   bool dumpSearchSpace; /* UNSUPPORTED */
   bool outputPatchMetadata; /* UNSUPPORTED */
@@ -54,15 +58,15 @@ struct Config {
 
 
 static Config DEFAULT_CONFIG = {
-  false,   /* verbose */
-  true,    /* validatePatches */
-  true,    /* synthesizeExpressions */
-  false,   /* exploreAll */
-  false,   /* dumpSearchSpace */
-  false,   /* outputPatchMetadata */
-  false,   /* removeIntermediateData */
-  64,      /* maxConditionParameter */
-  1,       /* maxExpressionParameter */
-  Exploration::SEMANTIC_PARTITIONING,
-  TestPrioritization::MAX_FAILING,
+  /* verbose = */ false,
+  /* validatePatches = */ true,
+  /* exploreAll = */ false,
+  /* dumpSearchSpace = */ false,
+  /* outputPatchMetadata = */ false,
+  /* removeIntermediateData = */ false,
+  /* maxConditionParameter = */ 64,
+  /* maxExpressionParameter = */ 1,
+  /* exploration = */ Exploration::TEST_EQUIVALENCE,
+  /* testPrioritization = */ TestPrioritization::MAX_FAILING,
 };
+

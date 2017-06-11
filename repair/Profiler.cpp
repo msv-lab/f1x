@@ -27,7 +27,7 @@
 
 #include "RepairUtil.h"
 #include "Profiler.h"
-#include "SystemConfig.h"
+#include "Config.h"
 
 namespace fs = boost::filesystem;
 using std::string;
@@ -60,7 +60,7 @@ boost::filesystem::path Profiler::getSource() {
   return workDir / PROFILE_SOURCE_FILE_NAME;
 }
 
-unordered_map<Location, vector<int>> Profiler::getRelatedTestIndexes() {
+unordered_map<Location, vector<unsigned>> Profiler::getRelatedTestIndexes() {
   return relatedTestIndexes;
 }
 
@@ -140,7 +140,7 @@ bool Profiler::compile() {
     cmd << " >/dev/null 2>&1";
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  ulong status = std::system(cmd.str().c_str());
+  unsigned long status = std::system(cmd.str().c_str());
   return WEXITSTATUS(status) == 0;
 }
 
@@ -151,7 +151,7 @@ void Profiler::clearTrace() {
   out.close();
 }
 
-void Profiler::mergeTrace(int testIndex, bool isPassing) {
+void Profiler::mergeTrace(unsigned testIndex, bool isPassing) {
   fs::path traceFile = workDir / TRACE_FILE_NAME;
   fs::ifstream infile(traceFile);
   set<string> covered;
@@ -162,9 +162,9 @@ void Profiler::mergeTrace(int testIndex, bool isPassing) {
       std::istringstream iss(line);
       iss >> loc.fileId >> loc.beginLine >> loc.beginColumn >> loc.endLine >> loc.endColumn;
       if(! relatedTestIndexes.count(loc)) {
-        relatedTestIndexes[loc] = vector<int>();
+        relatedTestIndexes[loc] = vector<unsigned>();
       }
-      vector<int> current = relatedTestIndexes[loc];
+      vector<unsigned> current = relatedTestIndexes[loc];
       if (std::find(current.begin(), current.end(), testIndex) == current.end()) {
         //NOTE: put failing in the beginning, passing in the end
         if (isPassing)
@@ -208,7 +208,7 @@ fs::path Profiler::getProfile() {
   fs::ofstream outfile(profileFile, std::ios::app);
 
   //NOTE: removing uninteresting test indexes
-  unordered_map<Location, vector<int>>::iterator it = relatedTestIndexes.begin();
+  unordered_map<Location, vector<unsigned>>::iterator it = relatedTestIndexes.begin();
   while(it != relatedTestIndexes.end()) {
     if(interestingLocations.find(locToString(it->first)) == interestingLocations.end()) {
       it = relatedTestIndexes.erase(it);

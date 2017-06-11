@@ -31,17 +31,17 @@
 const bool INPLACE_MODIFICATION = true;
 
 //FIXME: better to pass these variables to constructors, but it requires a lot of boilerplate
-extern ulong globalFileId;
-extern ulong globalFromLine;
-extern ulong globalToLine;
+extern unsigned globalFileId;
+extern unsigned globalFromLine;
+extern unsigned globalToLine;
 extern std::string globalProfileFile;
 extern std::string globalOutputFile;
-extern ulong globalBeginLine;
-extern ulong globalBeginColumn;
-extern ulong globalEndLine;
-extern ulong globalEndColumn;
+extern unsigned globalBeginLine;
+extern unsigned globalBeginColumn;
+extern unsigned globalEndLine;
+extern unsigned globalEndColumn;
 extern std::string globalPatch;
-extern ulong globalBaseAppId;
+extern unsigned long globalBaseAppId;
 //NOTE: this is a hack to collect ifdef locations from preprocessor
 extern std::shared_ptr<std::vector<clang::SourceRange>> globalConditionalsPP;
 
@@ -53,11 +53,11 @@ inline void hash_combine(std::size_t & s, const T & v) {
 }
 
 struct Location {
-  ulong fileId;
-  ulong beginLine;
-  ulong beginColumn;
-  ulong endLine;
-  ulong endColumn;
+  unsigned fileId;
+  unsigned beginLine;
+  unsigned beginColumn;
+  unsigned endLine;
+  unsigned endColumn;
 
   bool operator==(const Location &other) const { 
     return (fileId == other.fileId
@@ -83,7 +83,7 @@ namespace std {
   };
 }
 
-ulong getDeclExpandedLine(const clang::Decl *decl, clang::SourceManager &srcMgr);
+unsigned getDeclExpandedLine(const clang::Decl *decl, clang::SourceManager &srcMgr);
 
 bool insideMacro(const clang::Stmt *expr, clang::SourceManager &srcMgr, const clang::LangOptions &langOpts);
 
@@ -124,17 +124,17 @@ rapidjson::Value stmtToJSON(const clang::Stmt *stmt,
                             rapidjson::Document::AllocatorType &allocator);
 
 
-rapidjson::Value locToJSON(ulong fileId, ulong bl, ulong bc, ulong el, ulong ec,
+rapidjson::Value locToJSON(unsigned fileId, unsigned bl, unsigned bc, unsigned el, unsigned ec,
                            rapidjson::Document::AllocatorType &allocator);
 
 
 std::vector<rapidjson::Value> collectComponents(const clang::Stmt *stmt,
-                                                ulong line,
+                                                unsigned line,
                                                 clang::ASTContext *context,
                                                 rapidjson::Document::AllocatorType &allocator);
 
 
 std::string makeArgumentList(std::vector<rapidjson::Value> &components);
 
-ulong f1xapp(ulong baseId, ulong fileId);
-bool inRange(ulong line);
+unsigned long f1xapp(unsigned long baseId, unsigned fileId);
+bool inRange(unsigned line);

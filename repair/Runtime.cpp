@@ -30,7 +30,7 @@
 
 #include "RepairUtil.h"
 #include "Runtime.h"
-#include "SystemConfig.h"
+#include "Config.h"
 
 namespace fs = boost::filesystem;
 using std::vector;
@@ -52,7 +52,7 @@ Runtime::Runtime(const fs::path &workDir, const Config &cfg):
 
 void Runtime::setPartition(std::unordered_set<F1XID> ids) {
   assert(ids.size() < MAX_PARTITION_SIZE);
-  ulong index = 0;
+  unsigned long index = 0;
   for (auto &id : ids) {
     partition[index] = id;
     index++;
@@ -62,7 +62,7 @@ void Runtime::setPartition(std::unordered_set<F1XID> ids) {
 
 unordered_set<F1XID> Runtime::getPartition() {
   unordered_set<F1XID> result;
-  ulong index = 0;
+  unsigned long index = 0;
   while (!(partition[index] == OUTPUT_TERMINATOR)) {
     if (partition[index] == INPUT_TERMINATOR) {
       BOOST_LOG_TRIVIAL(debug) << "wrongly terminated partition";
@@ -104,6 +104,6 @@ bool Runtime::compile() {
     cmd << " >/dev/null 2>&1";
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  ulong status = std::system(cmd.str().c_str());
+  unsigned long status = std::system(cmd.str().c_str());
   return WEXITSTATUS(status) == 0;
 }

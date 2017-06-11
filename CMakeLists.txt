@@ -60,8 +60,8 @@ set (F1X_VERSION_PATCH 0)
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
-  "${PROJECT_SOURCE_DIR}/SystemConfig.h.in"
-  "${PROJECT_BINARY_DIR}/SystemConfig.h"
+  "${PROJECT_SOURCE_DIR}/Config.h.in"
+  "${PROJECT_BINARY_DIR}/Config.h"
   )
 
 # add the binary tree to the search path for include files
@@ -71,9 +71,11 @@ include_directories("${PROJECT_BINARY_DIR}")
 # JSON library
 include_directories(thirdparty)
 
-include_directories(lib)
+include_directories(repair)
+include_directories(transform)
 
-add_subdirectory(lib)
+add_subdirectory(repair)
+add_subdirectory(transform)
 add_subdirectory(tools)
 
 set (F1X_TOOLS_DIR "${PROJECT_BINARY_DIR}/tools/")

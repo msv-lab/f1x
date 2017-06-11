@@ -23,7 +23,7 @@
 
 #include <boost/log/trivial.hpp>
 
-#include "F1XConfig.h"
+#include "Config.h"
 #include "SearchEngine.h"
 #include "RepairUtil.h"
 
@@ -33,19 +33,19 @@ using std::shared_ptr;
 using std::string;
 using std::to_string;
 
-const ulong SHOW_PROGRESS_STEP = 10;
+const unsigned SHOW_PROGRESS_STEP = 10;
 
 SearchEngine::SearchEngine(const std::vector<std::string> &tests,
                            TestingFramework &tester,
                            Runtime &runtime,
                            const Config &cfg,
-                           shared_ptr<unordered_map<ulong, unordered_set<F1XID>>> groupable,
-                           std::unordered_map<Location, std::vector<int>> relatedTestIndexes):
+                           shared_ptr<unordered_map<unsigned long, unordered_set<F1XID>>> partitionable,
+                           std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes):
   tests(tests),
   tester(tester),
   runtime(runtime),
   cfg(cfg),
-  groupable(groupable),
+  partitionable(partitionable),
   relatedTestIndexes(relatedTestIndexes) {
   
   stat.explorationCounter = 0;
@@ -62,9 +62,10 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   }
 }
 
-ulong SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace, ulong fromIdx) {
+unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace,
+                                     unsigned long fromIdx) {
 
-  ulong candIdx = fromIdx;
+  unsigned long candIdx = fromIdx;
   for (; candIdx < searchSpace.size(); candIdx++) {
     stat.explorationCounter++;
     if ((100 * candIdx) / searchSpace.size() >= progress) {
@@ -74,7 +75,7 @@ ulong SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace,
 
     const SearchSpaceElement &elem = searchSpace[candIdx];
 
-    if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+    if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
       if (failing.count(elem.id))
         continue;
     }
@@ -90,18 +91,18 @@ ulong SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace,
     
     std::shared_ptr<SchemaApplication> sa = elem.app;
     
-    std::vector<int> testOrder = relatedTestIndexes[elem.app->location];
+    std::vector<unsigned> testOrder = relatedTestIndexes[elem.app->location];
     
-    for (int orderIdx = 0; orderIdx < testOrder.size(); orderIdx++) {
+    for (unsigned orderIdx = 0; orderIdx < testOrder.size(); orderIdx++) {
       auto test = tests[testOrder[orderIdx]];
       BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizeF1XID(elem.id) 
                                << " with test " << test;
 
-      if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+      if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
         if (passing[test].count(elem.id))
           continue;
         //FIXME: select unexplored candidates
-        runtime.setPartition((*groupable)[elem.app->appId]);
+        runtime.setPartition((*partitionable)[elem.app->appId]);
       }
 
       stat.executionCounter++;
@@ -122,7 +123,7 @@ ulong SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace,
 
       passAll = (status == TestStatus::PASS);
         
-      if (cfg.exploration == Exploration::SEMANTIC_PARTITIONING) {
+      if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
         unordered_set<F1XID> partition = runtime.getPartition();
         if (partition.empty()) {
           BOOST_LOG_TRIVIAL(warning) << "partitioning failed for "
@@ -140,7 +141,7 @@ ulong SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace,
 
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
-          changeSensitivity(relatedTestIndexes[elem.app->location], orderIdx);
+          prioritizeTest(relatedTestIndexes[elem.app->location], orderIdx);
         }
         break;
       }
@@ -158,9 +159,9 @@ SearchStatistics SearchEngine::getStatistics() {
   return stat;
 }
 
-void SearchEngine::changeSensitivity(std::vector<int> &testOrder, int index) {
-    std::vector<int>::iterator it = testOrder.begin() + index;
-    int temp = testOrder[index];
+void SearchEngine::prioritizeTest(std::vector<unsigned> &testOrder, unsigned index) {
+    std::vector<unsigned>::iterator it = testOrder.begin() + index;
+    unsigned temp = testOrder[index];
     testOrder.erase(it);
     testOrder.insert(testOrder.begin(), temp);
 }

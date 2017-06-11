@@ -25,7 +25,7 @@
 #include "ProfileInstrumentation.h"
 #include "SchemaApplication.h"
 #include "PatchApplication.h"
-#include "F1XConfig.h"
+#include "Config.h"
 
 using namespace clang::tooling;
 using namespace llvm;

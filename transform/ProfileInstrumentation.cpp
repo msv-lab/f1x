@@ -21,7 +21,7 @@
 #include <iostream>
 #include <unordered_set>
 
-#include "F1XConfig.h"
+#include "Config.h"
 #include "TransformationUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "ProfileInstrumentation.h"
@@ -96,10 +96,10 @@ void IfGuardSchemaProfileHandler::run(const MatchFinder::MatchResult &Result) {
 
       SourceRange expandedLoc = getExpandedLoc(stmt, srcMgr);
 
-      ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-      ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-      ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-      ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+      unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+      unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+      unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+      unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
       
       if (!inRange(beginLine))
         return;
@@ -110,7 +110,7 @@ void IfGuardSchemaProfileHandler::run(const MatchFinder::MatchResult &Result) {
       alreadyMatched.insert(current);
 
       // NOTE: to avoid extracting locations from headers:
-      std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+      std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
       if (srcMgr.getMainFileID() != decLoc.first)
         return;
 
@@ -140,10 +140,10 @@ void ExpressionSchemaProfileHandler::run(const MatchFinder::MatchResult &Result)
 
     SourceRange expandedLoc = getExpandedLoc(expr, srcMgr);
 
-    ulong beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
-    ulong beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
-    ulong endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
-    ulong endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
+    unsigned beginLine = srcMgr.getExpansionLineNumber(expandedLoc.getBegin());
+    unsigned beginColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getBegin());
+    unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
+    unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
     if (!inRange(beginLine))
       return;
@@ -154,7 +154,7 @@ void ExpressionSchemaProfileHandler::run(const MatchFinder::MatchResult &Result)
     alreadyMatched.insert(current);
 
     // NOTE: to avoid extracting locations from headers:
-    std::pair<FileID, ulong> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
+    std::pair<FileID, unsigned> decLoc = srcMgr.getDecomposedExpansionLoc(expandedLoc.getBegin());
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 

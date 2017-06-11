@@ -24,10 +24,10 @@
 
 #include <boost/filesystem.hpp>
 
-#include "F1XConfig.h"
+#include "Config.h"
 #include "RepairUtil.h"
 
-const ulong MAX_PARTITION_SIZE = 1000000;
+const unsigned long MAX_PARTITION_SIZE = 1000000;
 const std::string PARTITION_FILE_NAME = "/f1x_partition";
 const F1XID INPUT_TERMINATOR = F1XID{0, 0, 0, 0, 0};
 const F1XID OUTPUT_TERMINATOR = F1XID{0, 0, 0, 0, 1};

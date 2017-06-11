@@ -24,15 +24,15 @@
 
 #include <boost/filesystem.hpp>
 
-#include "F1XConfig.h"
+#include "Config.h"
 
 
 struct F1XID {
-  ulong base;  // 0 is reserved for special purpose
-  ulong int2;  // 0 means disabled
-  ulong bool2; // 0 means disabled
-  ulong cond3; // 0 means disabled
-  ulong param; // this is expression parameter
+  unsigned long base;  // 0 is reserved for special purpose
+  unsigned long int2;  // 0 means disabled
+  unsigned long bool2; // 0 means disabled
+  unsigned long cond3; // 0 means disabled
+  unsigned long param; // this is expression parameter
 
   bool operator==(const F1XID &other) const { 
     return (base == other.base
@@ -165,11 +165,11 @@ Expression makeNonZeroCheck(const Expression &expression);
 
 
 struct Location {
-  ulong fileId;
-  ulong beginLine;
-  ulong beginColumn;
-  ulong endLine;
-  ulong endColumn;
+  unsigned long fileId;
+  unsigned long beginLine;
+  unsigned long beginColumn;
+  unsigned long endLine;
+  unsigned long endColumn;
 
   bool operator==(const Location &other) const { 
     return (fileId == other.fileId
@@ -227,7 +227,7 @@ enum struct LocationContext {
 
 
 struct SchemaApplication {
-  ulong appId;
+  unsigned long appId;
   TransformationSchema schema;
   Location location;
   LocationContext context;
@@ -239,7 +239,7 @@ struct SchemaApplication {
 
 struct PatchMetadata {
   ModificationKind kind;
-  ulong distance;
+  unsigned long distance;
 };
 
 

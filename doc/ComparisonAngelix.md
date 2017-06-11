@@ -1,20 +1,30 @@
-# Comparison with Angelix #
+# f1x vs Angelix #
 
-f1x is the successor of [Angelix](http://angelix.io). We recommend f1x for general use, since it represents a more practical trade-off between efficiency, effectiveness and usability. However, Angelix also provides several unique capabilities not available in f1x.
+### Search methodology ###
 
-The advantages of f1x:
+From the point of view of search methodology, f1x is an __improvement__ of Angelix that addresses the path explosion problem. The corresponding tradeoffs:
 
-- f1x generates more patches (e.g. for Genprog ICSE'12 benchmark);
-- f1x is significantly faster (e.g. for Genprog ICSE'12 benchmark);
-- f1x supports patch prioritization (due to explicit search space representation and the global maximum guarantee);
-- f1x is easier to install and use;
+- f1x scales to larger search spaces and therefore can repair more bugs [TBA];
+- f1x search is complete (exhaustive), while Angelix search is not [TBA].
+
+### Underlying analysis ###
+
+Angelix is symbolic (uses constraint solving), while f1x is enumerative. Therefore, f1x is a __counterpart__ of Angelix from the point view of underlying analysis. The corresponding tradeoffs: 
+
+- f1x supports arbitrary patch prioritization [TBA];
+- f1x is not restricted to theories supported by SMT solver (e.g. supports non-linear arithmetic, etc.);
+- f1x does not depend on symbolic execution and therefore can be applied to a wider variety of programs;
+- f1x performance is more consistent [NO DOCUMENTED EVIDENCE];
+- Angelix is better in synthesizing constants [NO DOCUMENTED EVIDENCE];
+- Angelix is better in repairing integer expressions [NO DOCUMENTED EVIDENCE].
+
+### Implementation ###
+
+The implementation tradeoffs:
+
 - f1x does not require manual source code instrumentation;
-- f1x does not rely on symbolic execution and therefore can be applied to a wider variety of programs;
-- f1x is more accurate (its expression synthesizer is bit-precise);
-- f1x is not restricted to theories supported by SMT solver (e.g. it supports non-linear arithmetic, etc.)
-
-The advantages of Angelix:
-
-- Angelix can generate multi-line patches;
-- Angelix can generate more complex patches (e.g. for Heartbleed vulnerability)
-- Angelix can be potentially more reliable if its symbolic search space representation is combined with verification.
+- f1x is easier to install and use;
+- f1x implementation is deterministic, while Angelix implementation is not;
+- f1x synthesizer is bit-precise, while Angelix synthesizer is not;
+- Angelix can generate multi-line patches, while f1x cannot;
+- Angelix contain more complex patches in its search space (e.g. can fix Heartbleed vulnerability).

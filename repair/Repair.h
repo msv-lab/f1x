@@ -20,7 +20,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "F1XConfig.h"
+#include "Config.h"
 #include "Project.h"
 
 
