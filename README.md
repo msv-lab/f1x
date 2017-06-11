@@ -8,7 +8,7 @@ In order to install f1x you can either [build it from source](doc/BuildFromSourc
 
 The quickest way to get started with f1x is to go though our [tutorial](doc/Tutorial.md). More detailed information about the tool and the underlying algorithms is given in the [manual](doc/Manual.md). If you encounter a problem while using f1x, please consult the [troubleshooting guide](doc/Troubleshooting.md) or ask us by email (contact: Sergey Mechtaev, `mechtaev@comp.nus.edu.sg`). If you plan to modify f1x, please refer to the [developer guide](doc/Development.md).
 
-f1x have been evaluated on several automated program repair benchmarks. We provide scripts for reproducing [experiments with Genprog ICSE'12 benchmark](https://github.com/mechtaev/f1x-genprog-icse12) and [experiments with IntroClass benchmark](https://github.com/stan6/f1x-introclass).
+f1x has been evaluated on several automated program repair benchmarks. We provide environment for reproducing [experiments with Genprog ICSE'12 benchmark](https://github.com/mechtaev/f1x-genprog-icse12) and [experiments with IntroClass benchmark](https://github.com/stan6/f1x-introclass).
 
 ## People ##
 
