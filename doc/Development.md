@@ -29,6 +29,8 @@ The repair process and the meta-program runtime interact through shared memory (
 
 ## Transformation ##
 
+f1x relies on Clang to perform source code transformation.
+
 f1x-transform represents applications of transformation schemas to program locations in the following way:
 
     [
@@ -77,4 +79,3 @@ Each expression is represented as follows:
     }
     
 Kinds: `operator`, `constant`, `variable`. Types: `integer`, `pointer`. For pointers, `rawType` is the pointee type.
-
