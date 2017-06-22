@@ -25,7 +25,7 @@
 #include <boost/filesystem.hpp>
 
 #include "Config.h"
-#include "RepairUtil.h"
+#include "Util.h"
 
 const unsigned long MAX_PARTITION_SIZE = 1000000;
 const std::string PARTITION_FILE_NAME = "/f1x_partition";

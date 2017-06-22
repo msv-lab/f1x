@@ -34,7 +34,7 @@
 
 #include "Config.h"
 #include "Repair.h"
-#include "RepairUtil.h"
+#include "Util.h"
 
 
 namespace po = boost::program_options;
@@ -116,14 +116,16 @@ int main (int argc, char *argv[]) {
     ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
-    ("dump-profile", po::value<string>()->value_name("PATH"), "save project profile")
-    ("load-profile", po::value<string>()->value_name("PATH"), "load project profile")
-    ("dump-space", po::value<string>()->value_name("PATH"), "output search space")
+    ("dump-profile", po::value<string>()->value_name("PATH"), "[DEBUG] save project profile")
+    ("load-profile", po::value<string>()->value_name("PATH"), "[DEBUG] load project profile")
+    ("dump-space", po::value<string>()->value_name("PATH"), "[DEBUG] output search space")
     ("enable-cleanup", "remove intermediate files")
     ("enable-metadata", "output patch metadata")
-    ("disable-analysis", "don't partition search space")
-    ("disable-validation", "don't validate generated patches")
-    ("disable-testprior", "don't prioritize tests")
+    ("enable-assign", "synthesize assignment statements")
+    ("enable-cpp", "[EXPERIMENTAL] repair C++ source code")
+    ("disable-analysis", "[DEBUG] don't partition search space")
+    ("disable-testprior", "[DEBUG] don't prioritize tests")
+    ("disable-validation", "don't validate found patches")
     ;
 
   po::options_description hidden("Hidden options");
@@ -187,6 +189,9 @@ int main (int argc, char *argv[]) {
     cfg.testPrioritization = TestPrioritization::FIXED_ORDER;
   }
 
+  if (vm.count("dump-space")) {
+    cfg.searchSpaceFile = std::make_shared<std::string>(fs::absolute(vm["dump-space"].as<string>()).string());
+  }
 
   if (!vm.count("source")) {
     BOOST_LOG_TRIVIAL(error) << "source directory is not specified (use --help)";

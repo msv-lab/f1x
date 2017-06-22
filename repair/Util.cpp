@@ -28,7 +28,7 @@
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
 
-#include "RepairUtil.h"
+#include "Util.h"
 #include "Config.h"
 #include "Typing.h"
 

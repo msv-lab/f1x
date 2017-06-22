@@ -24,7 +24,7 @@
 #include <boost/filesystem.hpp>
 
 #include "Config.h"
-#include "RepairUtil.h"
+#include "Util.h"
 
 const std::string TRACE_FILE_NAME = "trace.txt";
 const std::string PROFILE_FILE_NAME = "profile.txt";

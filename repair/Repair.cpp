@@ -31,7 +31,7 @@
 
 #include "Repair.h"
 #include "Typing.h"
-#include "RepairUtil.h"
+#include "Util.h"
 #include "Project.h"
 #include "Runtime.h"
 #include "Profiler.h"
@@ -265,9 +265,10 @@ bool repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "prioritizing search space";
   prioritize(searchSpace);
 
-  if (cfg.dumpSearchSpace) {
-    BOOST_LOG_TRIVIAL(info) << "dumping search space: " << (workDir / "searchspace.txt");
-    dumpSearchSpace(searchSpace, workDir / "searchspace.txt", project.getFiles());
+  if (cfg.searchSpaceFile) {
+    auto path = fs::path(*cfg.searchSpaceFile);
+    BOOST_LOG_TRIVIAL(info) << "dumping search space: " << path;
+    dumpSearchSpace(searchSpace, path, project.getFiles());
   }
 
   SearchEngine engine(tests, tester, runtime, cfg, getPartitionable(searchSpace), relatedTestIndexes);
@@ -289,7 +290,8 @@ bool repair(Project &project,
       
       fs::path relpath = project.getFiles()[searchSpace[last].app->location.fileId].relpath;
       BOOST_LOG_TRIVIAL(info) << "plausible patch: " << visualizeChange(searchSpace[last]) 
-                              << " in " << relpath.string() << ":" << searchSpace[last].app->location.beginLine;;
+                              << " in " << relpath.string() << ":" << searchSpace[last].app->location.beginLine
+                              << " with score " << std::setprecision(3) << simplicityScore(searchSpace[last]);;
       
       bool appSuccess = project.applyPatch(searchSpace[last]);
       if (! appSuccess) {
