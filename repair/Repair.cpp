@@ -290,8 +290,8 @@ bool repair(Project &project,
       
       fs::path relpath = project.getFiles()[searchSpace[last].app->location.fileId].relpath;
       BOOST_LOG_TRIVIAL(info) << "plausible patch: " << visualizeChange(searchSpace[last]) 
-                              << " in " << relpath.string() << ":" << searchSpace[last].app->location.beginLine
-                              << " with score " << std::setprecision(3) << simplicityScore(searchSpace[last]);;
+                              << " with score " << std::setprecision(3) << simplicityScore(searchSpace[last])
+                              << " in " << relpath.string() << ":" << searchSpace[last].app->location.beginLine;
       
       bool appSuccess = project.applyPatch(searchSpace[last]);
       if (! appSuccess) {

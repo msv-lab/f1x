@@ -87,7 +87,7 @@ boost::filesystem::path Runtime::getSource() {
 }
 
 bool Runtime::compile() {
-  BOOST_LOG_TRIVIAL(info) << "compiling meta program runtime";
+  BOOST_LOG_TRIVIAL(info) << "compiling analysis runtime";
   FromDirectory dir(workDir);
   std::stringstream cmd;
   cmd << F1X_RUNTIME_COMPILER 

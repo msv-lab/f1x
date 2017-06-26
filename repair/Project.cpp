@@ -146,7 +146,7 @@ bool Project::buildInEnvironment(const std::map<std::string, std::string> &envir
   InEnvironment env(environment);
 
   std::stringstream cmd;
-  cmd << baseCmd;
+  cmd << " ( " << baseCmd << " ) ";
   if (cfg.verbose) {
     cmd << " >&2";
   } else {
