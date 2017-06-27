@@ -95,8 +95,6 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
     
     for (unsigned orderIdx = 0; orderIdx < testOrder.size(); orderIdx++) {
       auto test = tests[testOrder[orderIdx]];
-      BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizeF1XID(elem.id) 
-                               << " with test " << test;
 
       if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
         if (passing[test].count(elem.id))
@@ -104,6 +102,9 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
         //FIXME: select unexplored candidates
         runtime.setPartition((*partitionable)[elem.app->appId]);
       }
+
+      BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizeF1XID(elem.id) 
+                               << " with test " << test;
 
       stat.executionCounter++;
 
