@@ -1,6 +1,6 @@
 # f1x benchmarking infrastructure #
 
-This repository contains scripts and format specifications for running various benchmarks with f1x
+This documents describes scripts and format specifications for running various benchmarks with f1x
 
 ## Interface ##
 
@@ -18,24 +18,34 @@ Options:
 - `--list` - list all defects
 - `--help` - print help message
 - `--timeout` - running timeout
-- `--repaired` - perform command only for repaired versions
 - `--output DIR` - specify output directory
 
 ## Format ##
 
-In the root directory, there should be `benchmark.json` file. The content of `benchmark.json` should be as follows ($BENCHMARK_ROOT is provided):
+In the root benchmark  directory, there should be `benchmark.json` and `tests.json` files. The content of `benchmark.json` should be as follows (`fetch`, `setUp`, `tearDown` are shell commands, `$BENCHMARK_ROOT` is provided):
 
     [
-	"defect1": {
-	    "repaired": True,
-	    "fetch": "$BENCHMARK_ROOT/fetch defect1",
-	    "setUp": "$BENCHMARK_ROOT/configure defect1",
-	    "tearDown": "rm -rf defect1",
-	    "files": [ "lib/source.c" ],
-	    "negative-tests": [ "1", "2" ],
-	    "positive-tests": [ "3", "4", "5"],
-	    "test-timeout": 1000,
-	    "driver": "$BENCHMARK_ROOT/driver"
-	},
-	...
+        "defect1": {
+            "fetch": "$BENCHMARK_ROOT/util/fetch defect1",
+            "setUp": "$BENCHMARK_ROOT/util/configure defect1",
+            "tearDown": "rm -rf defect1",
+            "source": "defect1/src",
+            "files": [ "lib/source.c" ],
+            "build": "make -e && cd lib1 && make -e",
+            "test-timeout": 1000,
+            "driver": "util/driver"
+        },
+        ...
+    ]
+    
+Note that `source` and `driver` are relative to the benchmark root. `build` is optional.
+
+The content of `tests.json` should be as follows
+
+    [
+        "defect1": {
+            "negative": [ "1", "2" ],
+            "positive": [ "3", "4", "5"]
+        },
+        ...
     ]

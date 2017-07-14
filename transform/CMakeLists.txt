@@ -1,5 +1,5 @@
 #  This file is part of f1x.
-#  Copyright (C) 2016  Sergey Mechtaev, Gao Xiang, Abhik Roychoudhury
+#  Copyright (C) 2016  Sergey Mechtaev, Gao Xiang, Shin Hwei Tan, Abhik Roychoudhury
 #
 #  f1x is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
