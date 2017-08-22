@@ -113,19 +113,21 @@ int main (int argc, char *argv[]) {
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
     ("output,o", po::value<string>()->value_name("PATH"), "output patch file or directory (default: SRC-TIME)")
     ("all,a", "generate all patches")
+    ("cost,c", po::value<string>()->value_name("FUNCTION"), "patch prioritization (default: syntax-diff)")
     ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
     ("dump-profile", po::value<string>()->value_name("PATH"), "[DEBUG] save project profile")
     ("load-profile", po::value<string>()->value_name("PATH"), "[DEBUG] load project profile")
     ("dump-space", po::value<string>()->value_name("PATH"), "[DEBUG] output search space")
-    ("enable-cleanup", "remove intermediate files")
+    ("enable-cleanup", "remove temporary files")
     ("enable-metadata", "output patch metadata")
-    ("enable-assign", "synthesize assignment statements")
     ("enable-cpp", "[EXPERIMENTAL] repair C++ source code")
-    ("disable-analysis", "[DEBUG] don't partition search space")
+    ("disable-vteq", "[DEBUG] don't apply value-based analysis")
+    ("disable-dteq", "[DEBUG] don't apply dependency-based analysis")
     ("disable-testprior", "[DEBUG] don't prioritize tests")
     ("disable-validation", "don't validate found patches")
+    ("disable-assign", "don't synthesize assignments")
     ;
 
   po::options_description hidden("Hidden options");
@@ -181,7 +183,7 @@ int main (int argc, char *argv[]) {
     cfg.validatePatches = false;
   }
 
-  if (vm.count("disable-analysis")) {
+  if (vm.count("disable-vteq")) {
     cfg.exploration = Exploration::GENERATE_AND_VALIDATE;
   }
 
