@@ -4,11 +4,11 @@ f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs.
 
 ## Motivation ##
 
-* ***User/hacker-friendliness***. f1x requires virtually no configuration, has a compact implementation and provides several installation options.
-* ***Experimentation infrastructure***. f1x comes with environments for executing GenProg ICSE'12 benchmark, IntroClass benchmark and more coming soon.
+* ***User/hacker-friendly***. f1x requires virtually no configuration, has a simple interface and a compact implementation.
+* ***Experimentation***. f1x comes with environments for executing GenProg ICSE'12 benchmark, IntroClass benchmark and more coming soon.
 * ***Efficiency***. f1x generates fixes 10 times faster than previous systems (for GenProg ICSE'12 benchmark).
-* ***Effectiveness***. f1x can fix more bugs since it explores larger spaces of candidate patches compared with previous systems.
-* ***Future research***. f1x searches for patches that optimize a given cost function and therefore can be a platform for AI-based program repair.
+* ***Effectiveness***. f1x can repair more defects since it explores larger spaces of candidate patches compared with previous systems.
+* ***Future research***. f1x searches for patches that optimize a given cost function and therefore can be used as a platform for AI-based program repair.
 
 ## Documentation ##
 
