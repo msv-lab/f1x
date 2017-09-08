@@ -25,6 +25,18 @@ target_link_libraries(f1x
   ${CMAKE_THREAD_LIBS_INIT}
   rt)
 
+
+## f1x-bench target:
+
+add_executable(f1x-bench F1XBench.cpp)
+
+target_link_libraries(f1x-bench
+  f1xRepair # this is not really needed
+  ${Boost_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  rt)
+
+
 ## f1x-transform target:
 
 # Find the libraries that correspond to the LLVM components

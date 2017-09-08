@@ -1,44 +1,38 @@
-# f1x benchmarking infrastructure #
+# f1x-bench #
 
-This documents describes scripts and format specifications for running various benchmarks with f1x
+f1x-bench is a tool and a format specification for executing program repair benchmarks with f1x (and other tools). In f1x-bench, an experiment with a defect has the following lifecycle:
 
-## Interface ##
+- `fetch` - obtain a fresh copy of the subject program
+- `set-up` (optional) - configure the copy, etc.
+- `run` - execute the repair tool with the subject program
+- `tear-down` (optional) - check patch correctness, etc.
+- `remove` - delete the copy of the subject program
 
-- `f1x-bench DEFECT` - reproduce (fetch + setUp + run + tearDown) a repair for DEFECT
-- `f1x-bench` - reproduce repairs for all defects
+## Tool ##
+
+- `f1x-bench DEFECT` - perform an experiment (fetch + set-up + run + tear-down + remove) for DEFECT
+- `f1x-bench` - perform experiments for all defects
 
 Options:
 
-- `--root` - specify $BENCHMARK_ROOT (current directory by default)
-- `--fetch` - only fetch (should create directory DEFECT in current directory)
-- `--setUp` - only setUp (e.g. configure)
-- `--run` - only run (execute f1x, save results in output directory)
-- `--tearDown` - only tearDown (remove DEFECT directory, possibly something else)
-- `--print` - only print f1x command for specified DEFECT
-- `--list` - list all defects
+- `--root` - specify benchmark directory (current directory by default)
+- `--output DIR` - specify output directory (optional)
+- `--timeout` - timeout for individual defect (optional)
+- `--quiet` - print compact summary
 - `--help` - print help message
-- `--timeout` - running timeout
-- `--output DIR` - specify output directory
+- `--version` - print version
 
-## Format ##
+Options when used with a single defect:
 
-In the root benchmark  directory, there should be `benchmark.json` and `tests.json` files. The content of `benchmark.json` should be as follows (`fetch`, `setUp`, `tearDown` are shell commands, `$BENCHMARK_ROOT` is provided):
+- `--fetch` - only fetch (create directory DEFECT in current directory)
+- `--set-up` - only set-up
+- `--run` - only run
+- `--tear-down` - only tear-down
+- `--cmd` - only print f1x command for specified DEFECT
 
-    [
-        "defect1": {
-            "fetch": "$BENCHMARK_ROOT/util/fetch defect1",
-            "setUp": "$BENCHMARK_ROOT/util/configure defect1",
-            "tearDown": "rm -rf defect1",
-            "source": "defect1/src",
-            "files": [ "lib/source.c" ],
-            "build": "make -e && cd lib1 && make -e",
-            "test-timeout": 1000,
-            "driver": "util/driver"
-        },
-        ...
-    ]
-    
-Note that `source` and `driver` are relative to the benchmark root. `build` is optional.
+## Format specification ##
+
+The benchmark directory should contain two files: `tests.json` and `benchmark.json`.
 
 The content of `tests.json` should be as follows
 
@@ -49,3 +43,24 @@ The content of `tests.json` should be as follows
         },
         ...
     ]
+
+
+
+The content of `benchmark.json` should be as follows (`fetch`, `set-up`, `tear-down` are shell commands, `$F1X_BENCH_ROOT` and `$F1X_BENCH_OUTPUT` are provided environment variables):
+
+    [
+        "defect1": {
+            "fetch": "$F1X_BENCH_ROOT/fetch defect1",
+            "set-up": "$F1X_BENCH_ROOT/configure defect1",
+            "tear-down": "$F1X_BENCH_ROOT/check-patch $F1X_BENCH_OUTPUT defect1",
+            "source": "defect1/src",
+            "files": [ "lib/source.c" ],
+            "build": "make -e && cd lib1 && make -e",
+            "test-timeout": 1000,
+            "driver": "driver"
+        },
+        ...
+    ]
+    
+`source` and `driver` are relative to the benchmark root. `set-up`, `tear-down` and `build` are optional.
+
