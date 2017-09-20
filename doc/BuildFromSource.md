@@ -14,10 +14,10 @@ Install a new version of CMake (3.4.3 or higher, version is important).
     wget http://releases.llvm.org/3.8.1/clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz
     tar xf clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz
     
-Alternatively, you can build LLVM and Clang from sources (e.g. if the binary is not available for your platform). We provide a script for downloading, building and installing it locally from sources (create a directory `<my-llvm-dir>` where it will be installed):
+Alternatively, you can build LLVM and Clang from sources (e.g. if the binary is not available for your platform or it is built using a different compiler). We provide a script for downloading, building and installing it locally from sources (create a directory `<my-llvm-dir>` where it will be installed):
 
     cd <my-llvm-dir>
-    /path/to/f1x/scripts/download-and-build-llvm-3.8.1.sh
+    /path/to/f1x/infra/download_build_install_llvm.sh
     
 To compile f1x, execute the following (from the f1x root directory):
     
