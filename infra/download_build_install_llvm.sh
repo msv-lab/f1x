@@ -28,6 +28,7 @@ require () {
 
 require wget
 require cmake
+require ninja
 
 LLVM_URL="http://llvm.org/releases/3.8.1/llvm-3.8.1.src.tar.xz"
 LLVM_ARCHIVE="llvm-3.8.1.src.tar.xz"
@@ -61,7 +62,13 @@ mkdir -p "build"
 
 (
     cd "build"
-    cmake "../src" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"
-    make
-    make install
+    cmake "../src" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -G "Ninja"
+    ninja
+    ninja install
 )
+
+rm -rf build
+rm -f "$LLVM_ARCHIVE"
+rm -f "$CLANG_ARCHIVE"
+rm -f "$COMPILER_RT_ARCHIVE"
+rm -f "$CLANG_TOOLS_EXTRA_ARCHIVE"
