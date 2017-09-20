@@ -1,6 +1,6 @@
 # f1x Docker image #
 
-To pull the latest build of a our Docker image run [UNAVAILABLE]:
+[UNAVAILABLE] To pull our Docker image, run:
 
     docker pull mechtaev/f1x
 
