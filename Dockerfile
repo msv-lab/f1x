@@ -20,7 +20,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && apt-get upgrade -y && apt-get autoremove -y
 
-RUN apt-get install -y build-essential cmake zlib1g-dev libtinfo-dev
+RUN apt-get install -y build-essential cmake zlib1g-dev libtinfo-dev python
 RUN apt-get install -y libboost-filesystem-dev libboost-program-options-dev libboost-log-dev
 
 ADD CMakeLists.txt /f1x/
