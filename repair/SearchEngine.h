@@ -32,6 +32,8 @@ struct SearchStatistics {
   unsigned long explorationCounter;
   unsigned long executionCounter;
   unsigned long timeoutCounter;
+  unsigned long nonTimeoutCounter;
+  unsigned long nonTimeoutTestTime;
 };
 
 

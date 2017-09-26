@@ -21,7 +21,9 @@ f1x expression synthesizer is bit-precise; it supports all builtin (C99) integer
 
 ### Test-equivalence analyses ###
 
-The search space of f1x includes a huge number of program changes. In order to perform search efficiently, f1x implements several test-equivalence analyses that help to avoid redundant test executions:
+f1x performs search by applying and testing candidate patches.
+Since the search space of f1x includes a huge number of program changes, it is inefficient to test each change individually.
+In order to address this, f1x implements several test-equivalence analyses that help to avoid redundant test executions:
 
 1. `vteq`: value-based test-equivalence analysis (for side-effect free program expressions).
 2. `dteq`: dependency-based test-equivalence analysis (for assignment synthesis).

@@ -356,7 +356,11 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << stat.explorationCounter;
   BOOST_LOG_TRIVIAL(info) << "tests executed: " << stat.executionCounter;
-  BOOST_LOG_TRIVIAL(info) << "timeouts: " << stat.timeoutCounter;
+  BOOST_LOG_TRIVIAL(info) << "executions with timeout: " << stat.timeoutCounter;
+  if (stat.nonTimeoutTestTime != 0) {
+    double executionsPerSec = (stat.nonTimeoutCounter * 1000.0) / stat.nonTimeoutTestTime;
+    BOOST_LOG_TRIVIAL(info) << "test execution speed: " << std::setprecision(3) << executionsPerSec << " exe/sec";
+  }
   BOOST_LOG_TRIVIAL(info) << "plausible patches: " << patchCount;
   BOOST_LOG_TRIVIAL(info) << "fix locations: " << fixLocations.size();
 

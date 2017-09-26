@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <sstream>
 #include <memory>
+#include <chrono>
 
 #include <boost/log/trivial.hpp>
 
@@ -51,6 +52,8 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   stat.explorationCounter = 0;
   stat.executionCounter = 0;
   stat.timeoutCounter = 0;
+  stat.nonTimeoutCounter = 0;
+  stat.nonTimeoutTestTime = 0;
 
   progress = 0;
 
@@ -106,9 +109,20 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
       BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizeF1XID(elem.id) 
                                << " with test " << test;
 
-      stat.executionCounter++;
+      std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
       TestStatus status = tester.execute(test);
+
+      std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+      stat.executionCounter++;
+      if (status != TestStatus::TIMEOUT) {
+        stat.nonTimeoutCounter++;
+        stat.nonTimeoutTestTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+      } else {
+        stat.timeoutCounter++;
+      }
+
       switch (status) {
       case TestStatus::PASS:
         BOOST_LOG_TRIVIAL(debug) << "PASS";
@@ -118,7 +132,6 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
         break;
       case TestStatus::TIMEOUT:
         BOOST_LOG_TRIVIAL(debug) << "TIMEOUT";
-        stat.timeoutCounter++;
         break;
       }
 
