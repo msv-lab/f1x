@@ -20,6 +20,7 @@
 #include <ctime>
 #include <sstream>
 #include <string>
+#include <chrono>
 
 #include <boost/filesystem.hpp>
 
@@ -43,15 +44,43 @@ using std::vector;
 using std::string;
 
 
-void initializeTrivialLogger(bool quiet) {
+void initializeTrivialLogger(bool verbose) {
   boost::log::add_common_attributes();
   boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
   boost::log::add_console_log(std::cerr, boost::log::keywords::format = "[%TimeStamp%] [%Severity%]\t%Message%");
-  if (quiet) {
-    boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
-  } else {
+  if (verbose) {
     boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);
+  } else {
+    boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
   }
+}
+
+
+std::string formatMilliseconds(unsigned long milliseconds) {
+  std::ostringstream out;
+  if (milliseconds >= 1000) {
+    unsigned seconds = (milliseconds / 1000) % 60;
+    unsigned minutes = ((milliseconds / (1000 * 60)) % 60);
+    unsigned hours = ((milliseconds / (1000 * 60 * 60)) % 24);
+    unsigned days = (milliseconds / (1000 * 60 * 60 * 24));
+    if ((days == 0) && (hours != 0)){
+      out << hours << "h " << minutes << "m " << seconds << "s";
+    } else if ((hours == 0) && (minutes != 0)) {
+      out << minutes << "m " << seconds << "s";
+    } else if ((days == 0) && (hours == 0) && (minutes == 0)) {
+      out << seconds << "s";
+    } else {
+      out << days << "d " << hours << "h " << minutes << "m " << seconds << "s";
+    }
+  } else {
+    out << "less than a second";
+  }
+  return out.str();
+}
+
+
+bool executeDefect(std::string defect, fs::path root, fs::path output, unsigned timeout) {
+  
 }
 
 
@@ -60,17 +89,17 @@ int main (int argc, char *argv[]) {
   positional.add("defect", -1);
   
   // Declare supported options.
-  po::options_description general("Usage: f1x-bench [DEFECT] OPTIONS\n\nSupported options");
+  po::options_description general("Usage: f1x-bench [DEFECT] OPTIONS -- TOOL_OPTIONS\n\nSupported options");
   general.add_options()
     ("root", po::value<string>()->value_name("PATH"), "benchmark root (default: current directory)")
     ("output", po::value<string>()->value_name("PATH"), "output directory (default: results-TIME)")
-    ("timeout", po::value<unsigned>()->value_name("SEC"), "timeout for individual defect")
+    ("timeout", po::value<unsigned>()->value_name("SEC"), "timeout for individual defect (default: none)")
     ("fetch", "perform fetch command and exit")
     ("set-up", "perform set-up command and exit")
     ("run", "perform run command and exit")
     ("tear-down", "perform tear-down command and exit")
     ("cmd", "print f1x command and exit")
-    ("quiet", "print compact summary")
+    ("verbose", "produce extended output")
     ("help", "produce help message and exit")
     ("version", "print version and exit")
     ;
@@ -105,12 +134,12 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
-  bool quiet = false;
-  if (vm.count("quiet")) {
-    quiet = true;
+  bool verbose = false;
+  if (vm.count("verbose")) {
+    verbose = true;
   }
 
-  initializeTrivialLogger(quiet);
+  initializeTrivialLogger(verbose);
 
   fs::path root(fs::current_path());
   if (vm.count("root")) {
@@ -144,7 +173,7 @@ int main (int argc, char *argv[]) {
     tstruct = *localtime(&now);
     strftime(timeRepr, sizeof(timeRepr), "-%Y_%m_%d-%H_%M_%S", &tstruct);
     std::stringstream name;
-    name << "results" << timeRepr;
+    name << "experiment" << timeRepr;
     output = fs::path(name.str());
   } else {
     output = fs::path(vm["output"].as<string>());
@@ -152,12 +181,35 @@ int main (int argc, char *argv[]) {
 
   output = fs::absolute(output);
   if (fs::exists(output)) {
-    BOOST_LOG_TRIVIAL(warning) << "existing "<< output << " will be overwritten";
-    fs::remove_all(output);
+    BOOST_LOG_TRIVIAL(debug) << "output directory " << output << " will be overwritten";
+  } else {
+    BOOST_LOG_TRIVIAL(debug) << "output directory: " << output;
+    fs::create_directory(output);
   }
-  fs::create_directory(output);
 
-  BOOST_LOG_TRIVIAL(debug) << "output directory: " << output;
-  
+  if (!vm.count("defect")) {
+    BOOST_LOG_TRIVIAL(error) << "defect is not specified (use --help)";
+    return 1;
+  }
+  std::string defect(vm["defect"].as<string>());
+
+  unsigned long elapsedTime = 0;
+
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+  bool success = executeDefect(defect, root, output, timeout);
+
+  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+  elapsedTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+
+  if (success) {
+    BOOST_LOG_TRIVIAL(info) << defect << "\t" << "SUCCESS";
+  } else {
+    BOOST_LOG_TRIVIAL(info) << defect << "\t" << "FAILURE";
+  }
+
+  BOOST_LOG_TRIVIAL(info) << "total time: " << formatMilliseconds(elapsedTime);
+
   return 0;
 }
