@@ -1,6 +1,6 @@
 # f1x-bench #
 
-f1x-bench is a tool and a format specification for executing program repair benchmarks with f1x (and other tools). In f1x-bench, an experiment with a defect has the following lifecycle:
+f1x-bench is a tool and a format specification for executing program repair benchmarks. In f1x-bench, an experiment with a defect has the following lifecycle:
 
 - `fetch` - obtain a fresh copy of the subject program
 - `set-up` (optional) - configure the copy, etc.
@@ -10,15 +10,18 @@ f1x-bench is a tool and a format specification for executing program repair benc
 
 ## Tool ##
 
+Usage:
+
 - `f1x-bench DEFECT` - perform an experiment (fetch + set-up + run + tear-down + remove) for DEFECT
 - `f1x-bench` - perform experiments for all defects
+- `f1x-bench OPTIONS -- TOOL_OPTIONS` - you can pass options for the repair tool after `--`
 
 Options:
 
 - `--root` - specify benchmark directory (current directory by default)
 - `--output DIR` - specify output directory (optional)
 - `--timeout` - timeout for individual defect (optional)
-- `--quiet` - print compact summary
+- `--verbose` - produce extended output
 - `--help` - print help message
 - `--version` - print version
 
@@ -63,4 +66,3 @@ The content of `benchmark.json` should be as follows (`fetch`, `set-up`, `tear-d
     ]
     
 `source` and `driver` are relative to the benchmark root. `set-up`, `tear-down` and `build` are optional.
-

@@ -8,6 +8,10 @@ The system consists of three main parts:
 
 The repair module is responsible for running tests, maintaining search space and partitioning, and synthesizing meta-program. f1x-transform is responsible for instrumenting buggy code, applying transformation schemas to suspicious locations and applying generated patches. The mata-program runtime library is responsible for computing semantic partitions.
 
+## Repair workflow ##
+
+![Workflow](./workflow.svg)
+
 ## Search space representation ##
 
 The entire search space is explicitly represented as a C++ vector `searchSpace` in SearchEngine.cpp. The search space can be efficiently traversed in an arbitrary order.
