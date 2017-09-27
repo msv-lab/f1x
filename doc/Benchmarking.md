@@ -39,19 +39,19 @@ The benchmark directory should contain two files: `tests.json` and `benchmark.js
 
 The content of `tests.json` should be as follows
 
-    [
+    {
         "defect1": {
             "negative": [ "1", "2" ],
             "positive": [ "3", "4", "5"]
         },
         ...
-    ]
+    }
 
 
 
 The content of `benchmark.json` should be as follows (`fetch`, `set-up`, `tear-down` are shell commands, `$F1X_BENCH_ROOT` and `$F1X_BENCH_OUTPUT` are provided environment variables):
 
-    [
+    {
         "defect1": {
             "fetch": "$F1X_BENCH_ROOT/fetch defect1",
             "set-up": "$F1X_BENCH_ROOT/configure defect1",
@@ -63,6 +63,6 @@ The content of `benchmark.json` should be as follows (`fetch`, `set-up`, `tear-d
             "driver": "driver"
         },
         ...
-    ]
+    }
     
-`source` and `driver` are relative to the benchmark root. `set-up`, `tear-down` and `build` are optional.
+`set-up`, `tear-down` and `build` are optional.

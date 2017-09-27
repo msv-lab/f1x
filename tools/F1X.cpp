@@ -273,7 +273,7 @@ int main (int argc, char *argv[]) {
 
   output = fs::absolute(output);
   if (fs::exists(output)) {
-    BOOST_LOG_TRIVIAL(warning) << "existing "<< output << " will be overwritten";
+    BOOST_LOG_TRIVIAL(warning) << "existing " << output << " will be overwritten";
     fs::remove_all(output);
   }
 

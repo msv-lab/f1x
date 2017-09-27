@@ -23,6 +23,7 @@
 #include <chrono>
 
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -33,16 +34,41 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 
+#include <rapidjson/document.h>
+#include <rapidjson/istreamwrapper.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <rapidjson/writer.h>
+
 #include "Config.h"
 #include "Util.h"
 
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+namespace json = rapidjson;
 
 using std::vector;
 using std::string;
 
+
+enum class ExperimentStatus {
+  SUCCESS, FAILURE, TIMEOUT
+};
+
+
+const unsigned TIMEOUT_STATUS = 124;
+
+
+std::string statusToString(ExperimentStatus status) {
+  switch (status) {
+  case ExperimentStatus::SUCCESS:
+    return "SUCCESS";
+  case ExperimentStatus::FAILURE:
+    return "FAILURE";
+  case ExperimentStatus::TIMEOUT:
+    return "TIMEOUT";
+  }
+}
 
 void initializeTrivialLogger(bool verbose) {
   boost::log::add_common_attributes();
@@ -78,9 +104,143 @@ std::string formatMilliseconds(unsigned long milliseconds) {
   return out.str();
 }
 
+ExperimentStatus experiment(std::string defectId, 
+                            fs::path root, 
+                            fs::path output, 
+                            unsigned timeout,
+                            bool verbose) {
 
-bool executeDefect(std::string defect, fs::path root, fs::path output, unsigned timeout) {
+  InEnvironment env({ {"CC", "f1x-cc"},
+                      {"F1X_BENCH_ROOT", root.string()},
+                      {"F1X_BENCH_OUTPUT", output.string()} });
+
+  if (fs::exists(output)) {
+    fs::create_directory(output);
+  }
+
+  fs::path benchmarkFile = root / "benchmark.json";
+  fs::path testsFile = root / "tests.json";
+  fs::path patchFile = output / (defectId + ".patch");
+  fs::path defectDir(defectId);
+
+  json::Document benchmark;
+  {
+    fs::ifstream ifs(benchmarkFile);
+    json::IStreamWrapper isw(ifs);
+    benchmark.ParseStream(isw);
+  }
+
+  auto defect = benchmark.GetObject()[defectId.c_str()].GetObject();
+
+  std::string fetch = defect["fetch"].GetString();
+  std::string setUp;
+  if (defect.HasMember("set-up")) {
+    setUp = defect["set-up"].GetString();
+  }
+  std::string tearDown;
+  if (defect.HasMember("tear-down")) {
+    tearDown = defect["tear-down"].GetString();
+  }
+  std::string source = defect["source"].GetString();
+  vector<std::string> files;
+  for (json::SizeType i = 0; i < defect["files"].GetArray().Size(); i++)
+    files.push_back(defect["files"].GetArray()[i].GetString());
+  std::string build;
+  if (defect.HasMember("build")) {
+    build = defect["build"].GetString();
+  }
+  unsigned testTimeout = defect["test-timeout"].GetUint();
+  std::string driver = defect["driver"].GetString();
+
+  json::Document alltests;
+  {
+    fs::ifstream ifs(testsFile);
+    json::IStreamWrapper isw(ifs);
+    alltests.ParseStream(isw);
+  }
+
+  auto tests = alltests.GetObject()[defectId.c_str()].GetObject();
+  vector<std::string> negative;
+  for (json::SizeType i = 0; i < tests["negative"].GetArray().Size(); i++)
+    negative.push_back(tests["negative"].GetArray()[i].GetString());
+  vector<std::string> positive;
+  for (json::SizeType i = 0; i < tests["positive"].GetArray().Size(); i++)
+    positive.push_back(tests["positive"].GetArray()[i].GetString());
+
+  std::stringstream fetchCmd;
+  fetchCmd << fetch << " >/dev/null 2>&1";
+  BOOST_LOG_TRIVIAL(debug) << defectId << "/fetch: " << fetchCmd.str();
+  unsigned long fetchStatus = std::system(fetchCmd.str().c_str());
+  if (WEXITSTATUS(fetchStatus) != 0) {
+    BOOST_LOG_TRIVIAL(warning) << defectId << "/fetch returned non-zero exit code";
+  }
+
+  if (!setUp.empty()) {
+    std::stringstream setUpCmd;
+    setUpCmd << setUp << " >/dev/null 2>&1";
+    BOOST_LOG_TRIVIAL(debug) << defectId << "/set-up: " << setUpCmd.str();
+    unsigned long setUpStatus = std::system(setUpCmd.str().c_str());
+    if (WEXITSTATUS(setUpStatus) != 0) {
+      BOOST_LOG_TRIVIAL(warning) << defectId << "/set-up returned non-zero exit code";
+    }
+  }
+
+  std::stringstream f1xCmd;
+  f1xCmd << "timeout " << timeout << "s" << " f1x " << source;
+  f1xCmd << " --files";
+  for (auto &file: files) {
+    f1xCmd << " " << file;
+  }
+  f1xCmd << " --tests";
+  for (auto &test: negative) {
+    f1xCmd << " " << test;
+  }
+  for (auto &test: positive) {
+    f1xCmd << " " << test;
+  }
+  f1xCmd << " --test-timeout " << testTimeout; 
+  f1xCmd << " --driver " << driver;
+  if (!build.empty()) {
+    f1xCmd << " --build " << build;
+  }
+  f1xCmd << " --output " << patchFile.string();
+  if (verbose) {
+    f1xCmd << " >&2";
+  } else {
+    f1xCmd << " --enable-cleanup";
+    f1xCmd << " >/dev/null 2>&1";
+  }
+
+  BOOST_LOG_TRIVIAL(debug) << defectId << "/run: " << f1xCmd.str();
   
+  unsigned long f1xStatus = std::system(f1xCmd.str().c_str());
+
+  ExperimentStatus result;
+  
+  if (WEXITSTATUS(f1xStatus) == 0) {
+    result = ExperimentStatus::SUCCESS;
+  } else if (WEXITSTATUS(f1xStatus) == TIMEOUT_STATUS) {
+    result = ExperimentStatus::TIMEOUT;
+  } else {
+    result = ExperimentStatus::FAILURE;
+  }
+
+  if (!tearDown.empty()) {
+    std::stringstream tearDownCmd;
+    tearDownCmd << tearDown << " >/dev/null 2>&1";
+    BOOST_LOG_TRIVIAL(debug) << defectId << "/tear-down: " << tearDownCmd.str();
+    unsigned long tearDownStatus = std::system(tearDownCmd.str().c_str());
+    if (WEXITSTATUS(tearDownStatus) != 0) {
+      BOOST_LOG_TRIVIAL(warning) << defectId << "/tear-down returned non-zero exit code";
+    }
+  }
+
+  BOOST_LOG_TRIVIAL(debug) << "removing " << defectDir;
+  if (fs::exists(defectDir)) {
+    fs::remove_all(defectDir);
+  }
+ 
+  return result;
 }
 
 
@@ -187,29 +347,52 @@ int main (int argc, char *argv[]) {
     fs::create_directory(output);
   }
 
-  if (!vm.count("defect")) {
-    BOOST_LOG_TRIVIAL(error) << "defect is not specified (use --help)";
-    return 1;
-  }
-  std::string defect(vm["defect"].as<string>());
+  vector<std::string> defects;
 
-  unsigned long elapsedTime = 0;
-
-  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-  bool success = executeDefect(defect, root, output, timeout);
-
-  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-  elapsedTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-
-  if (success) {
-    BOOST_LOG_TRIVIAL(info) << defect << "\t" << "SUCCESS";
+  if (vm.count("defect")) {
+    defects.push_back(vm["defect"].as<string>());
   } else {
-    BOOST_LOG_TRIVIAL(info) << defect << "\t" << "FAILURE";
+    fs::path benchmarkFile = root / "benchmark.json";
+
+    json::Document benchmark;
+    {
+      fs::ifstream ifs(benchmarkFile);
+      json::IStreamWrapper isw(ifs);
+      benchmark.ParseStream(isw);
+    }
+    for (json::Value::ConstMemberIterator itr = benchmark.MemberBegin(); itr != benchmark.MemberEnd(); ++itr) {
+      defects.push_back(itr->name.GetString());
+    }
   }
 
-  BOOST_LOG_TRIVIAL(info) << "total time: " << formatMilliseconds(elapsedTime);
+  unsigned long totalTime = 0;
+  unsigned long totalRepaired = 0;
+
+  for (auto &defect : defects) {
+    unsigned long defectTime = 0;
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    
+    ExperimentStatus status = experiment(defect, root, output, timeout, verbose);
+  
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+    defectTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+    totalTime += defectTime;
+
+    BOOST_LOG_TRIVIAL(info) << defect 
+                            << "\t" << statusToString(status)
+                            << "\t" << formatMilliseconds(defectTime);
+
+    if (status == ExperimentStatus::SUCCESS) {
+      totalRepaired++;
+    }
+  }
+
+  if (defects.size() > 1) {
+    BOOST_LOG_TRIVIAL(info) << "total time: " << formatMilliseconds(totalTime);
+    BOOST_LOG_TRIVIAL(info) << "total repaired: " << totalRepaired << "/" << defects.size();
+  }
 
   return 0;
 }
