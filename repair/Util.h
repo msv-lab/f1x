@@ -27,6 +27,11 @@
 #include "Config.h"
 
 
+const unsigned SUCCESS_EXIT_CODE = 0;
+const unsigned FAILURE_EXIT_CODE = 122;
+const unsigned TIMEOUT_EXIT_CODE = 124;
+
+
 struct F1XID {
   unsigned long base;  // 0 is reserved for special purpose
   unsigned long int2;  // 0 means disabled

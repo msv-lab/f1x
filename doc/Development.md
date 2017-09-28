@@ -4,9 +4,9 @@ The system consists of three main parts:
 
 1. Repair module (f1x) 
 2. Code transformation module (f1x-transform)
-3. Meta-program runtime (libf1xrt.so)
+3. Analysis runtime (libf1xrt.so)
 
-The repair module is responsible for running tests, maintaining search space and partitioning, and synthesizing meta-program. f1x-transform is responsible for instrumenting buggy code, applying transformation schemas to suspicious locations and applying generated patches. The mata-program runtime library is responsible for computing semantic partitions.
+The repair module is responsible for running tests, maintaining search space and partitioning, and synthesizing meta-program. f1x-transform is responsible for instrumenting buggy code, applying transformation schemas to suspicious locations and applying generated patches. The analysis runtime library is responsible for computing test-equivalence partitions.
 
 ## Repair workflow ##
 
@@ -27,9 +27,9 @@ Search space elements are assigned unique identifiers. Each application of a tra
 
 ## Runtime ##
 
-f1x meta-program runtime is generated automatically and dynamically linked to the buggy program. The runtime is responsible for computing semantic partitions. It takes a candidate and a search space to partition as the arguments and outputs a subset of the given search space that have the same semantic impact as the given candidate.
+f1x analysis runtime is generated automatically and dynamically linked to the buggy program. The runtime is responsible for computing test-equivalence partitions. It takes a candidate and a search space to partition as the arguments and outputs a subset of the given search space that have the same semantic impact as the given candidate.
 
-The repair process and the meta-program runtime interact through shared memory (POSIX Shared Memory).
+The repair process and the analysis runtime interact through shared memory (POSIX Shared Memory).
 
 ## Transformation ##
 

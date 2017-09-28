@@ -65,4 +65,4 @@ The content of `benchmark.json` should be as follows (`fetch`, `set-up`, `tear-d
         ...
     }
     
-`set-up`, `tear-down` and `build` are optional.
+`driver` is relative to benchmark root. `set-up`, `tear-down` and `build` are optional.

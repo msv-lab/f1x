@@ -1,13 +1,13 @@
 # f1x Docker image #
 
-[UNAVAILABLE] To pull our Docker image, run:
+To pull our Docker image, run:
 
     docker pull mechtaev/f1x
 
-Alternatively, you can build an image locally (if you choose this options, replace `mechtaev/f1x` with `my-f1x` in the subsequent commands):
+Alternatively, you can build an image locally (note that it relies on `mechtaev/ubuntu-16.04-llvm-3.8.1`, which is built using `infra/Dockerfile`):
 
     cd /path/to/f1x
-    docker build . -t my-f1x
+    docker build . -t mechtaev/f1x
 
 To test the image, you can run f1x test suite in a temporary container:
 

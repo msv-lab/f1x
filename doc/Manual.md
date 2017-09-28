@@ -73,9 +73,13 @@ Note that `F1X_RUN` is only required to optimize assignment synthesis. If you di
 
 ### Command-line interface ###
 
-The f1x command-line tool accepts user options, executes the repair algorithm and saves the generated patches in unidiff format. f1x prints log messages on the standard error output and terminates with zero exit code if and only if it finds a patch.
+The f1x command-line tool accepts user options, executes the repair algorithm and saves the generated patches in unidiff format. f1x prints log messages on the standard error output and terminates with the following exit codes:
 
-Typically, you need to pass only five arguments to f1x:
+- `0` if a patch is found
+- `122` is no patch is found
+- a non-zero code in case of errors
+
+Typically, you need to pass the following mandatory arguments:
 
 - The source directory.
 - The suspicious source files (`--files` option).
@@ -85,57 +89,18 @@ Typically, you need to pass only five arguments to f1x:
 
 f1x accepts the following arguments:
 
-#### PATH ####
-
-The source directory of your buggy program (positional argument).
-
-#### -f [ --files ] RELPATH... ####
-
-The list of suspicious files. The paths should be relative to the root of the source directory.
-
-f1x allows to restrict the search space to certain parts of the source code files. In the following example, the candidate locations will be restricted to the line 20 of `main.c` and from the line 5 to the line 45 (inclusive) of `lib.c`:
-
-    --files main.c:20 lib.c:5-45
-
-#### -t [ --tests ] ID... ####
-
-The list of unique test identifiers.
-
-#### -T [ --test-timeout ] MS ####
-
-The test execution timeout in milliseconds.
-
-#### -d [ --driver ] PATH ####
-
-The path to the test driver. The test driver is executed from the root of the source directory.
-
-#### -b [ --build ] CMD ####
-
-The build command. If omitted, `make -e` is used. The build command is executed from the root of the source directory.
-
-#### -o [ --output ] PATH ####
-
-The path to the output patch (or directory when used with `--all`). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the directory `<SRC>-<TIME>` when used with `--all`)
-
-#### -a [ --all ] ####
-
-Enables exploration of the whole search space (generate all plausible patches). Since there can be many plausible patches, it is recommended to disable validation of synthesized patches using `--disable-validation` option.
-
-#### -c [ --cost ] FUNCTION ####
-
-The cost function used to prioritize patches. If omitted, `syntax-diff` is used.
-
-#### -v [ --verbose ] ####
-
-Enables extended output for troubleshooting.
-
-#### -h [ --help ] ####
-
-Prints help message and exits.
-
-#### --version ####
-
-Prints version and exits.
+- `PATH` - the source directory of your buggy program (positional argument).
+- `-f [ --files ] RELPATH...` - the list of suspicious files. The paths should be relative to the root of the source directory. f1x allows to restrict the search space to certain parts of the source code files. For the arguments `--files main.c:20 lib.c:5-45`, the candidate locations will be restricted to the line 20 of `main.c` and from the line 5 to the line 45 (inclusive) of `lib.c`.
+- `-t [ --tests ] ID...` - the list of unique test identifiers.
+- `-T [ --test-timeout ] MS` - the test execution timeout in milliseconds.
+- `-d [ --driver ] PATH` - the path to the test driver. The test driver is executed from the root of the source directory.
+- `-b [ --build ] CMD` - the build command. If omitted, `make -e` is used. The build command is executed from the root of the source directory.
+- `-o [ --output ] PATH` - the path to the output patch (or directory when used with `--all`). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the directory `<SRC>-<TIME>` when used with `--all`)
+- `-a [ --all ]` - enables exploration of the whole search space (generate all plausible patches). Since there can be many plausible patches, it is recommended to disable validation of synthesized patches using `--disable-validation` option.
+- `-c [ --cost ] FUNCTION` - the cost function used to prioritize patches. If omitted, `syntax-diff` is used.
+- `-v [ --verbose ]` - enables extended output for troubleshooting.
+- `-h [ --help ]` - prints help message and exits.
+- `--version` - prints version and exits.
 
 ## Related publications ##
 

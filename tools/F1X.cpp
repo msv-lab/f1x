@@ -300,9 +300,9 @@ int main (int argc, char *argv[]) {
     } else {
       BOOST_LOG_TRIVIAL(info) << "patch successfully generated: " << output;
     }
-    return 0;
+    return SUCCESS_EXIT_CODE;
   } else {
     BOOST_LOG_TRIVIAL(info) << "failed to generated a patch";
-    return 1;
+    return FAILURE_EXIT_CODE;
   }
 }

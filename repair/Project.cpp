@@ -343,8 +343,6 @@ TestingFramework::TestingFramework(const Project &project,
   cfg(cfg) {}
 
 
-const unsigned TIMEOUT_STATUS = 124;
-
 TestStatus TestingFramework::execute(const std::string &testId) {
   FromDirectory dir(project.getRoot());
   InEnvironment env(map<string, string>{{"LD_LIBRARY_PATH", workDir.string()}});
@@ -360,7 +358,7 @@ TestStatus TestingFramework::execute(const std::string &testId) {
   unsigned long status = std::system(cmd.str().c_str());
   if (WEXITSTATUS(status) == 0) {
     return TestStatus::PASS;
-  } else if (WEXITSTATUS(status) == TIMEOUT_STATUS) {
+  } else if (WEXITSTATUS(status) == TIMEOUT_EXIT_CODE) {
     return TestStatus::TIMEOUT;
   } else {
     return TestStatus::FAIL;
