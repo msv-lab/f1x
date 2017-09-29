@@ -48,6 +48,7 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
 
 # Compiler
+set(CMAKE_CXX_FLAGS "-lboost_program_options") #added on 29 Sep 2017
 set(CMAKE_CXX_STANDARD 11) # C++11...
 set(CMAKE_CXX_STANDARD_REQUIRED ON) #...is required...
 set(CMAKE_CXX_EXTENSIONS OFF) #...without compiler extensions like gnu++11
