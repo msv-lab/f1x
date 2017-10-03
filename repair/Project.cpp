@@ -275,10 +275,8 @@ bool Project::instrumentFile(const ProjectFile &file,
   cmd << "f1x-transform " << file.relpath.string();
   
   if(! profile) {
-    BOOST_LOG_TRIVIAL(info) << "instrumenting source files for profiling";
     cmd << " --profile";
   } else {
-    BOOST_LOG_TRIVIAL(info) << "applying transfomation schemas to source files";
     cmd << " --instrument " << *profile;
   }
 
@@ -301,6 +299,8 @@ unsigned Project::getFileId(const ProjectFile &file) {
   for (auto &f : files) {
     if (file.relpath != f.relpath)
       id++;
+    else
+      break;
   }
   assert(id < files.size());
   return id;

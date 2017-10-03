@@ -147,6 +147,7 @@ bool repair(Project &project,
 
   fs::path traceFile = workDir / TRACE_FILE_NAME;
 
+  BOOST_LOG_TRIVIAL(info) << "instrumenting source files for profiling";
   for (auto &file : project.getFiles()) {
     bool profileInstSuccess = project.instrumentFile(file, traceFile);
     if (! profileInstSuccess) {
@@ -216,6 +217,7 @@ bool repair(Project &project,
   
   vector<fs::path> saFiles;
 
+  BOOST_LOG_TRIVIAL(info) << "applying transfomation schemas to source files";
   for (int i=0; i<project.getFiles().size(); i++) {
     fs::path saFile = workDir / getSchemaApplicationsFileName(i);
     saFiles.push_back(saFile);
