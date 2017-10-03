@@ -423,8 +423,7 @@ Expression convertExpression(const json::Value &json) {
   return Expression{kind, type, op, rawType, repr, args};
 }
 
-
-vector<shared_ptr<SchemaApplication>> loadSchemaApplications(const fs::path &path) {
+vector<shared_ptr<SchemaApplication>> loadSAFile(const fs::path &path) {
   vector<shared_ptr<SchemaApplication>> result;
   json::Document d;
   {
@@ -483,6 +482,16 @@ vector<shared_ptr<SchemaApplication>> loadSchemaApplications(const fs::path &pat
     result.push_back(sa);
   }
 
+  return result;
+}
+
+
+vector<shared_ptr<SchemaApplication>> loadSchemaApplications(const vector<fs::path> &paths) {
+  vector<shared_ptr<SchemaApplication>> result;
+  for (auto &path : paths) {
+    vector<shared_ptr<SchemaApplication>> singleFile = loadSAFile(path);
+    result.insert(result.end(), singleFile.begin(), singleFile.end());
+  }
   return result;
 }
 

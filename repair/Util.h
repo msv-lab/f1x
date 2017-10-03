@@ -291,7 +291,7 @@ class parse_error : public std::logic_error {
 };
 
 
-std::vector<std::shared_ptr<SchemaApplication>> loadSchemaApplications(const boost::filesystem::path &path);
+std::vector<std::shared_ptr<SchemaApplication>> loadSchemaApplications(const std::vector<boost::filesystem::path> &paths);
 
 
 bool isExecutable(const char *file);

@@ -47,7 +47,11 @@ using std::unordered_map;
 using std::unordered_set;
 
 
-const string SCHEMA_APPLICATIONS_FILE_NAME = "applications.json";
+string getSchemaApplicationsFileName(unsigned index) {
+  std::stringstream name;
+  name << "applications" << index << ".json";
+  return name.str();
+}
 
 double simplicityScore(const SearchSpaceElement &el) {
   double result = (double) el.meta.distance;
@@ -143,9 +147,11 @@ bool repair(Project &project,
 
   fs::path traceFile = workDir / TRACE_FILE_NAME;
 
-  bool profileInstSuccess = project.instrumentFile(project.getFiles()[0], traceFile);
-  if (! profileInstSuccess) {
-    BOOST_LOG_TRIVIAL(warning) << "profiling instrumentation returned non-zero exit code";
+  for (auto &file : project.getFiles()) {
+    bool profileInstSuccess = project.instrumentFile(file, traceFile);
+    if (! profileInstSuccess) {
+      BOOST_LOG_TRIVIAL(warning) << "profiling instrumentation of " << file.relpath << " returned non-zero exit code";
+    }
   }
   project.saveProfileInstumentedFiles();
 
@@ -208,21 +214,25 @@ bool repair(Project &project,
   auto relatedTestIndexes = profiler.getRelatedTestIndexes();
   BOOST_LOG_TRIVIAL(info) << "number of locations: " << relatedTestIndexes.size();
   
-  fs::path saFile = workDir / SCHEMA_APPLICATIONS_FILE_NAME;
+  vector<fs::path> saFiles;
 
-  bool instrSuccess = project.instrumentFile(project.getFiles()[0], saFile, &profile);
-  if (! instrSuccess) {
-    BOOST_LOG_TRIVIAL(warning) << "transformation returned non-zero exit code";
-  }
-  if (! fs::exists(saFile)) {
-    BOOST_LOG_TRIVIAL(error) << "failed to extract candidate locations";
-    return false;
+  for (int i=0; i<project.getFiles().size(); i++) {
+    fs::path saFile = workDir / getSchemaApplicationsFileName(i);
+    saFiles.push_back(saFile);
+    bool instrSuccess = project.instrumentFile(project.getFiles()[i], saFile, &profile);
+    if (! instrSuccess) {
+      BOOST_LOG_TRIVIAL(warning) << "transformation returned non-zero exit code";
+    }
+    if (! fs::exists(saFile)) {
+      BOOST_LOG_TRIVIAL(error) << "failed to extract candidate locations";
+      return false;
+    }
   }
 
   project.saveInstrumentedFiles();
 
   BOOST_LOG_TRIVIAL(debug) << "loading candidate locations";
-  vector<shared_ptr<SchemaApplication>> sas = loadSchemaApplications(saFile);
+  vector<shared_ptr<SchemaApplication>> sas = loadSchemaApplications(saFiles);
   
   BOOST_LOG_TRIVIAL(debug) << "inferring types";
   for (auto sa : sas) {
@@ -343,7 +353,9 @@ bool repair(Project &project,
       patchCount++;
       fixLocations.insert(searchSpace[last].app->appId);
 
-      project.computeDiff(project.getFiles()[0], patchFile);
+      unsigned fileId = searchSpace[last].app->location.fileId;
+
+      project.computeDiff(project.getFiles()[fileId], patchFile);
       
       if (!cfg.exploreAll)
         break;
@@ -359,7 +371,7 @@ bool repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "executions with timeout: " << stat.timeoutCounter;
   if (stat.nonTimeoutTestTime != 0) {
     double executionsPerSec = (stat.nonTimeoutCounter * 1000.0) / stat.nonTimeoutTestTime;
-    BOOST_LOG_TRIVIAL(info) << "test execution speed: " << std::setprecision(3) << executionsPerSec << " exe/sec";
+    BOOST_LOG_TRIVIAL(info) << "execution speed: " << std::setprecision(3) << executionsPerSec << " exe/sec";
   }
   BOOST_LOG_TRIVIAL(info) << "plausible patches: " << patchCount;
   BOOST_LOG_TRIVIAL(info) << "fix locations: " << fixLocations.size();
