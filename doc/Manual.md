@@ -79,7 +79,7 @@ The f1x command-line tool accepts user options, executes the repair algorithm an
 - `122` is no patch is found
 - a non-zero code in case of errors
 
-Typically, you need to pass the following mandatory arguments:
+The following arguments are mandatory (and sufficient for most cases):
 
 - The source directory.
 - The suspicious source files (`--files` option).

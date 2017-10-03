@@ -141,8 +141,8 @@ bool setUp(std::string defectId, const json::Document &benchmark) {
 bool tearDown(std::string defectId, const json::Document &benchmark) {
   auto defect = benchmark.GetObject()[defectId.c_str()].GetObject();
   std::string tearDown;
-  if (defect.HasMember("set-up")) {
-    tearDown = defect["set-up"].GetString();
+  if (defect.HasMember("tear-down")) {
+    tearDown = defect["tear-down"].GetString();
   } else {
     BOOST_LOG_TRIVIAL(debug) << defectId << "/tear-down is undefined";
     return true;
@@ -194,7 +194,7 @@ std::string cmd(std::string defectId, const json::Document &benchmark, const jso
   f1xCmd << " --test-timeout " << testTimeout; 
   f1xCmd << " --driver " << driver;
   if (!build.empty()) {
-    f1xCmd << " --build " << build;
+    f1xCmd << " --build \"" << build << "\"";
   }
   fs::path patchFile = output / (defectId + ".patch");
   f1xCmd << " --output " << patchFile.string();
