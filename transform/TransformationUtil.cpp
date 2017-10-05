@@ -54,6 +54,7 @@ unsigned globalEndLine;
 unsigned globalEndColumn;
 string globalPatch;
 unsigned long globalBaseAppId = 0;
+bool globalUseGlobalVariables = false;
 std::shared_ptr<std::vector<clang::SourceRange>> globalConditionalsPP = std::shared_ptr<std::vector<clang::SourceRange>>(new std::vector<clang::SourceRange>());
 
 const unsigned F1XAPP_WIDTH = 32;
@@ -716,7 +717,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
       }
     }
 
-    if (USE_GLOBAL_VARIABLES) {
+    if (globalUseGlobalVariables) {
       auto parents = context->getParents(node);
       if (parents.size() > 0) {
         const ast_type_traits::DynTypedNode parent = *(parents.begin()); // FIXME: for now only first

@@ -25,6 +25,7 @@
 #include "Synthesis.h"
 #include "Runtime.h"
 #include "Typing.h"
+#include "Global.h"
 
 namespace fs = boost::filesystem;
 
@@ -435,7 +436,7 @@ namespace generator {
     return "__" + result + "_vals";
   }
 
-  void runtimeLoader(std::ostream &OUT, const Config &cfg) {
+  void runtimeLoader(std::ostream &OUT) {
     OUT << "struct __f1xid_t {" << "\n"
         << ID_TYPE << " base;" << "\n"
         << ID_TYPE << " int2;" << "\n"
@@ -453,7 +454,7 @@ namespace generator {
         << "__f1xid_t *__f1xids = NULL;" << "\n";
 
     OUT << "void __f1x_init_runtime() {" << "\n";
-    if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
+    if (cfg.valueTEQ) {
       OUT << "int fd = shm_open(\"" << PARTITION_FILE_NAME << "\", O_RDWR, 0);" << "\n"
           << "struct stat sb;" << "\n"
           << "fstat(fd, &sb);" << "\n"
@@ -689,8 +690,7 @@ namespace generator {
   void candidateDispatch(shared_ptr<SchemaApplication> sa,
                                 unsigned long &baseId,
                                 std::ostream &OS,
-                                vector<SearchSpaceElement> &ss,
-                                const Config &cfg) {
+                                vector<SearchSpaceElement> &ss) {
     unordered_map<string, string> runtimeReprBySource = runtimeRenaming(sa);
     unordered_map<string, string> sizeByType = typeSizes(sa);
     unordered_map<string, string> nullDerefByName = nullDerefCondition(sa, runtimeReprBySource);
@@ -771,8 +771,7 @@ namespace generator {
   void partitioningFunctions(const vector<shared_ptr<SchemaApplication>> &schemaApplications,
                              const fs::path &workDir,
                              std::ostream &OS,
-                             vector<SearchSpaceElement> &searchSpace,
-                             const Config &cfg) {
+                             vector<SearchSpaceElement> &searchSpace) {
 
     OS << "#include \"rt.h\"" << "\n"
        << "#include <stdlib.h>" << "\n"
@@ -784,7 +783,7 @@ namespace generator {
        << "#include <sys/mman.h>" << "\n";
 
 
-    generator::runtimeLoader(OS, cfg);
+    generator::runtimeLoader(OS);
 
     unsigned long baseId = 1; // because 0 is reserved:
 
@@ -821,7 +820,7 @@ namespace generator {
          << "bool output_panic = false;" << "\n"
          << "bool current_panic = false;" << "\n";
 
-      if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
+      if (cfg.valueTEQ) {
         OS << "if (__f1xids == NULL) __f1x_init_runtime();" << "\n";
       }
 
@@ -829,7 +828,7 @@ namespace generator {
 
       OS << "current_panic = false;" << "\n";
 
-      generator::candidateDispatch(sa, baseId, OS, searchSpace, cfg);
+      generator::candidateDispatch(sa, baseId, OS, searchSpace);
       
       OS << "if (!output_initialized) {" << "\n"
          << "output_panic = current_panic;" << "\n"
@@ -837,7 +836,7 @@ namespace generator {
          << "output_initialized = true;" << "\n"
          << "} else if ((output_panic && current_panic)"
          << " || (!output_panic && !current_panic && output_value == base_value)) {" << "\n";
-      if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
+      if (cfg.valueTEQ) {
         OS << "__f1xids[output_index] = id;" << "\n"
            << "output_index++;" << "\n";
       }
@@ -849,7 +848,7 @@ namespace generator {
          << "goto " << "label_" << locationNameSuffix(sa->location) << ";" << "\n"
          << "}" << "\n";
 
-      if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
+      if (cfg.valueTEQ) {
         // output terminator:
         OS << "__f1xids[output_index] = __f1xid_t{0, 0, 0, 0, 1};" << "\n";
       }
@@ -872,8 +871,7 @@ vector<SearchSpaceElement>
 generateSearchSpace(const vector<shared_ptr<SchemaApplication>> &schemaApplications,
                     const fs::path &workDir,
                     std::ostream &OS,
-                    std::ostream &OH,
-                    const Config &cfg) {
+                    std::ostream &OH) {
   
   // header
 
@@ -904,7 +902,7 @@ generateSearchSpace(const vector<shared_ptr<SchemaApplication>> &schemaApplicati
 
   vector<SearchSpaceElement> searchSpace;
   
-  generator::partitioningFunctions(schemaApplications, workDir, OS, searchSpace, cfg);  
+  generator::partitioningFunctions(schemaApplications, workDir, OS, searchSpace);  
 
   return searchSpace;
 }

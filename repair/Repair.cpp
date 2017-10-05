@@ -30,6 +30,7 @@
 #include <boost/log/trivial.hpp>
 
 #include "Repair.h"
+#include "Global.h"
 #include "Typing.h"
 #include "Util.h"
 #include "Project.h"
@@ -131,8 +132,7 @@ bool repair(Project &project,
             TestingFramework &tester,
             const std::vector<std::string> &tests,
             const boost::filesystem::path &workDir,
-            const boost::filesystem::path &patchOutput,
-            const Config &cfg) {
+            const boost::filesystem::path &patchOutput) {
 
   BOOST_LOG_TRIVIAL(info) << "repairing project " << project.getRoot();
   
@@ -156,7 +156,7 @@ bool repair(Project &project,
   }
   project.saveProfileInstumentedFiles();
 
-  Profiler profiler(workDir, cfg);
+  Profiler profiler(workDir);
 
   bool profilerBuildSuccess = profiler.compile();
   if (! profilerBuildSuccess) {
@@ -248,13 +248,13 @@ bool repair(Project &project,
 
   vector<SearchSpaceElement> searchSpace;
 
-  Runtime runtime(workDir, cfg);
+  Runtime runtime(workDir);
 
   BOOST_LOG_TRIVIAL(info) << "generating search space";
   {
     fs::ofstream os(runtime.getSource());
     fs::ofstream oh(runtime.getHeader());
-    searchSpace = generateSearchSpace(sas, workDir, os, oh, cfg);
+    searchSpace = generateSearchSpace(sas, workDir, os, oh);
   }
 
   BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();
@@ -277,13 +277,13 @@ bool repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "prioritizing search space";
   prioritize(searchSpace);
 
-  if (cfg.searchSpaceFile) {
-    auto path = fs::path(*cfg.searchSpaceFile);
+  if (!cfg.searchSpaceFile.empty()) {
+    auto path = fs::path(cfg.searchSpaceFile);
     BOOST_LOG_TRIVIAL(info) << "dumping search space: " << path;
     dumpSearchSpace(searchSpace, path, project.getFiles());
   }
 
-  SearchEngine engine(tests, tester, runtime, cfg, getPartitionable(searchSpace), relatedTestIndexes);
+  SearchEngine engine(tests, tester, runtime, getPartitionable(searchSpace), relatedTestIndexes);
 
   unsigned long last = 0;
   unsigned long patchCount = 0;
@@ -294,7 +294,7 @@ bool repair(Project &project,
 
     if (last < searchSpace.size()) {
       //FIXME: this logic with --all may be incorrect, needs to be simplified
-      if (! cfg.exploreAll && fixLocations.count(searchSpace[last].app->appId)) {
+      if (! cfg.generateAll && fixLocations.count(searchSpace[last].app->appId)) {
         last++;
         patchCount++;
         continue;
@@ -331,7 +331,7 @@ bool repair(Project &project,
           }
         }
 
-        if (cfg.exploreAll) {
+        if (cfg.generateAll) {
           project.restoreInstrumentedFiles();
           project.buildWithRuntime(runtime.getHeader());
         }
@@ -345,7 +345,7 @@ bool repair(Project &project,
       }
 
       fs::path patchFile = patchOutput;
-      if (cfg.exploreAll) {
+      if (cfg.generateAll) {
         if (! fs::exists(patchFile)) {
           fs::create_directory(patchFile);
         }
@@ -359,7 +359,7 @@ bool repair(Project &project,
 
       project.computeDiff(project.getFiles()[fileId], patchFile);
       
-      if (!cfg.exploreAll)
+      if (!cfg.generateAll)
         break;
     }
 

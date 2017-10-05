@@ -16,63 +16,39 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <memory>
-
 #pragma once
 
-const ulong F1X_VERSION_MAJOR = @F1X_VERSION_MAJOR@;
-const ulong F1X_VERSION_MINOR = @F1X_VERSION_MINOR@;
-const ulong F1X_VERSION_PATCH = @F1X_VERSION_PATCH@;
+#include <string>
 
+
+const unsigned F1X_VERSION_MAJOR = @F1X_VERSION_MAJOR@;
+const unsigned F1X_VERSION_MINOR = @F1X_VERSION_MINOR@;
+const unsigned F1X_VERSION_PATCH = @F1X_VERSION_PATCH@;
 const std::string F1X_CLANG_INCLUDE = "@F1X_CLANG_INCLUDE@";
 
-const std::string F1X_RUNTIME_COMPILER = "g++";
-const std::string F1X_RUNTIME_OPTIMIZATION = "-O1";
+const std::string TRACE_FILE_NAME = "trace.txt";
+const std::string PROFILE_FILE_NAME = "profile.txt";
+const std::string PROFILE_SOURCE_FILE_NAME = "profile.cpp";
+const std::string PROFILE_HEADER_FILE_NAME = "profile.h";
+const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
+const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
 
-enum class Exploration {
-  GENERATE_AND_VALIDATE, // evaluate patches one-by-one
-  TEST_EQUIVALENCE,      // one-the-fly group patches based on test-equivalence
-  PATH_EXPLORATION       // UNSUPPORTED explore paths, then synthesize patches
-};
+// default values of configuration options:
 
+const std::string DEFAULT_RUNTIME_COMPILER      = "g++";
+const std::string DEFAULT_RUNTIME_OPTIMIZATION  = "-O1";
+const bool DEFAULT_GLOBAL_VARIABLES             = false;
+const bool DEFAULT_VERBOSE                      = false;
+const bool DEFAULT_VALIDATE_PATCHES             = false;
+const bool DEFAULT_GENERATE_ALL                 = false;
+const bool DEFAULT_OUTPUT_PATCH_METADATA        = false;
+const bool DEFAULT_REMOVE_INTERMEDIATE_DATA     = false;
+const bool DEFAULT_INSERT_ASSIGNMENTS           = true;
+const bool DEFAULT_REPAIR_CPP                   = false;
+const bool DEFAULT_VALUE_TEQ                    = true;
+const bool DEFAULT_DEPENDENCY_TEQ               = true;
+const bool DEFAULT_TEST_PRIORITIZATION          = true;
+const unsigned DEFAULT_MAX_CONDITION_PARAMETER  = 64;
+const unsigned DEFAULT_MAX_EXPRESSION_PARAMETER = 1;
 
-enum class TestPrioritization {
-  FIXED_ORDER,      // first run failing, then passing tests
-  MAX_FAILING       // dynamically prioritize tests based on previous failures
-};
-
-
-const bool USE_GLOBAL_VARIABLES = false;
-
-
-struct Config {
-  bool verbose;
-  bool validatePatches;
-  bool exploreAll;
-  std::shared_ptr<std::string> searchSpaceFile; /* UNSUPPORTED */
-  bool outputPatchMetadata; /* UNSUPPORTED */
-  bool removeIntermediateData;
-  bool insertAssignments; /* UNSUPPORTED */
-  bool cppProject; /* UNSUPPORTED */
-  ulong maxConditionParameter;
-  ulong maxExpressionParameter;
-  Exploration exploration;
-  TestPrioritization testPrioritization;
-};
-
-
-static Config DEFAULT_CONFIG = {
-  /* verbose = */ false,
-  /* validatePatches = */ false,
-  /* exploreAll = */ false,
-  /* searchSpaceFile = */ nullptr,
-  /* outputPatchMetadata = */ false,
-  /* removeIntermediateData = */ false,
-  /* insertAssignments = */ false,
-  /* cppProject = */ false,
-  /* maxConditionParameter = */ 64,
-  /* maxExpressionParameter = */ 1,
-  /* exploration = */ Exploration::TEST_EQUIVALENCE,
-  /* testPrioritization = */ TestPrioritization::MAX_FAILING,
-};
 

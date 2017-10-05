@@ -25,6 +25,7 @@
 #include <boost/log/trivial.hpp>
 
 #include "Config.h"
+#include "Global.h"
 #include "SearchEngine.h"
 #include "Util.h"
 
@@ -39,13 +40,11 @@ const unsigned SHOW_PROGRESS_STEP = 10;
 SearchEngine::SearchEngine(const std::vector<std::string> &tests,
                            TestingFramework &tester,
                            Runtime &runtime,
-                           const Config &cfg,
                            shared_ptr<unordered_map<unsigned long, unordered_set<F1XID>>> partitionable,
                            std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes):
   tests(tests),
   tester(tester),
   runtime(runtime),
-  cfg(cfg),
   partitionable(partitionable),
   relatedTestIndexes(relatedTestIndexes) {
   
@@ -78,7 +77,7 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
 
     const SearchSpaceElement &elem = searchSpace[candIdx];
 
-    if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
+    if (cfg.valueTEQ) {
       if (failing.count(elem.id))
         continue;
     }
@@ -99,7 +98,7 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
     for (unsigned orderIdx = 0; orderIdx < testOrder.size(); orderIdx++) {
       auto test = tests[testOrder[orderIdx]];
 
-      if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
+      if (cfg.valueTEQ) {
         if (passing[test].count(elem.id))
           continue;
         //FIXME: select unexplored candidates
@@ -137,7 +136,7 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
 
       passAll = (status == TestStatus::PASS);
         
-      if (cfg.exploration == Exploration::TEST_EQUIVALENCE) {
+      if (cfg.valueTEQ) {
         unordered_set<F1XID> partition = runtime.getPartition();
         if (partition.empty()) {
           BOOST_LOG_TRIVIAL(warning) << "partitioning failed for "

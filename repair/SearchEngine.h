@@ -42,7 +42,6 @@ class SearchEngine {
   SearchEngine(const std::vector<std::string> &tests,
                TestingFramework &tester,
                Runtime &runtime,
-               const Config &cfg,
                std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<F1XID>>> partitionable,
                std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes);
 
@@ -55,7 +54,6 @@ class SearchEngine {
   std::vector<std::string> tests;
   TestingFramework tester;
   Runtime runtime;
-  Config cfg;
   SearchStatistics stat;
   unsigned long progress;
   std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<F1XID>>> partitionable;

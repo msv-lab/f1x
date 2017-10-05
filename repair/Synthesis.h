@@ -48,5 +48,4 @@ std::vector<SearchSpaceElement>
 generateSearchSpace(const std::vector<std::shared_ptr<SchemaApplication>> &schemaApplications,
                     const boost::filesystem::path &workDir,
                     std::ostream &OS,
-                    std::ostream &OH,
-                    const Config &cfg);
+                    std::ostream &OH);

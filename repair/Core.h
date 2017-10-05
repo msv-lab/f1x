@@ -18,32 +18,9 @@
 
 #pragma once
 
-#include <unordered_set>
-#include <string>
-#include <sstream>
-
-#include <boost/filesystem.hpp>
-
-#include "Config.h"
-#include "Util.h"
-
-const unsigned long MAX_PARTITION_SIZE = 1000000;
-const std::string PARTITION_FILE_NAME = "/f1x_partition";
-const F1XID INPUT_TERMINATOR = F1XID{0, 0, 0, 0, 0};
-const F1XID OUTPUT_TERMINATOR = F1XID{0, 0, 0, 0, 1};
 
 
-class Runtime {
- public:
-  Runtime(const boost::filesystem::path &workDir);
-
-  void setPartition(std::unordered_set<F1XID> ids);
-  std::unordered_set<F1XID> getPartition();
-  boost::filesystem::path getSource();
-  boost::filesystem::path getHeader();
-  bool compile();
-
- private:
-  boost::filesystem::path workDir;
-  F1XID *partition;
+enum class TestPrioritization {
+  FIXED_ORDER,      // first run failing, then passing tests
+  MAX_FAILING       // dynamically prioritize tests based on previous failures
 };

@@ -42,6 +42,7 @@ extern unsigned globalEndLine;
 extern unsigned globalEndColumn;
 extern std::string globalPatch;
 extern unsigned long globalBaseAppId;
+extern bool globalUseGlobalVariables;
 //NOTE: this is a hack to collect ifdef locations from preprocessor
 extern std::shared_ptr<std::vector<clang::SourceRange>> globalConditionalsPP;
 

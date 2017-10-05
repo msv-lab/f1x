@@ -16,6 +16,7 @@
 
 add_library (f1xRepair
   Process.cpp
+  Global.cpp
   Typing.cpp
   Util.cpp
   Project.cpp

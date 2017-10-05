@@ -42,6 +42,9 @@ static cl::extrahelp MoreHelp("\nf1x-transform is a tool used internally by f1x\
 // only ones displayed.
 static llvm::cl::OptionCategory F1XCategory("f1x-transform options");
 
+static cl::opt<bool>
+Global("global", cl::desc("use global variables"), cl::cat(F1XCategory));
+
 // Search space instrumentation options:
 
 static cl::opt<std::string>
@@ -101,6 +104,7 @@ int main(int argc, const char **argv) {
   globalEndLine = EndLine;
   globalEndColumn = EndColumn;
   globalPatch = Patch;
+  globalUseGlobalVariables = Global;
 
   if (Apply)
     FrontendFactory = newFrontendActionFactory<PatchApplicationAction>();

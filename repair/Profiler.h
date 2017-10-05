@@ -23,18 +23,11 @@
 
 #include <boost/filesystem.hpp>
 
-#include "Config.h"
 #include "Util.h"
-
-const std::string TRACE_FILE_NAME = "trace.txt";
-const std::string PROFILE_FILE_NAME = "profile.txt";
-const std::string PROFILE_SOURCE_FILE_NAME = "profile.cpp";
-const std::string PROFILE_HEADER_FILE_NAME = "profile.h";
-
 
 class Profiler {
  public:
-  Profiler(const boost::filesystem::path &workDir, const Config &cfg);
+  Profiler(const boost::filesystem::path &workDir);
 
   boost::filesystem::path getHeader();
   boost::filesystem::path getSource();
@@ -46,7 +39,6 @@ class Profiler {
 
  private:
   boost::filesystem::path workDir;
-  Config cfg;
   std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes;
   std::set<std::string> interestingLocations; //NOTE: set of string to make more deterministic
 };

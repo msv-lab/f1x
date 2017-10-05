@@ -29,6 +29,7 @@
 #include <boost/log/trivial.hpp>
 
 #include "Util.h"
+#include "Global.h"
 #include "Runtime.h"
 #include "Config.h"
 
@@ -37,9 +38,8 @@ using std::vector;
 using std::unordered_set;
 
 
-Runtime::Runtime(const fs::path &workDir, const Config &cfg): 
-  workDir(workDir),
-  cfg(cfg) {
+Runtime::Runtime(const fs::path &workDir): 
+  workDir(workDir) {
 
   size_t size = sizeof(F1XID) * MAX_PARTITION_SIZE;
   int fd = shm_open(PARTITION_FILE_NAME.c_str(),
@@ -90,8 +90,8 @@ bool Runtime::compile() {
   BOOST_LOG_TRIVIAL(info) << "compiling analysis runtime";
   FromDirectory dir(workDir);
   std::stringstream cmd;
-  cmd << F1X_RUNTIME_COMPILER 
-      << " " << F1X_RUNTIME_OPTIMIZATION
+  cmd << cfg.runtimeCompiler
+      << " " << cfg.runtimeOptimization
       << " -fPIC"
       << " " << RUNTIME_SOURCE_FILE_NAME
       << " -shared"

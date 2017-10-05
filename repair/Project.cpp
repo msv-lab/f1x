@@ -31,6 +31,7 @@
 #include "Config.h"
 #include "Project.h"
 #include "Util.h"
+#include "Global.h"
 
 namespace fs = boost::filesystem;
 namespace json = rapidjson;
@@ -118,13 +119,11 @@ void adjustCompileDB(fs::path projectRoot) {
 Project::Project(const boost::filesystem::path &root,
                  const std::vector<ProjectFile> &files,
                  const std::string &buildCmd,
-                 const boost::filesystem::path &workDir,
-                 const Config &cfg):
+                 const boost::filesystem::path &workDir):
   root(root),
   files(files),
   buildCmd(buildCmd),
-  workDir(workDir),
-  cfg(cfg) {
+  workDir(workDir) {
   saveOriginalFiles();
   }
 
@@ -334,13 +333,11 @@ bool Project::applyPatch(const SearchSpaceElement &patch) {
 TestingFramework::TestingFramework(const Project &project,
                                    const boost::filesystem::path &driver,
                                    const unsigned long testTimeout,
-                                   const boost::filesystem::path &workDir,
-                                   const Config &cfg):
+                                   const boost::filesystem::path &workDir):
   project(project),
   driver(driver),
   testTimeout(testTimeout),
-  workDir(workDir),
-  cfg(cfg) {}
+  workDir(workDir) {}
 
 
 TestStatus TestingFramework::execute(const std::string &testId) {

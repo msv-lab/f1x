@@ -32,7 +32,8 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 
-#include "Config.h"
+#include "Core.h"
+#include "Global.h"
 #include "Repair.h"
 #include "Util.h"
 
@@ -159,15 +160,13 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
-  Config cfg = DEFAULT_CONFIG;
-
   if (vm.count("verbose")) {
     cfg.verbose = true;
   }
   initializeTrivialLogger(cfg.verbose);
 
   if (vm.count("all")) {
-    cfg.exploreAll = true;
+    cfg.generateAll = true;
   }
 
   if (vm.count("enable-metadata")) {
@@ -183,7 +182,7 @@ int main (int argc, char *argv[]) {
   }
 
   if (vm.count("disable-vteq")) {
-    cfg.exploration = Exploration::GENERATE_AND_VALIDATE;
+    cfg.valueTEQ = false;
   }
 
   if (vm.count("disable-testprior")) {
@@ -191,7 +190,7 @@ int main (int argc, char *argv[]) {
   }
 
   if (vm.count("dump-space")) {
-    cfg.searchSpaceFile = std::make_shared<std::string>(fs::absolute(vm["dump-space"].as<string>()).string());
+    cfg.searchSpaceFile = fs::absolute(vm["dump-space"].as<string>()).string();
   }
 
   if (!vm.count("source")) {
@@ -263,7 +262,7 @@ int main (int argc, char *argv[]) {
         dirname = e.string();
     std::stringstream name;
     name << dirname << timeRepr;
-    if (!cfg.exploreAll)
+    if (!cfg.generateAll)
       name << ".patch";
     output = fs::path(name.str());
   } else {
@@ -282,10 +281,10 @@ int main (int argc, char *argv[]) {
 
   bool found = false;
   {
-    Project project(root, files, buildCmd, workDir, cfg);
-    TestingFramework tester(project, driver, testTimeout, workDir, cfg);
+    Project project(root, files, buildCmd, workDir);
+    TestingFramework tester(project, driver, testTimeout, workDir);
     
-    found = repair(project, tester, tests, workDir, output, cfg);
+    found = repair(project, tester, tests, workDir, output);
   }
 
   // NOTE: project is already destroyed here
@@ -294,7 +293,7 @@ int main (int argc, char *argv[]) {
   }
 
   if (found) {
-    if (cfg.exploreAll) {
+    if (cfg.generateAll) {
       BOOST_LOG_TRIVIAL(info) << "patches successfully generated: " << output;
     } else {
       BOOST_LOG_TRIVIAL(info) << "patch successfully generated: " << output;

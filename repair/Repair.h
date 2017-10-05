@@ -31,5 +31,4 @@ bool repair(Project &project,
             TestingFramework &tester,
             const std::vector<std::string> &tests,
             const boost::filesystem::path &workDir,
-            const boost::filesystem::path &patchOutput,
-            const Config &cfg);
+            const boost::filesystem::path &patchOutput);

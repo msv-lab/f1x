@@ -27,7 +27,7 @@
 
 #include "Util.h"
 #include "Profiler.h"
-#include "Config.h"
+#include "Global.h"
 
 namespace fs = boost::filesystem;
 using std::string;
@@ -47,9 +47,8 @@ string locToString(const Location &loc) {
 }
 
 
-Profiler::Profiler(const fs::path &workDir, const Config &cfg): 
-  workDir(workDir),
-  cfg(cfg) {};
+Profiler::Profiler(const fs::path &workDir): 
+  workDir(workDir) {};
 
 
 boost::filesystem::path Profiler::getHeader() {
@@ -127,8 +126,8 @@ bool Profiler::compile() {
   }
   FromDirectory dir(workDir);
   std::stringstream cmd;
-  cmd << F1X_RUNTIME_COMPILER 
-      << " " << F1X_RUNTIME_OPTIMIZATION
+  cmd << cfg.runtimeCompiler
+      << " " << cfg.runtimeOptimization
       << " -fPIC"
       << " " << PROFILE_SOURCE_FILE_NAME
       << " -shared"
