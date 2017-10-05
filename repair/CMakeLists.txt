@@ -15,6 +15,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 add_library (f1xRepair
+  Process.cpp
   Typing.cpp
   Util.cpp
   Project.cpp
