@@ -96,7 +96,7 @@ f1x accepts the following arguments:
 - `-d [ --driver ] PATH` - the path to the test driver. The test driver is executed from the root of the source directory.
 - `-b [ --build ] CMD` - the build command. If omitted, `make -e` is used. The build command is executed from the root of the source directory.
 - `-o [ --output ] PATH` - the path to the output patch (or directory when used with `--all`). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the directory `<SRC>-<TIME>` when used with `--all`)
-- `-a [ --all ]` - enables exploration of the whole search space (generate all plausible patches). Since there can be many plausible patches, it is recommended to disable validation of synthesized patches using `--disable-validation` option.
+- `-a [ --all ]` - enables exploration of the whole search space (generate all plausible patches).
 - `-c [ --cost ] FUNCTION` - the cost function used to prioritize patches. If omitted, `syntax-diff` is used.
 - `-v [ --verbose ]` - enables extended output for troubleshooting.
 - `-h [ --help ]` - prints help message and exits.

@@ -10,6 +10,8 @@ f1x-bench is a tool and a format specification for executing program repair benc
 
 ## Tool ##
 
+The tool must be executed from the benchmark root directory.
+
 Usage:
 
 - `f1x-bench DEFECT` - perform an experiment (fetch + set-up + run + tear-down + remove) for DEFECT
@@ -18,7 +20,6 @@ Usage:
 
 Options:
 
-- `--root` - specify benchmark directory (current directory by default)
 - `--output DIR` - specify output directory (optional)
 - `--timeout` - timeout for individual defect (optional)
 - `--verbose` - produce extended output
@@ -49,13 +50,13 @@ The content of `tests.json` should be as follows
 
 
 
-The content of `benchmark.json` should be as follows (`fetch`, `set-up`, `tear-down` are shell commands, `$F1X_BENCH_ROOT` and `$F1X_BENCH_OUTPUT` are provided environment variables):
+The content of `benchmark.json` should be as follows (`fetch`, `set-up`, `tear-down` are shell commands, `$F1X_BENCH_OUTPUT` is provided environment variable):
 
     {
         "defect1": {
-            "fetch": "$F1X_BENCH_ROOT/fetch defect1",
-            "set-up": "$F1X_BENCH_ROOT/configure defect1",
-            "tear-down": "$F1X_BENCH_ROOT/check-patch $F1X_BENCH_OUTPUT defect1",
+            "fetch": "./fetch defect1",
+            "set-up": "./configure defect1",
+            "tear-down": "./check-patch $F1X_BENCH_OUTPUT defect1",
             "source": "defect1/src",
             "files": [ "lib/source.c" ],
             "build": "make -e && cd lib1 && make -e",
@@ -65,4 +66,4 @@ The content of `benchmark.json` should be as follows (`fetch`, `set-up`, `tear-d
         ...
     }
     
-`driver` is relative to benchmark root. `set-up`, `tear-down` and `build` are optional.
+All commands and paths (except for `files`) are relative to benchmark root. `set-up`, `tear-down` and `build` are optional.

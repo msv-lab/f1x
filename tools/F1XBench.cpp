@@ -252,7 +252,6 @@ std::pair<ExperimentStatus, unsigned long> experiment(std::string defectId,
                                                       ExperimentPlan plan) {
 
   InEnvironment env({ {"CC", "f1x-cc"},
-                      {"F1X_BENCH_ROOT", root.string()},
                       {"F1X_BENCH_OUTPUT", output.string()} });
 
   if (fs::exists(output)) {
@@ -306,7 +305,6 @@ int main (int argc, char *argv[]) {
   // Declare supported options.
   po::options_description general("Usage: f1x-bench [DEFECT] OPTIONS -- TOOL_OPTIONS\n\nSupported options");
   general.add_options()
-    ("root", po::value<string>()->value_name("PATH"), "benchmark root (default: current directory)")
     ("output", po::value<string>()->value_name("PATH"), "output directory (default: results-TIME)")
     ("timeout", po::value<unsigned>()->value_name("SEC"), "timeout for individual defect (default: none)")
     ("fetch", "perform fetch command and exit")
@@ -407,14 +405,6 @@ int main (int argc, char *argv[]) {
   }
 
   fs::path root(fs::current_path());
-  if (vm.count("root")) {
-    fs::path specifiedRoot(vm["root"].as<string>());
-    root = fs::absolute(specifiedRoot);
-    if (! (fs::exists(root) && fs::is_directory(root))) {
-      BOOST_LOG_TRIVIAL(error) << "benchmark directory " << root.string() << " does not exist";
-      return 1;
-    }
-  }
   BOOST_LOG_TRIVIAL(debug) << "benchmark root: " << root.string();
   if (! fs::exists(root / "benchmark.json")) {
     BOOST_LOG_TRIVIAL(error) << "benchmark.json does not exist";

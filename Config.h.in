@@ -63,7 +63,7 @@ struct Config {
 
 static Config DEFAULT_CONFIG = {
   /* verbose = */ false,
-  /* validatePatches = */ true,
+  /* validatePatches = */ false,
   /* exploreAll = */ false,
   /* searchSpaceFile = */ nullptr,
   /* outputPatchMetadata = */ false,

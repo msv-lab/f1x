@@ -117,17 +117,16 @@ int main (int argc, char *argv[]) {
     ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
-    ("dump-profile", po::value<string>()->value_name("PATH"), "[DEBUG] save project profile")
-    ("load-profile", po::value<string>()->value_name("PATH"), "[DEBUG] load project profile")
+    ("dump-stat", po::value<string>()->value_name("PATH"), "output execution statistics")
     ("dump-space", po::value<string>()->value_name("PATH"), "[DEBUG] output search space")
     ("enable-cleanup", "remove temporary files")
     ("enable-metadata", "output patch metadata")
+    ("enable-validation", "validate found patches")
     ("enable-cpp", "[EXPERIMENTAL] repair C++ source code")
+    ("disable-assign", "don't synthesize assignments")
     ("disable-vteq", "[DEBUG] don't apply value-based analysis")
     ("disable-dteq", "[DEBUG] don't apply dependency-based analysis")
     ("disable-testprior", "[DEBUG] don't prioritize tests")
-    ("disable-validation", "don't validate found patches")
-    ("disable-assign", "don't synthesize assignments")
     ;
 
   po::options_description hidden("Hidden options");
@@ -179,8 +178,8 @@ int main (int argc, char *argv[]) {
     cfg.removeIntermediateData = true;
   }
 
-  if (vm.count("disable-validation")) {
-    cfg.validatePatches = false;
+  if (vm.count("enable-validation")) {
+    cfg.validatePatches = true;
   }
 
   if (vm.count("disable-vteq")) {
