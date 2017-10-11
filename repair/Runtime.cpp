@@ -38,8 +38,7 @@ using std::vector;
 using std::unordered_set;
 
 
-Runtime::Runtime(const fs::path &workDir): 
-  workDir(workDir) {
+Runtime::Runtime() {
 
   size_t size = sizeof(F1XID) * MAX_PARTITION_SIZE;
   int fd = shm_open(PARTITION_FILE_NAME.c_str(),
@@ -79,16 +78,16 @@ unordered_set<F1XID> Runtime::getPartition() {
 }
 
 boost::filesystem::path Runtime::getHeader() {
-  return workDir / RUNTIME_HEADER_FILE_NAME;
+return fs::path(cfg.dataDir) / RUNTIME_HEADER_FILE_NAME;
 }
 
 boost::filesystem::path Runtime::getSource() {
-  return workDir / RUNTIME_SOURCE_FILE_NAME;
+return fs::path(cfg.dataDir) / RUNTIME_SOURCE_FILE_NAME;
 }
 
 bool Runtime::compile() {
   BOOST_LOG_TRIVIAL(info) << "compiling analysis runtime";
-  FromDirectory dir(workDir);
+FromDirectory dir(fs::path(cfg.dataDir));
   std::stringstream cmd;
   cmd << cfg.runtimeCompiler
       << " " << cfg.runtimeOptimization

@@ -35,8 +35,7 @@ const F1XID OUTPUT_TERMINATOR = F1XID{0, 0, 0, 0, 1};
 
 class Runtime {
  public:
-  Runtime(const boost::filesystem::path &workDir);
-
+  Runtime();
   void setPartition(std::unordered_set<F1XID> ids);
   std::unordered_set<F1XID> getPartition();
   boost::filesystem::path getSource();
@@ -44,6 +43,5 @@ class Runtime {
   bool compile();
 
  private:
-  boost::filesystem::path workDir;
   F1XID *partition;
 };

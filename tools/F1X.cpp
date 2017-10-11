@@ -102,7 +102,7 @@ std::vector<ProjectFile> parseFilesArg(const boost::filesystem::path &root,
 
 int main (int argc, char *argv[]) {
   po::positional_options_description positional;
-  positional.add("source", -1);
+  positional.add("root", -1);
   
   // Declare supported options.
   po::options_description general("Usage: f1x PATH OPTIONS\n\nSupported options");
@@ -120,10 +120,9 @@ int main (int argc, char *argv[]) {
     ("version", "print version and exit")
     ("dump-stat", po::value<string>()->value_name("PATH"), "output execution statistics")
     ("dump-space", po::value<string>()->value_name("PATH"), "[DEBUG] output search space")
-    ("enable-cleanup", "remove temporary files")
+    ("enable-cleanup", "remove intermediate data")
     ("enable-metadata", "output patch metadata")
     ("enable-validation", "validate found patches")
-    ("enable-cpp", "[EXPERIMENTAL] repair C++ source code")
     ("disable-assign", "don't synthesize assignments")
     ("disable-vteq", "[DEBUG] don't apply value-based analysis")
     ("disable-dteq", "[DEBUG] don't apply dependency-based analysis")
@@ -132,7 +131,7 @@ int main (int argc, char *argv[]) {
 
   po::options_description hidden("Hidden options");
   hidden.add_options()  
-    ("source", po::value<string>(), "source directory")
+    ("root", po::value<string>(), "project root directory")
     ;
 
   po::options_description allOptions("All options");
@@ -193,14 +192,14 @@ int main (int argc, char *argv[]) {
     cfg.searchSpaceFile = fs::absolute(vm["dump-space"].as<string>()).string();
   }
 
-  if (!vm.count("source")) {
-    BOOST_LOG_TRIVIAL(error) << "source directory is not specified (use --help)";
+  if (!vm.count("root")) {
+    BOOST_LOG_TRIVIAL(error) << "project root directory is not specified (use --help)";
     return 1;
   }
-  fs::path root(vm["source"].as<string>());
+  fs::path root(vm["root"].as<string>());
   root = fs::absolute(root);
   if (! (fs::exists(root) && fs::is_directory(root))) {
-    BOOST_LOG_TRIVIAL(error) << "source directory " << root.string() << " does not exist";
+    BOOST_LOG_TRIVIAL(error) << "project root directory " << root.string() << " does not exist";
     return 1;
   }
 
@@ -275,21 +274,22 @@ int main (int argc, char *argv[]) {
     fs::remove_all(output);
   }
 
-  fs::path workDir = fs::temp_directory_path() / fs::unique_path();
-  fs::create_directory(workDir);
-  BOOST_LOG_TRIVIAL(info) << "working directory: " << workDir;
+  fs::path dataDir = fs::temp_directory_path() / fs::unique_path();
+  fs::create_directory(dataDir);
+  BOOST_LOG_TRIVIAL(info) << "intermediate data directory: " << dataDir;
+  cfg.dataDir = dataDir.string();
 
   bool found = false;
   {
-    Project project(root, files, buildCmd, workDir);
-    TestingFramework tester(project, driver, testTimeout, workDir);
+    Project project(root, files, buildCmd);
+    TestingFramework tester(project, driver, testTimeout);
     
-    found = repair(project, tester, tests, workDir, output);
+    found = repair(project, tester, tests, output);
   }
 
   // NOTE: project is already destroyed here
   if (cfg.removeIntermediateData) {
-    fs::remove_all(workDir);
+    fs::remove_all(dataDir);
   }
 
   if (found) {

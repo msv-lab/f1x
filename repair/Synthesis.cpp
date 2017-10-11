@@ -769,7 +769,6 @@ namespace generator {
   }
 
   void partitioningFunctions(const vector<shared_ptr<SchemaApplication>> &schemaApplications,
-                             const fs::path &workDir,
                              std::ostream &OS,
                              vector<SearchSpaceElement> &searchSpace) {
 
@@ -869,7 +868,6 @@ namespace generator {
 
 vector<SearchSpaceElement> 
 generateSearchSpace(const vector<shared_ptr<SchemaApplication>> &schemaApplications,
-                    const fs::path &workDir,
                     std::ostream &OS,
                     std::ostream &OH) {
   
@@ -902,7 +900,7 @@ generateSearchSpace(const vector<shared_ptr<SchemaApplication>> &schemaApplicati
 
   vector<SearchSpaceElement> searchSpace;
   
-  generator::partitioningFunctions(schemaApplications, workDir, OS, searchSpace);  
+  generator::partitioningFunctions(schemaApplications, OS, searchSpace);  
 
   return searchSpace;
 }

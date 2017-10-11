@@ -66,4 +66,4 @@ The content of `benchmark.json` should be as follows (`fetch`, `set-up`, `tear-d
         ...
     }
     
-All commands and paths (except for `files`) are relative to benchmark root. `set-up`, `tear-down` and `build` are optional.
+All commands and paths (except for `files`) are relative to benchmark root directory. `set-up`, `tear-down` and `build` are optional.

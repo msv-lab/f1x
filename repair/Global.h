@@ -32,6 +32,7 @@ struct Config {
   bool generateAll;
   std::string searchSpaceFile;
   std::string statisticsFile;
+  std::string dataDir;
   bool outputPatchMetadata;
   bool removeIntermediateData;
   bool insertAssignments;

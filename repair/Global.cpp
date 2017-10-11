@@ -30,6 +30,7 @@ struct Config cfg = {
   /* generateAll            = */ DEFAULT_GENERATE_ALL,
   /* searchSpaceFile        = */ "",
   /* statisticsFile         = */ "",
+  /* dataDir                = */ "",
   /* outputPatchMetadata    = */ DEFAULT_OUTPUT_PATCH_METADATA,
   /* removeIntermediateData = */ DEFAULT_REMOVE_INTERMEDIATE_DATA,
   /* insertAssignments      = */ DEFAULT_INSERT_ASSIGNMENTS,

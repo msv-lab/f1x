@@ -1,6 +1,6 @@
 # Manual #
 
-f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs. It automatically finds and fixes software bugs by analyzing behaviour of passing and failing tests. f1x aims to be efficient, predictable and easy-to-use.
+f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs. It automatically finds and fixes software bugs by analyzing behaviour of passing and failing tests. f1x aims to be efficient, robust and easy-to-use.
 
 ## Characteristics ##
 
@@ -40,7 +40,13 @@ Search space prioritization can be thought of as a function that assigns lower c
     
 In order to repair a program, f1x requires a special build configuration and an interface to the testing framework.
 
-### Build system ###
+### Project ###
+
+The input to f1x is a project, which is simply a directory such that:
+
+- all source files that may contain a bug are in the project root directory or its subdirectories;
+- the program is build by executing a command from the project root directory;
+- each test can be run by executing a command from the project root directory.
 
 It order to let f1x transform and compile your application, you need to substitute C compiler in your build system with the `f1x-cc` tool. For instance, autotools-based projects require
 
@@ -48,12 +54,10 @@ It order to let f1x transform and compile your application, you need to substitu
 - removing binaries before executing f1x (e.g. `make clean`)
 - ensuring that the build command uses the compiler from the `CC` environment variable (e.g. use `make` with the `-e` option)
 
-### Testing framework ###
-
 f1x needs to be able to execute an arbitrary test to identify if this test passes or fails. To abstract over testing frameworks, f1x uses the following entities:
 
 - A set of unique test identifiers (e.g. "test1", "test2", ...).
-- A test driver executable that accepts a test identifier as the only argument, runs the corresponding test, and terminates with zero exit code if and only if the test passes.
+- A test driver executable that accepts a test identifier as the only argument, runs the corresponding test, and terminates with zero exit code if and only if the test passes. A test driver is executed from the project root directory.
 
 When executing tests, f1x appends a path to its runtime library (libf1xrt.so) to the `LD_LIBRARY_PATH` environment variable. Therefore, the testing framework should not overwrite this variable.
 
@@ -81,26 +85,28 @@ The f1x command-line tool accepts user options, executes the repair algorithm an
 
 The following arguments are mandatory (and sufficient for most cases):
 
-- The source directory.
-- The suspicious source files (`--files` option).
-- The test-suite (`--tests` option).
-- The test execution timeout (`--test-timeout` option).
-- The test driver (`--driver` option).
+- Project root directory.
+- Suspicious source files (`--files` option).
+- Test-suite (`--tests` option).
+- Test execution timeout (`--test-timeout` option).
+- Test driver (`--driver` option).
 
 f1x accepts the following arguments:
 
-- `PATH` - the source directory of your buggy program (positional argument).
-- `-f [ --files ] RELPATH...` - the list of suspicious files. The paths should be relative to the root of the source directory. f1x allows to restrict the search space to certain parts of the source code files. For the arguments `--files main.c:20 lib.c:5-45`, the candidate locations will be restricted to the line 20 of `main.c` and from the line 5 to the line 45 (inclusive) of `lib.c`.
+- `PATH` - the project root directory of your buggy program (positional argument).
+- `-f [ --files ] RELPATH...` - the list of suspicious files (that may contain a bug). The paths should be relative to the project root directory. f1x allows to restrict the search space to certain parts of the source code files. For the arguments `--files main.c:20 lib.c:5-45`, the candidate locations will be restricted to the line 20 of `main.c` and from the line 5 to the line 45 (inclusive) of `lib.c`.
 - `-t [ --tests ] ID...` - the list of unique test identifiers.
 - `-T [ --test-timeout ] MS` - the test execution timeout in milliseconds.
-- `-d [ --driver ] PATH` - the path to the test driver. The test driver is executed from the root of the source directory.
-- `-b [ --build ] CMD` - the build command. If omitted, `make -e` is used. The build command is executed from the root of the source directory.
+- `-d [ --driver ] PATH` - the path to the test driver. The test driver is executed from the project root directory.
+- `-b [ --build ] CMD` - the build command. If omitted, `make -e` is used. The build command is executed from the project root directory.
 - `-o [ --output ] PATH` - the path to the output patch (or directory when used with `--all`). If omitted, the patch is generated in the current directory with the name `<SRC>-<TIME>.patch` (or in the directory `<SRC>-<TIME>` when used with `--all`)
 - `-a [ --all ]` - enables exploration of the whole search space (generate all plausible patches).
 - `-c [ --cost ] FUNCTION` - the cost function used to prioritize patches. If omitted, `syntax-diff` is used.
 - `-v [ --verbose ]` - enables extended output for troubleshooting.
 - `-h [ --help ]` - prints help message and exits.
 - `--version` - prints version and exits.
+
+Run `f1x --help` to view the list of advanced options.
 
 ## Related publications ##
 

@@ -27,8 +27,6 @@
 
 class Profiler {
  public:
-  Profiler(const boost::filesystem::path &workDir);
-
   boost::filesystem::path getHeader();
   boost::filesystem::path getSource();
   bool compile();
@@ -38,7 +36,6 @@ class Profiler {
   void clearTrace();
 
  private:
-  boost::filesystem::path workDir;
   std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes;
   std::set<std::string> interestingLocations; //NOTE: set of string to make more deterministic
 };

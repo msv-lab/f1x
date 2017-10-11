@@ -47,16 +47,12 @@ string locToString(const Location &loc) {
 }
 
 
-Profiler::Profiler(const fs::path &workDir): 
-  workDir(workDir) {};
-
-
 boost::filesystem::path Profiler::getHeader() {
-  return workDir / PROFILE_HEADER_FILE_NAME;
+  return fs::path(cfg.dataDir) / PROFILE_HEADER_FILE_NAME;
 }
 
 boost::filesystem::path Profiler::getSource() {
-  return workDir / PROFILE_SOURCE_FILE_NAME;
+  return fs::path(cfg.dataDir) / PROFILE_SOURCE_FILE_NAME;
 }
 
 unordered_map<Location, vector<unsigned>> Profiler::getRelatedTestIndexes() {
@@ -109,7 +105,7 @@ bool Profiler::compile() {
     source << "void __f1x_trace(unsigned long fid, unsigned long bl, unsigned long bc, unsigned long el, unsigned long ec) {"  << "\n"
            << "__f1x_loc loc = {fid, bl, bc, el, ec};" << "\n"
            << "if (! __f1x_locs.count(loc)) {" << "\n"
-           << "std::ofstream ofs(\""<< (workDir / TRACE_FILE_NAME).string() << "\", std::ofstream::out | std::ofstream::app);" << "\n"
+           << "std::ofstream ofs(\""<< (fs::path(cfg.dataDir) / TRACE_FILE_NAME).string() << "\", std::ofstream::out | std::ofstream::app);" << "\n"
            << "ofs << fid << \" \" << bl << \" \" <<  bc << \" \" << el << \" \" << ec << \"\\n\";" << "\n"
            << "__f1x_locs.insert(loc);" << "\n"
            << "}" << "\n"
@@ -124,7 +120,7 @@ bool Profiler::compile() {
            << "}" << "\n"
            << "#endif" << "\n";
   }
-  FromDirectory dir(workDir);
+  FromDirectory dir(fs::path(cfg.dataDir));
   std::stringstream cmd;
   cmd << cfg.runtimeCompiler
       << " " << cfg.runtimeOptimization
@@ -144,14 +140,14 @@ bool Profiler::compile() {
 }
 
 void Profiler::clearTrace() {
-  fs::path traceFile = workDir / TRACE_FILE_NAME;
+  fs::path traceFile = fs::path(cfg.dataDir) / TRACE_FILE_NAME;
   fs::ofstream out;
   out.open(traceFile, std::ofstream::out | std::ofstream::trunc);
   out.close();
 }
 
 void Profiler::mergeTrace(unsigned testIndex, bool isPassing) {
-  fs::path traceFile = workDir / TRACE_FILE_NAME;
+  fs::path traceFile = fs::path(cfg.dataDir) / TRACE_FILE_NAME;
   fs::ifstream infile(traceFile);
   set<string> covered;
   if(infile) {
@@ -203,7 +199,7 @@ void Profiler::mergeTrace(unsigned testIndex, bool isPassing) {
 }
 
 fs::path Profiler::getProfile() {
-  fs::path profileFile = workDir/ PROFILE_FILE_NAME;
+  fs::path profileFile = fs::path(cfg.dataDir)/ PROFILE_FILE_NAME;
   fs::ofstream outfile(profileFile, std::ios::app);
 
   //NOTE: removing uninteresting test indexes

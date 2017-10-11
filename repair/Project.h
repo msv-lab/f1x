@@ -36,8 +36,7 @@ class Project {
      the convention is to restore original after every modification */
   Project(const boost::filesystem::path &root,
           const std::vector<ProjectFile> &files,
-          const std::string &buildCmd,          
-          const boost::filesystem::path &workDir);
+          const std::string &buildCmd);
 
   /* restores original files on destruction, just in case of exception */
   ~Project();
@@ -64,7 +63,6 @@ class Project {
   boost::filesystem::path root;
   std::vector<ProjectFile> files;
   std::string buildCmd;
-  boost::filesystem::path workDir;
 
   void saveFilesWithPrefix(const std::string &prefix);
   void restoreFilesWithPrefix(const std::string &prefix);
@@ -77,8 +75,7 @@ class TestingFramework {
  public:
   TestingFramework(const Project &project,
                    const boost::filesystem::path &driver,
-                   const unsigned long testTimeout,
-                   const boost::filesystem::path &workDir);
+                   const unsigned long testTimeout);
   
   TestStatus execute(const std::string &testId);
 
@@ -86,7 +83,6 @@ class TestingFramework {
   Project project;
   boost::filesystem::path driver;
   unsigned testTimeout;
-  boost::filesystem::path workDir;
 };
 
 

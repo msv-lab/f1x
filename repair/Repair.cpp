@@ -131,7 +131,6 @@ shared_ptr<unordered_map<unsigned long, unordered_set<F1XID>>> getPartitionable(
 bool repair(Project &project,
             TestingFramework &tester,
             const std::vector<std::string> &tests,
-            const boost::filesystem::path &workDir,
             const boost::filesystem::path &patchOutput) {
 
   BOOST_LOG_TRIVIAL(info) << "repairing project " << project.getRoot();
@@ -145,7 +144,7 @@ bool repair(Project &project,
     return false;
   }
 
-  fs::path traceFile = workDir / TRACE_FILE_NAME;
+  fs::path traceFile = fs::path(cfg.dataDir) / TRACE_FILE_NAME;
 
   BOOST_LOG_TRIVIAL(info) << "instrumenting source files for profiling";
   for (auto &file : project.getFiles()) {
@@ -156,7 +155,7 @@ bool repair(Project &project,
   }
   project.saveProfileInstumentedFiles();
 
-  Profiler profiler(workDir);
+  Profiler profiler;
 
   bool profilerBuildSuccess = profiler.compile();
   if (! profilerBuildSuccess) {
@@ -219,7 +218,7 @@ bool repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "applying transfomation schemas to source files";
   for (int i=0; i<project.getFiles().size(); i++) {
-    fs::path saFile = workDir / getSchemaApplicationsFileName(i);
+    fs::path saFile = fs::path(cfg.dataDir) / getSchemaApplicationsFileName(i);
     saFiles.push_back(saFile);
     bool instrSuccess = project.instrumentFile(project.getFiles()[i], saFile, &profile);
     if (! instrSuccess) {
@@ -248,13 +247,13 @@ bool repair(Project &project,
 
   vector<SearchSpaceElement> searchSpace;
 
-  Runtime runtime(workDir);
+  Runtime runtime;
 
   BOOST_LOG_TRIVIAL(info) << "generating search space";
   {
     fs::ofstream os(runtime.getSource());
     fs::ofstream oh(runtime.getHeader());
-    searchSpace = generateSearchSpace(sas, workDir, os, oh);
+    searchSpace = generateSearchSpace(sas, os, oh);
   }
 
   BOOST_LOG_TRIVIAL(info) << "search space size: " << searchSpace.size();

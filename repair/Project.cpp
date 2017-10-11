@@ -118,12 +118,10 @@ void adjustCompileDB(fs::path projectRoot) {
 
 Project::Project(const boost::filesystem::path &root,
                  const std::vector<ProjectFile> &files,
-                 const std::string &buildCmd,
-                 const boost::filesystem::path &workDir):
+                 const std::string &buildCmd):
   root(root),
   files(files),
-  buildCmd(buildCmd),
-  workDir(workDir) {
+  buildCmd(buildCmd) {
   saveOriginalFiles();
   }
 
@@ -196,8 +194,8 @@ bool Project::buildWithRuntime(const fs::path &header) {
 
   bool success = buildInEnvironment({ {"CC", "f1x-cc"},
                                       {"F1X_RUNTIME_H", header.string()},
-                                      {"F1X_RUNTIME_LIB", workDir.string()},
-                                      {"LD_LIBRARY_PATH", workDir.string()} },
+                                      {"F1X_RUNTIME_LIB", cfg.dataDir},
+                                      {"LD_LIBRARY_PATH", cfg.dataDir} },
                                     buildCmd);
 
   return success;
@@ -205,7 +203,7 @@ bool Project::buildWithRuntime(const fs::path &header) {
 
 void Project::saveFilesWithPrefix(const string &prefix) {
   for (int i = 0; i < files.size(); i++) {
-    auto destination = workDir / fs::path(prefix + std::to_string(i) + ".c");
+    auto destination = fs::path(cfg.dataDir) / fs::path(prefix + std::to_string(i) + ".c");
     if(fs::exists(destination)) {
       fs::remove(destination);
     }
@@ -218,7 +216,7 @@ void Project::restoreFilesWithPrefix(const string &prefix) {
     if(fs::exists(root / files[i].relpath)) {
       fs::remove(root / files[i].relpath);
     }
-    fs::copy(workDir / fs::path(prefix + std::to_string(i) + ".c"), root / files[i].relpath);
+    fs::copy(fs::path(cfg.dataDir) / fs::path(prefix + std::to_string(i) + ".c"), root / files[i].relpath);
   }
 }
 
@@ -257,8 +255,8 @@ void Project::computeDiff(const ProjectFile &file,
   }
   unsigned id = getFileId(file);
   
-  fs::path fromFile = workDir / fs::path("original" + std::to_string(id) + ".c");
-  fs::path toFile = workDir / fs::path("patched" + std::to_string(id) + ".c");
+  fs::path fromFile = fs::path(cfg.dataDir) / fs::path("original" + std::to_string(id) + ".c");
+  fs::path toFile = fs::path(cfg.dataDir) / fs::path("patched" + std::to_string(id) + ".c");
   string cmd = "diff " + fromFile.string() + " " + toFile.string() + " >> " + output.string();
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd;
   std::system(cmd.c_str());
@@ -332,17 +330,15 @@ bool Project::applyPatch(const SearchSpaceElement &patch) {
 
 TestingFramework::TestingFramework(const Project &project,
                                    const boost::filesystem::path &driver,
-                                   const unsigned long testTimeout,
-                                   const boost::filesystem::path &workDir):
+                                   const unsigned long testTimeout):
   project(project),
   driver(driver),
-  testTimeout(testTimeout),
-  workDir(workDir) {}
+  testTimeout(testTimeout) {}
 
 
 TestStatus TestingFramework::execute(const std::string &testId) {
   FromDirectory dir(project.getRoot());
-  InEnvironment env(map<string, string>{{"LD_LIBRARY_PATH", workDir.string()}});
+  InEnvironment env(map<string, string>{{"LD_LIBRARY_PATH", cfg.dataDir}});
   std::stringstream cmd;
   cmd << "timeout " << std::setprecision(3) << ((double) testTimeout) / 1000.0 << "s"
       << " " << driver.string() << " " << testId;
