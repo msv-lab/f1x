@@ -252,6 +252,7 @@ std::pair<ExperimentStatus, unsigned long> experiment(std::string defectId,
                                                       ExperimentPlan plan) {
 
   InEnvironment env({ {"CC", "f1x-cc"},
+                      {"CXX", "f1x-cxx"},
                       {"F1X_BENCH_OUTPUT", output.string()} });
 
   if (fs::exists(output)) {

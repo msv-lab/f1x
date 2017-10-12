@@ -53,5 +53,6 @@ target_link_libraries(f1x-transform
 
 set_target_properties(f1x-transform PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exceptions" ) # this is to be compatible with llvm libraries
 
-## f1x-cc target
+## f1x-cc and f1x-cxx targets
 configure_file(f1x-cc f1x-cc COPYONLY)
+configure_file(f1x-cxx f1x-cxx COPYONLY)

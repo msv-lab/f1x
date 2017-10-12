@@ -50,14 +50,14 @@ The input to f1x is a project, which is simply a directory such that:
 
 It order to let f1x transform and compile your application, you need to substitute C compiler in your build system with the `f1x-cc` tool. For instance, autotools-based projects require
 
-- configuring using f1x compiler wrapper (e.g. `CC=f1x-cc ./configure`)
+- configuring using f1x compiler wrapper (e.g. `CC=f1x-cc CXX=f1x-cxx ./configure`)
 - removing binaries before executing f1x (e.g. `make clean`)
-- ensuring that the build command uses the compiler from the `CC` environment variable (e.g. use `make` with the `-e` option)
+- ensuring that the build command uses the compilers from `CC` and `CXX` environment variables (e.g. use `make` with the `-e` option)
 
 f1x needs to be able to execute an arbitrary test to identify if this test passes or fails. To abstract over testing frameworks, f1x uses the following entities:
 
 - A set of unique test identifiers (e.g. "test1", "test2", ...).
-- A test driver executable that accepts a test identifier as the only argument, runs the corresponding test, and terminates with zero exit code if and only if the test passes. A test driver is executed from the project root directory.
+- A test driver executable that accepts a test identifier as the only argument, runs the corresponding test, and terminates with zero exit code if and only if the test passes. The test driver is executed from the project root directory.
 
 When executing tests, f1x appends a path to its runtime library (libf1xrt.so) to the `LD_LIBRARY_PATH` environment variable. Therefore, the testing framework should not overwrite this variable.
 

@@ -166,7 +166,7 @@ std::pair<bool, bool> Project::initialBuild() {
   } else {
     cmd << "f1x-bear " << buildCmd;
   }
-  bool compilationSuccess = buildInEnvironment({ {"CC", "f1x-cc"} }, cmd.str());
+  bool compilationSuccess = buildInEnvironment({ {"CC", "f1x-cc"}, {"CXX", "f1x-cxx"} }, cmd.str());
 
   bool inferenceSuccess = fs::exists(root / "compile_commands.json");
 
@@ -184,7 +184,7 @@ std::pair<bool, bool> Project::initialBuild() {
 bool Project::build() {
   BOOST_LOG_TRIVIAL(info) << "building project";
 
-  bool success = buildInEnvironment({ {"CC", "f1x-cc"} }, buildCmd);
+  bool success = buildInEnvironment({ {"CC", "f1x-cc"}, {"CXX", "f1x-cxx"} }, buildCmd);
 
   return success;
 }
@@ -193,6 +193,7 @@ bool Project::buildWithRuntime(const fs::path &header) {
   BOOST_LOG_TRIVIAL(info) << "building project with f1x runtime";
 
   bool success = buildInEnvironment({ {"CC", "f1x-cc"},
+                                      {"CXX", "f1x-cxx"},
                                       {"F1X_RUNTIME_H", header.string()},
                                       {"F1X_RUNTIME_LIB", cfg.dataDir},
                                       {"LD_LIBRARY_PATH", cfg.dataDir} },
