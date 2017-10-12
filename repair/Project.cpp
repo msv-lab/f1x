@@ -156,15 +156,31 @@ bool Project::buildInEnvironment(const std::map<std::string, std::string> &envir
   return WEXITSTATUS(status) == 0;
 }
 
+bool reusableCompilationDatabaseExists(fs::path root) {
+  fs::path compileDB = root / "compile_commands.json";
+  if (! fs::exists(compileDB)) {
+    return false;
+  }
+  json::Document db;
+  {
+    fs::ifstream ifs(compileDB);
+    json::IStreamWrapper isw(ifs);
+    db.ParseStream(isw);
+  }
+
+  return (! db.GetArray().Empty());
+}
+
 std::pair<bool, bool> Project::initialBuild() {
   BOOST_LOG_TRIVIAL(info) << "building project and inferring compile commands";
 
   std::stringstream cmd;
-  if (fs::exists(root / "compile_commands.json")) {
+  // FIXME: ideally, I should use "bear --append", but due to its implementation this corrupts compile db
+  if (reusableCompilationDatabaseExists(root)) {
     BOOST_LOG_TRIVIAL(info) << "using existing compilation database (compile_commands.json)";
     cmd << buildCmd;
   } else {
-    cmd << "f1x-bear " << buildCmd;
+    cmd << "f1x-bear sh -c \"" << buildCmd << "\"";
   }
   bool compilationSuccess = buildInEnvironment({ {"CC", "f1x-cc"}, {"CXX", "f1x-cxx"} }, cmd.str());
 
