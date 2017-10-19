@@ -25,6 +25,7 @@ add_library (f1xRepair
   Synthesis.cpp
   SearchEngine.cpp
   Repair.cpp
+	FaultLocalization.cpp
   )
 
 target_include_directories (f1xRepair PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
