@@ -38,6 +38,7 @@
 #include "Profiler.h"
 #include "Synthesis.h"
 #include "SearchEngine.h"
+#include "FaultLocalization.h"
 
 namespace fs = boost::filesystem;
 using std::vector;
@@ -143,6 +144,29 @@ bool repair(Project &project,
     BOOST_LOG_TRIVIAL(error) << "failed to infer compile commands";
     return false;
   }
+
+  /**
+   * testing fault localization module
+   */
+  FaultLocalization faultLocal(tests,tester,project);
+  vector<struct TarantulaScore> vFaultLocal = faultLocal.getFaultLocalization();
+  if (vFaultLocal.empty())
+  {
+	  BOOST_LOG_TRIVIAL(info) << "kiki";
+		for (int i = 0 ; i < vFaultLocal.size(); i++)
+		{
+				BOOST_LOG_TRIVIAL(info) << vFaultLocal[i].line << "    " << vFaultLocal[i].score;
+		}
+  }
+  else
+  {
+	  BOOST_LOG_TRIVIAL(info) << "kaka";
+  }
+
+
+  /**
+   * finishing
+   */
 
   fs::path traceFile = fs::path(cfg.dataDir) / TRACE_FILE_NAME;
 
