@@ -15,7 +15,8 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 add_library (f1xTransform
-  TransformationUtil.cpp
+  TransformGlobal.cpp
+  TransformUtil.cpp
   SearchSpaceMatchers.cpp
   ProfileInstrumentation.cpp
   SchemaApplication.cpp

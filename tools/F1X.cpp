@@ -123,7 +123,8 @@ int main (int argc, char *argv[]) {
     ("enable-cleanup", "remove intermediate data")
     ("enable-metadata", "output patch metadata")
     ("enable-validation", "validate found patches")
-    ("disable-assign", "don't synthesize assignments")
+    ("enable-assignment", "synthesize assignments")
+    ("disable-guard", "don't synthesize guards")
     ("disable-vteq", "[DEBUG] don't apply value-based analysis")
     ("disable-dteq", "[DEBUG] don't apply dependency-based analysis")
     ("disable-testprior", "[DEBUG] don't prioritize tests")
@@ -186,6 +187,10 @@ int main (int argc, char *argv[]) {
 
   if (vm.count("disable-testprior")) {
     cfg.testPrioritization = TestPrioritization::FIXED_ORDER;
+  }
+
+  if (vm.count("disable-guard")) {
+    cfg.addGuards = false;
   }
 
   if (vm.count("dump-space")) {

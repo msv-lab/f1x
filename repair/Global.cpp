@@ -22,8 +22,6 @@
 
 
 struct Config cfg = {
-  /* runtimeCompiler        = */ DEFAULT_RUNTIME_COMPILER,
-  /* runtimeOptimization    = */ DEFAULT_RUNTIME_OPTIMIZATION,
   /* globalVariables        = */ DEFAULT_GLOBAL_VARIABLES,
   /* verbose                = */ DEFAULT_VERBOSE,
   /* validatePatches        = */ DEFAULT_VALIDATE_PATCHES,
@@ -34,7 +32,7 @@ struct Config cfg = {
   /* outputPatchMetadata    = */ DEFAULT_OUTPUT_PATCH_METADATA,
   /* removeIntermediateData = */ DEFAULT_REMOVE_INTERMEDIATE_DATA,
   /* insertAssignments      = */ DEFAULT_INSERT_ASSIGNMENTS,
-  /* repairCPP              = */ DEFAULT_REPAIR_CPP,
+  /* addGuards              = */ DEFAULT_ADD_GUARDS,
   /* maxConditionParameter  = */ DEFAULT_MAX_CONDITION_PARAMETER,
   /* maxExpressionParameter = */ DEFAULT_MAX_EXPRESSION_PARAMETER,
   /* valueTEQ               = */ DEFAULT_VALUE_TEQ,

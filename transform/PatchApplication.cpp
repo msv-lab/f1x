@@ -20,7 +20,8 @@
 #include <iostream>
 #include <unordered_set>
 
-#include "TransformationUtil.h"
+#include "TransformGlobal.h"
+#include "TransformUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "PatchApplication.h"
 #include "Config.h"
@@ -42,7 +43,7 @@ void PatchApplicationAction::EndSourceFileAction() {
   alreadyTransformed = true;
 
   FileID ID = TheRewriter.getSourceMgr().getMainFileID();
-  if (INPLACE_MODIFICATION) {
+  if (cfg.inplaceModification) {
     overwriteMainChangedFile(TheRewriter);
     // I am not sure what the difference is, but this case requires explicit check:
     //TheRewriter.overwriteChangedFiles();
@@ -82,7 +83,7 @@ void IfGuardPatchApplicationHandler::run(const MatchFinder::MatchResult &Result)
       unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
       unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-      Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
+      Location current{cfg.fileId, beginLine, beginColumn, endLine, endColumn};
       if (alreadyMatched.count(current))
         return;
       alreadyMatched.insert(current);
@@ -92,10 +93,10 @@ void IfGuardPatchApplicationHandler::run(const MatchFinder::MatchResult &Result)
       if (srcMgr.getMainFileID() != decLoc.first)
         return;
 
-      if (beginLine == globalBeginLine &&
-          beginColumn == globalBeginColumn &&
-          endLine == globalEndLine &&
-          endColumn == globalEndColumn) {
+      if (beginLine == cfg.beginLine &&
+          beginColumn == cfg.beginColumn &&
+          endLine == cfg.endLine &&
+          endColumn == cfg.endColumn) {
 
         std::stringstream replacement;
         
@@ -104,7 +105,7 @@ void IfGuardPatchApplicationHandler::run(const MatchFinder::MatchResult &Result)
         if (addBrackets)
     	    replacement << "{ ";
     	    
-        replacement << "if (" << globalPatch << ") " << toString(stmt);
+        replacement << "if (" << cfg.patch << ") " << toString(stmt);
 
         llvm::errs() << beginLine << " " << beginColumn << " " << endLine << " " << endColumn << "\n"
           << "<   " << toString(stmt) << "\n"
@@ -145,7 +146,7 @@ void ExpressionPatchApplicationHandler::run(const MatchFinder::MatchResult &Resu
       unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
       unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-      Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
+      Location current{cfg.fileId, beginLine, beginColumn, endLine, endColumn};
       if (alreadyMatched.count(current))
         return;
       alreadyMatched.insert(current);
@@ -156,15 +157,15 @@ void ExpressionPatchApplicationHandler::run(const MatchFinder::MatchResult &Resu
         return;
 
       //FIXME: do I need to cast here?
-      if (beginLine == globalBeginLine &&
-          beginColumn == globalBeginColumn &&
-          endLine == globalEndLine &&
-          endColumn == globalEndColumn) {
+      if (beginLine == cfg.beginLine &&
+          beginColumn == cfg.beginColumn &&
+          endLine == cfg.endLine &&
+          endColumn == cfg.endColumn) {
         llvm::errs() << beginLine << " " << beginColumn << " " << endLine << " " << endColumn << "\n"
           << "<   " << toString(expr) << "\n"
-          << ">   " << globalPatch << "\n";
+          << ">   " << cfg.patch << "\n";
         
-        Rewrite.ReplaceText(expandedLoc, globalPatch);
+        Rewrite.ReplaceText(expandedLoc, cfg.patch);
       }
   }
 }

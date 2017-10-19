@@ -22,7 +22,8 @@
 #include <unordered_set>
 
 #include "Config.h"
-#include "TransformationUtil.h"
+#include "TransformGlobal.h"
+#include "TransformUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "ProfileInstrumentation.h"
 
@@ -53,7 +54,7 @@ bool ProfileInstrumentationAction::BeginSourceFileAction(CompilerInstance &CI, S
 
 void ProfileInstrumentationAction::EndSourceFileAction() {
   FileID ID = TheRewriter.getSourceMgr().getMainFileID();
-  if (INPLACE_MODIFICATION) {
+  if (cfg.inplaceModification) {
     overwriteMainChangedFile(TheRewriter);
     // I am not sure what the difference is, but this case requires explicit check:
     //TheRewriter.overwriteChangedFiles();
@@ -72,7 +73,7 @@ ProfileInstrumentationASTConsumer::ProfileInstrumentationASTConsumer(Rewriter &R
   ExpressionSchemaHandler(R),
   IfGuardSchemaHandler(R) {
   Matcher.addMatcher(ExpressionSchemaMatcher, &ExpressionSchemaHandler);    
-  Matcher.addMatcher(IfGuardSchemaMatcher, &IfGuardSchemaHandler);
+  if (cfg.addGuards) Matcher.addMatcher(IfGuardSchemaMatcher, &IfGuardSchemaHandler);
 }
 
 void ProfileInstrumentationASTConsumer::HandleTranslationUnit(ASTContext &Context) {
@@ -104,7 +105,7 @@ void IfGuardSchemaProfileHandler::run(const MatchFinder::MatchResult &Result) {
       if (!inRange(beginLine))
         return;
 
-      Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
+      Location current{cfg.fileId, beginLine, beginColumn, endLine, endColumn};
       if (alreadyMatched.count(current))
         return;
       alreadyMatched.insert(current);
@@ -115,7 +116,7 @@ void IfGuardSchemaProfileHandler::run(const MatchFinder::MatchResult &Result) {
         return;
 
       std::ostringstream replacement;
-      replacement << "({ __f1x_trace(" << globalFileId << ", "
+      replacement << "({ __f1x_trace(" << cfg.fileId << ", "
                                        << beginLine << ", "
                                        << beginColumn << ", "
                                        << endLine << ", "
@@ -148,7 +149,7 @@ void ExpressionSchemaProfileHandler::run(const MatchFinder::MatchResult &Result)
     if (!inRange(beginLine))
       return;
 
-    Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
+    Location current{cfg.fileId, beginLine, beginColumn, endLine, endColumn};
     if (alreadyMatched.count(current))
       return;
     alreadyMatched.insert(current);
@@ -159,7 +160,7 @@ void ExpressionSchemaProfileHandler::run(const MatchFinder::MatchResult &Result)
       return;
 
     std::ostringstream stringStream;
-    stringStream << "({ __f1x_trace(" << globalFileId << ", " 
+    stringStream << "({ __f1x_trace(" << cfg.fileId << ", " 
                                       << beginLine << ", "
                                       << beginColumn << ", " 
                                       << endLine << ", "

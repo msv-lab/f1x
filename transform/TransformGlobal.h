@@ -20,26 +20,23 @@
 
 
 #include "Config.h"
-#include "Core.h"
 
 
 struct Config {
-  bool globalVariables;
-  bool verbose;
-  bool validatePatches;
-  bool generateAll;
-  std::string searchSpaceFile;
-  std::string statisticsFile;
-  std::string dataDir;
-  bool outputPatchMetadata;
-  bool removeIntermediateData;
-  bool insertAssignments;
+  unsigned fileId;
+  unsigned fromLine;
+  unsigned toLine;
+  std::string profileFile;
+  std::string outputFile;
+  unsigned beginLine;
+  unsigned beginColumn;
+  unsigned endLine;
+  unsigned endColumn;
+  std::string patch;
+  unsigned long baseAppId;
+  bool useGlobalVariables;
   bool addGuards;
-  unsigned maxConditionParameter;
-  unsigned maxExpressionParameter;
-  bool valueTEQ;
-  bool dependencyTEQ;
-  TestPrioritization testPrioritization;
+  bool inplaceModification;
 };
 
 

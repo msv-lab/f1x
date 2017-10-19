@@ -294,6 +294,10 @@ bool Project::instrumentFile(const ProjectFile &file,
     cmd << " --instrument " << *profile;
   }
 
+  if(! cfg.addGuards) {
+    cmd << " --disable-guard";
+  }
+
   cmd << " --from-line " << file.fromLine
       << " --to-line " << file.toLine
       << " --file-id " << id

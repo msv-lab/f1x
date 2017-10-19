@@ -75,21 +75,38 @@ In order to perfrom `dteq` analysis, f1x uses dynamic program instrumentation. T
 
 Note that `F1X_RUN` is only required to optimize assignment synthesis. If you disable assignment synthesis (e.g. using `--disable-assign` option), instrumenting tests with `F1X_RUN` is not needed.
 
-### Command-line interface ###
+By default, f1x compiles the project using gcc/g++. The compilers can be redefined through `F1X_PROJECT_CC` and `F1X_PROJECT_CXX` environment variables.
 
-The f1x command-line tool accepts user options, executes the repair algorithm and saves the generated patches in unidiff format. f1x prints log messages on the standard error output and terminates with the following exit codes:
+### Side effects ###
+
+The f1x tool accepts user options, executes the repair algorithm, and terminates with the following exit codes:
 
 - `0` if a patch is found
-- `122` is no patch is found
-- a non-zero code in case of errors
+- `122` if negative tests are provided but no patch is found
+- `123` if no negative tests are provided
+- an arbitrary non-zero code in case of errors
+
+Apart from that, f1x produces the following side effects:
+
+- prints log messages on the standard error output
+- saves generated patch(es) in the current directory (or the path specified by `--output`)
+- saves intermediate data in a temporary directory (the path can be found in log messages)
+- transforms/builds/tests the provided project
+
+f1x operates directly on the provided source tree.
+Typically, it is safe to execute f1x consequently on the same copy of the project (without `make clean`), however idempotence cannot be guaranteed.
+After a successful termination of f1x, the original source files are restored.
+If f1x does not terminates successfully (e.g. by receiving `SIGKILL`), the source tree is likely to be corrupted.
+
+### Command-line interface ###
 
 The following arguments are mandatory (and sufficient for most cases):
 
-- Project root directory.
-- Suspicious source files (`--files` option).
-- Test-suite (`--tests` option).
-- Test execution timeout (`--test-timeout` option).
-- Test driver (`--driver` option).
+- project root directory;
+- suspicious source files (`--files` option);
+- test-suite (`--tests` option);
+- test execution timeout (`--test-timeout` option);
+- test driver (`--driver` option).
 
 f1x accepts the following arguments:
 

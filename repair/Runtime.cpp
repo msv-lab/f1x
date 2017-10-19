@@ -89,8 +89,8 @@ bool Runtime::compile() {
   BOOST_LOG_TRIVIAL(info) << "compiling analysis runtime";
 FromDirectory dir(fs::path(cfg.dataDir));
   std::stringstream cmd;
-  cmd << cfg.runtimeCompiler
-      << " " << cfg.runtimeOptimization
+  cmd << RUNTIME_COMPILER
+      << " " << RUNTIME_OPTIMIZATION
       << " -fPIC"
       << " " << RUNTIME_SOURCE_FILE_NAME
       << " -shared"

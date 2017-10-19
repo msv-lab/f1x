@@ -21,34 +21,42 @@
 #include <string>
 
 
-const unsigned F1X_VERSION_MAJOR = @F1X_VERSION_MAJOR@;
-const unsigned F1X_VERSION_MINOR = @F1X_VERSION_MINOR@;
-const unsigned F1X_VERSION_PATCH = @F1X_VERSION_PATCH@;
+const unsigned F1X_VERSION_MAJOR    = @F1X_VERSION_MAJOR@;
+const unsigned F1X_VERSION_MINOR    = @F1X_VERSION_MINOR@;
+const unsigned F1X_VERSION_PATCH    = @F1X_VERSION_PATCH@;
 const std::string F1X_CLANG_INCLUDE = "@F1X_CLANG_INCLUDE@";
 
-const std::string TRACE_FILE_NAME = "trace.txt";
-const std::string PROFILE_FILE_NAME = "profile.txt";
+// default runtime configuration:
+
+const std::string RUNTIME_COMPILER         = "g++";
+const std::string RUNTIME_OPTIMIZATION     = "-O1";
+const std::string TRACE_FILE_NAME          = "trace.txt";
+const std::string PROFILE_FILE_NAME        = "profile.txt";
 const std::string PROFILE_SOURCE_FILE_NAME = "profile.cpp";
 const std::string PROFILE_HEADER_FILE_NAME = "profile.h";
 const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
 const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
 
-// default values of configuration options:
+// default synthesis configuration:
 
-const std::string DEFAULT_RUNTIME_COMPILER      = "g++";
-const std::string DEFAULT_RUNTIME_OPTIMIZATION  = "-O1";
-const bool DEFAULT_GLOBAL_VARIABLES             = false;
-const bool DEFAULT_VERBOSE                      = false;
-const bool DEFAULT_VALIDATE_PATCHES             = false;
-const bool DEFAULT_GENERATE_ALL                 = false;
-const bool DEFAULT_OUTPUT_PATCH_METADATA        = false;
-const bool DEFAULT_REMOVE_INTERMEDIATE_DATA     = false;
-const bool DEFAULT_INSERT_ASSIGNMENTS           = true;
-const bool DEFAULT_REPAIR_CPP                   = false;
-const bool DEFAULT_VALUE_TEQ                    = true;
-const bool DEFAULT_DEPENDENCY_TEQ               = true;
-const bool DEFAULT_TEST_PRIORITIZATION          = true;
 const unsigned DEFAULT_MAX_CONDITION_PARAMETER  = 64;
 const unsigned DEFAULT_MAX_EXPRESSION_PARAMETER = 1;
+const bool DEFAULT_GLOBAL_VARIABLES             = false;
+
+// default repair configuration:
+
+const bool DEFAULT_INSERT_ASSIGNMENTS = true;
+const bool DEFAULT_ADD_GUARDS         = true;
+const bool DEFAULT_VALUE_TEQ          = true;
+const bool DEFAULT_DEPENDENCY_TEQ     = true;
+
+// default workflow configuration:
+
+const bool DEFAULT_VERBOSE                  = false;
+const bool DEFAULT_VALIDATE_PATCHES         = false;
+const bool DEFAULT_GENERATE_ALL             = false;
+const bool DEFAULT_OUTPUT_PATCH_METADATA    = false;
+const bool DEFAULT_REMOVE_INTERMEDIATE_DATA = false;
+const bool DEFAULT_TEST_PRIORITIZATION      = true;
 
 

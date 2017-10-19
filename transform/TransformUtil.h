@@ -28,21 +28,6 @@
 #include <rapidjson/document.h>
 
 
-const bool INPLACE_MODIFICATION = true;
-
-//FIXME: better to pass these variables to constructors, but it requires a lot of boilerplate
-extern unsigned globalFileId;
-extern unsigned globalFromLine;
-extern unsigned globalToLine;
-extern std::string globalProfileFile;
-extern std::string globalOutputFile;
-extern unsigned globalBeginLine;
-extern unsigned globalBeginColumn;
-extern unsigned globalEndLine;
-extern unsigned globalEndColumn;
-extern std::string globalPatch;
-extern unsigned long globalBaseAppId;
-extern bool globalUseGlobalVariables;
 //NOTE: this is a hack to collect ifdef locations from preprocessor
 extern std::shared_ptr<std::vector<clang::SourceRange>> globalConditionalsPP;
 

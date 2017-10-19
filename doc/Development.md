@@ -16,7 +16,7 @@ The repair module is responsible for running tests, maintaining search space and
 
 The entire search space is explicitly represented as a C++ vector `searchSpace` in SearchEngine.cpp. The search space can be efficiently traversed in an arbitrary order.
 
-The following data structures are used for search space representation (in `RepairUtil.h`):
+The following data structures are used for search space representation (in `repair/Core.h`):
 
 - `TransformationSchema` is a high-level transformation rule (e.g. adding guard)
 - `ModificationKind` is a kind of expression modification (e.g. operator replacement)

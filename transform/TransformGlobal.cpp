@@ -16,31 +16,26 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-
 #include "Config.h"
 #include "Core.h"
+#include "TransformGlobal.h"
 
 
-struct Config {
-  bool globalVariables;
-  bool verbose;
-  bool validatePatches;
-  bool generateAll;
-  std::string searchSpaceFile;
-  std::string statisticsFile;
-  std::string dataDir;
-  bool outputPatchMetadata;
-  bool removeIntermediateData;
-  bool insertAssignments;
-  bool addGuards;
-  unsigned maxConditionParameter;
-  unsigned maxExpressionParameter;
-  bool valueTEQ;
-  bool dependencyTEQ;
-  TestPrioritization testPrioritization;
+struct Config cfg = {
+  /* fileId              = */ 0,
+  /* fromLine            = */ 0,
+  /* toLine              = */ 0,
+  /* profileFile         = */ "",
+  /* outputFile          = */ "",
+  /* beginLine           = */ 0,
+  /* beginColumn         = */ 0,
+  /* endLine             = */ 0,
+  /* endColumn           = */ 0,
+  /* patch               = */ "",
+  /* baseAppId           = */ 0,
+  /* useGlobalVariables  = */ DEFAULT_GLOBAL_VARIABLES,
+  /* addGuards           = */ DEFAULT_ADD_GUARDS,
+  /* inplaceModification = */ true
 };
 
 
-extern struct Config cfg;

@@ -21,7 +21,8 @@
 // Declares llvm::cl::extrahelp.
 #include "llvm/Support/CommandLine.h"
 
-#include "TransformationUtil.h"
+#include "TransformGlobal.h"
+#include "TransformUtil.h"
 #include "ProfileInstrumentation.h"
 #include "SchemaApplication.h"
 #include "PatchApplication.h"
@@ -52,6 +53,9 @@ Instrument("instrument", cl::desc("instrument search space with profile"), cl::c
 
 static cl::opt<bool>
 Profile("profile", cl::desc("instrument search space for profile"), cl::cat(F1XCategory));
+
+static cl::opt<bool>
+DisableGuard("disable-guard", cl::desc("don't instrument guards"), cl::cat(F1XCategory));
 
 static cl::opt<unsigned>
 FileId("file-id", cl::desc("file id"), cl::cat(F1XCategory));
@@ -94,17 +98,20 @@ int main(int argc, const char **argv) {
 
   std::unique_ptr<FrontendActionFactory> FrontendFactory;
 
-  globalFileId = FileId;
-  globalFromLine = FromLine;
-  globalToLine = ToLine;
-  globalProfileFile = Instrument;
-  globalOutputFile = Output;
-  globalBeginLine = BeginLine;
-  globalBeginColumn = BeginColumn;
-  globalEndLine = EndLine;
-  globalEndColumn = EndColumn;
-  globalPatch = Patch;
-  globalUseGlobalVariables = Global;
+  cfg.fileId = FileId;
+  cfg.fromLine = FromLine;
+  cfg.toLine = ToLine;
+  cfg.profileFile = Instrument;
+  cfg.outputFile = Output;
+  cfg.beginLine = BeginLine;
+  cfg.beginColumn = BeginColumn;
+  cfg.endLine = EndLine;
+  cfg.endColumn = EndColumn;
+  cfg.patch = Patch;
+  cfg.useGlobalVariables = Global;
+  if (DisableGuard) {
+    cfg.addGuards = false;
+  }
 
   if (Apply)
     FrontendFactory = newFrontendActionFactory<PatchApplicationAction>();

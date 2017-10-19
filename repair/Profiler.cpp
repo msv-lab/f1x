@@ -122,8 +122,8 @@ bool Profiler::compile() {
   }
   FromDirectory dir(fs::path(cfg.dataDir));
   std::stringstream cmd;
-  cmd << cfg.runtimeCompiler
-      << " " << cfg.runtimeOptimization
+  cmd << RUNTIME_COMPILER
+      << " " << RUNTIME_OPTIMIZATION
       << " -fPIC"
       << " " << PROFILE_SOURCE_FILE_NAME
       << " -shared"

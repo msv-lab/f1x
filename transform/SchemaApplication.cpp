@@ -27,7 +27,8 @@
 #include <map>
 
 #include "Config.h"
-#include "TransformationUtil.h"
+#include "TransformGlobal.h"
+#include "TransformUtil.h"
 #include "SearchSpaceMatchers.h"
 #include "SchemaApplication.h"
 
@@ -44,7 +45,7 @@ json::Document schemaApplications;
 std::unordered_set<std::string> interestingLocations;
 
 void initInterestingLocations() {
-  std::ifstream infile(globalProfileFile);
+  std::ifstream infile(cfg.profileFile);
   std::string line;
   while(std::getline(infile, line)) {
     interestingLocations.insert(line);
@@ -85,7 +86,7 @@ bool SchemaApplicationAction::BeginSourceFileAction(CompilerInstance &CI, String
 
 void SchemaApplicationAction::EndSourceFileAction() {
   FileID ID = TheRewriter.getSourceMgr().getMainFileID();
-  if (INPLACE_MODIFICATION) {
+  if (cfg.inplaceModification) {
     overwriteMainChangedFile(TheRewriter);
     // I am not sure what the difference is, but this case requires explicit check:
     //TheRewriter.overwriteChangedFiles();
@@ -93,7 +94,7 @@ void SchemaApplicationAction::EndSourceFileAction() {
       TheRewriter.getEditBuffer(ID).write(llvm::outs());
   }
 
-  std::ofstream ofs(globalOutputFile);
+  std::ofstream ofs(cfg.outputFile);
   json::OStreamWrapper osw(ofs);
   json::Writer<json::OStreamWrapper> writer(osw);
   schemaApplications.Accept(writer);
@@ -129,7 +130,7 @@ void IfGuardSchemaApplicationHandler::run(const MatchFinder::MatchResult &Result
     unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-    Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
+    Location current{cfg.fileId, beginLine, beginColumn, endLine, endColumn};
     if (alreadyMatched.count(current))
       return;
     alreadyMatched.insert(current);
@@ -139,11 +140,11 @@ void IfGuardSchemaApplicationHandler::run(const MatchFinder::MatchResult &Result
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
-    if (!isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
+    if (!isInterestingLocation(cfg.fileId, beginLine, beginColumn, endLine, endColumn))
       return;
     
-    unsigned long appId = f1xapp(globalBaseAppId, globalFileId);
-    globalBaseAppId++;
+    unsigned long appId = f1xapp(cfg.baseAppId, cfg.fileId);
+    cfg.baseAppId++;
                  
     llvm::errs() << beginLine << " "
                  << beginColumn << " "
@@ -161,7 +162,7 @@ void IfGuardSchemaApplicationHandler::run(const MatchFinder::MatchResult &Result
     exprJSON.AddMember("repr", json::Value().SetString("1"), schemaApplications.GetAllocator());
     app.AddMember("expression", exprJSON, schemaApplications.GetAllocator());
     app.AddMember("appId", json::Value().SetInt(appId), schemaApplications.GetAllocator());
-    json::Value locJSON = locToJSON(globalFileId, beginLine, beginColumn, endLine, endColumn, schemaApplications.GetAllocator());
+    json::Value locJSON = locToJSON(cfg.fileId, beginLine, beginColumn, endLine, endColumn, schemaApplications.GetAllocator());
     app.AddMember("location", locJSON, schemaApplications.GetAllocator());
     app.AddMember("context", json::Value().SetString("condition"), schemaApplications.GetAllocator());
     json::Value componentsJSON(json::kArrayType);    
@@ -183,7 +184,7 @@ void IfGuardSchemaApplicationHandler::run(const MatchFinder::MatchResult &Result
     //FIXME: should I use location or appid for the runtime function name?
     stringStream << "if ("
                  << "!(__f1xapp == " << appId << "ul) || "
-                 << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
+                 << "__f1x_" << cfg.fileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
                  << "(" << arguments << ")"
                  << ") "
                  << toString(stmt);
@@ -224,7 +225,7 @@ void ExpressionSchemaApplicationHandler::run(const MatchFinder::MatchResult &Res
     unsigned endLine = srcMgr.getExpansionLineNumber(expandedLoc.getEnd());
     unsigned endColumn = srcMgr.getExpansionColumnNumber(expandedLoc.getEnd());
 
-    Location current{globalFileId, beginLine, beginColumn, endLine, endColumn};
+    Location current{cfg.fileId, beginLine, beginColumn, endLine, endColumn};
     if (alreadyMatched.count(current))
       return;
     alreadyMatched.insert(current);
@@ -234,11 +235,11 @@ void ExpressionSchemaApplicationHandler::run(const MatchFinder::MatchResult &Res
     if (srcMgr.getMainFileID() != decLoc.first)
       return;
 
-    if (!isInterestingLocation(globalFileId, beginLine, beginColumn, endLine, endColumn))
+    if (!isInterestingLocation(cfg.fileId, beginLine, beginColumn, endLine, endColumn))
       return;
 
-    unsigned long appId = f1xapp(globalBaseAppId, globalFileId);
-    globalBaseAppId++;
+    unsigned long appId = f1xapp(cfg.baseAppId, cfg.fileId);
+    cfg.baseAppId++;
 
     llvm::errs() << beginLine << " "
                  << beginColumn << " "
@@ -252,7 +253,7 @@ void ExpressionSchemaApplicationHandler::run(const MatchFinder::MatchResult &Res
     json::Value exprJSON = stmtToJSON(expr, schemaApplications.GetAllocator());
     app.AddMember("expression", exprJSON, schemaApplications.GetAllocator());
     app.AddMember("appId", json::Value().SetInt(appId), schemaApplications.GetAllocator());
-    json::Value locJSON = locToJSON(globalFileId, beginLine, beginColumn, endLine, endColumn, schemaApplications.GetAllocator());
+    json::Value locJSON = locToJSON(cfg.fileId, beginLine, beginColumn, endLine, endColumn, schemaApplications.GetAllocator());
     app.AddMember("location", locJSON, schemaApplications.GetAllocator());
     json::Value context;
     if (inConditionContext(expr, Result.Context)) {
@@ -272,7 +273,7 @@ void ExpressionSchemaApplicationHandler::run(const MatchFinder::MatchResult &Res
     
     std::ostringstream stringStream;
     stringStream << "(__f1xapp == " << appId << "ul ? "
-                 << "__f1x_" << globalFileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
+                 << "__f1x_" << cfg.fileId << "_" << beginLine << "_" << beginColumn << "_" << endLine << "_" << endColumn
                  << "(" << arguments << ")"
                  << " : " << toString(expr) << ")";
     string replacement = stringStream.str();

@@ -25,8 +25,10 @@
 #include "clang/AST/Type.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "TransformationUtil.h"
+#include "TransformUtil.h"
+#include "TransformGlobal.h"
 #include "Config.h"
+
 
 namespace json = rapidjson;
 
@@ -43,18 +45,6 @@ const BuiltinType::Kind DEFAULT_NUMERIC_TYPE = BuiltinType::Long;
 const string DEFAULT_POINTEE_TYPE = "void";
 
 
-unsigned globalFileId;
-unsigned globalFromLine;
-unsigned globalToLine;
-string globalOutputFile;
-string globalProfileFile;
-unsigned globalBeginLine;
-unsigned globalBeginColumn;
-unsigned globalEndLine;
-unsigned globalEndColumn;
-string globalPatch;
-unsigned long globalBaseAppId = 0;
-bool globalUseGlobalVariables = false;
 std::shared_ptr<std::vector<clang::SourceRange>> globalConditionalsPP = std::shared_ptr<std::vector<clang::SourceRange>>(new std::vector<clang::SourceRange>());
 
 const unsigned F1XAPP_WIDTH = 32;
@@ -74,8 +64,8 @@ unsigned long f1xapp(unsigned long baseId, unsigned fileId) {
 
 
 bool inRange(unsigned line) {
-  if (globalFromLine || globalToLine) {
-    return globalFromLine <= line && line <= globalToLine;
+  if (cfg.fromLine || cfg.toLine) {
+    return cfg.fromLine <= line && line <= cfg.toLine;
   } else {
     return true;
   }
@@ -717,7 +707,7 @@ vector<json::Value> collectVisible(const ast_type_traits::DynTypedNode &node,
       }
     }
 
-    if (globalUseGlobalVariables) {
+    if (cfg.useGlobalVariables) {
       auto parents = context->getParents(node);
       if (parents.size() > 0) {
         const ast_type_traits::DynTypedNode parent = *(parents.begin()); // FIXME: for now only first
