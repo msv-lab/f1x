@@ -51,11 +51,12 @@ std::vector<struct TarantulaScore> FaultLocalization::getFaultLocalization()
  */
 	if(this->executingGovr())
 	{
-		BOOST_LOG_TRIVIAL(info) << "execute test";
 		this->executingTest();
+		this->acquiringTarantulaArgs();
+		this->calculatingTarantulaScore(vTarantulaArgs);
 		std::sort(vTarantulaScore.begin(),vTarantulaScore.end(),
 					[](const TarantulaScore &tmp1, const TarantulaScore &tmp2)->
-					bool {return &tmp1.score > &tmp2.score;});
+					bool {return (&tmp1.score > &tmp2.score);});
 	}
 	return vTarantulaScore;
 }
@@ -95,7 +96,7 @@ void FaultLocalization::calculatingTarantulaScore(const std::vector<struct Taran
 	}
 }
 
-void FaultLocalization::acquiringTarantulaArgs(struct SpectrumBased &SBasedCollection)
+void FaultLocalization::acquiringTarantulaArgs()
 {
 	/**
 	 * check whether Spectrum based collection is empty
@@ -152,7 +153,6 @@ void FaultLocalization::acquiringTarantulaArgs(struct SpectrumBased &SBasedColle
 					/**
 					 * end if()
 					 */
-					vSpectrumBased[i].statusOfTestCase ? this->ns++ : this->nf++;
 				}
 				/**
 				 * end for(;;)
@@ -178,8 +178,7 @@ void FaultLocalization::executingTest()
 		{
 			sBasedTmp.contentOfXML.clear();
 			status = tester.execute(test);
-			BOOST_LOG_TRIVIAL(info) << "test is executing";
-			sBasedTmp.contentOfXML = this->analyzingXMLFiles("/tmp/" + this->generatingXMLFiles(test));
+			sBasedTmp.contentOfXML = this->analyzingXMLFiles(this->generatingXMLFiles(test));
 			if (status == TestStatus::PASS)
 			{
 				/*
@@ -197,36 +196,36 @@ void FaultLocalization::executingTest()
 				sBasedTmp.statusOfTestCase = false;
 			}
 			this->vSpectrumBased.push_back(sBasedTmp);
-		}
-		if (vTarantulaArgs.empty())
-		{
-			if (status == TestStatus::PASS)
+			if (vTarantulaArgs.empty())
 			{
-				this->ns = 1;
-				for (auto &item : sBasedTmp.contentOfXML)
+				if (status == TestStatus::PASS)
 				{
-					struct TarantulaArgs tArgsTmp;
-					this->creatingNewTarantulaArgs(tArgsTmp);
-					tArgsTmp.line = item.line;
-					if (item.hits > 0)
+					for (auto &item : sBasedTmp.contentOfXML)
 					{
-						tArgsTmp.ns_e = 1;
+						struct TarantulaArgs tArgsTmp;
+						this->creatingNewTarantulaArgs(tArgsTmp);
+						tArgsTmp.line = item.line;
+						if (item.hits > 0)
+						{
+							tArgsTmp.ns_e = 1;
+						}
+						vTarantulaArgs.push_back(tArgsTmp);
 					}
-					vTarantulaArgs.push_back(tArgsTmp);
 				}
-			}
-			else
-			{
-				for (auto &item : sBasedTmp.contentOfXML)
+				else
 				{
-					struct TarantulaArgs tArgsTmp;
-					this->creatingNewTarantulaArgs(tArgsTmp);
-					tArgsTmp.line = item.line;
-					if (item.hits > 0)
+					for (auto &item : sBasedTmp.contentOfXML)
 					{
-						tArgsTmp.nf_e = 1;
+						BOOST_LOG_TRIVIAL(info) << "false";
+						struct TarantulaArgs tArgsTmp;
+						this->creatingNewTarantulaArgs(tArgsTmp);
+						tArgsTmp.line = item.line;
+						if (item.hits > 0)
+						{
+							tArgsTmp.nf_e = 1;
+						}
+						vTarantulaArgs.push_back(tArgsTmp);
 					}
-					vTarantulaArgs.push_back(tArgsTmp);
 				}
 			}
 		}
@@ -256,7 +255,6 @@ std::string FaultLocalization::generatingXMLFiles(const std::string &testID)
 	/*
 	 * return full file path if generation is success
 	 */
-	BOOST_LOG_TRIVIAL(info) << tmp.c_str();
 	return (this->executingCMD(cmd.str()) == true) ? tmp : "";
 }
 
@@ -276,6 +274,7 @@ std::vector<struct HitsEachLine> FaultLocalization::analyzingXMLFiles(const std:
 		 * pointing to lines node
 		 */
 		xml_node<> *lineRoot = doc_tmp.first_node()->first_node("packages")->first_node()->first_node()->first_node()->first_node("lines")->first_node();
+		//xml_node<> *lineRoot = doc_tmp.first_node();
 		while(lineRoot)
 		{
 			struct HitsEachLine hELine_tmp;
@@ -285,6 +284,7 @@ std::vector<struct HitsEachLine> FaultLocalization::analyzingXMLFiles(const std:
 			sn << lineRoot->first_attribute("number")->value();
 			sn >> hELine_tmp.line;
 			vHELine.push_back(hELine_tmp);
+			lineRoot = lineRoot->next_sibling();
 		}
 		return vHELine;
 	}

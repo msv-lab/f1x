@@ -150,9 +150,8 @@ bool repair(Project &project,
    */
   FaultLocalization faultLocal(tests,tester,project);
   vector<struct TarantulaScore> vFaultLocal = faultLocal.getFaultLocalization();
-  if (vFaultLocal.empty())
+  if (!vFaultLocal.empty())
   {
-	  BOOST_LOG_TRIVIAL(info) << "kiki";
 		for (int i = 0 ; i < vFaultLocal.size(); i++)
 		{
 				BOOST_LOG_TRIVIAL(info) << vFaultLocal[i].line << "    " << vFaultLocal[i].score;
@@ -160,7 +159,7 @@ bool repair(Project &project,
   }
   else
   {
-	  BOOST_LOG_TRIVIAL(info) << "kaka";
+	  BOOST_LOG_TRIVIAL(info) << "Does not find fault localize";
   }
 
 

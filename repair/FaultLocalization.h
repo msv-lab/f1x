@@ -41,7 +41,7 @@ private:
 							const int &ns,
 							const int &nf);
 	void calculatingTarantulaScore(const std::vector<struct TarantulaArgs> &cTArgsCollection);
-	void acquiringTarantulaArgs(struct SpectrumBased &SBasedCollection);
+	void acquiringTarantulaArgs();
 	std::vector<struct HitsEachLine> analyzingXMLFiles(const std::string &);
 	bool isXMLFile(const std::string &relpath) const;
 	bool isSourceFile(const boost::filesystem::path &) const;
@@ -110,7 +110,7 @@ struct TarantulaArgs {
 
 struct TarantulaScore {
 	int line;
-	int score;
+	double score;
 };
 
 struct TestCaseInfo
