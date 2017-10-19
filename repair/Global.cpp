@@ -37,7 +37,8 @@ struct Config cfg = {
   /* maxExpressionParameter = */ DEFAULT_MAX_EXPRESSION_PARAMETER,
   /* valueTEQ               = */ DEFAULT_VALUE_TEQ,
   /* dependencyTEQ          = */ DEFAULT_DEPENDENCY_TEQ,
-  /* testPrioritization     = */ (DEFAULT_TEST_PRIORITIZATION ? TestPrioritization::MAX_FAILING : TestPrioritization::FIXED_ORDER)
+  /* testPrioritization     = */ (DEFAULT_TEST_PRIORITIZATION ? TestPrioritization::MAX_FAILING : TestPrioritization::FIXED_ORDER),
+  /* filesToLocalize        = */ 0
 };
 
 

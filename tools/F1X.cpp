@@ -110,6 +110,7 @@ int main (int argc, char *argv[]) {
     ("files,f", po::value<vector<string>>()->multitoken()->value_name("RELPATH..."), "list of source files to repair")
     ("tests,t", po::value<vector<string>>()->multitoken()->value_name("ID..."), "list of test IDs")
     ("test-timeout,T", po::value<unsigned>()->value_name("MS"), "test execution timeout")
+    ("localize,l", po::value<unsigned>(), "number of files to localize")
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
     ("output,o", po::value<string>()->value_name("PATH"), "output patch file or directory (default: SRC-TIME)")
@@ -213,6 +214,10 @@ int main (int argc, char *argv[]) {
     return 1;
   }
   unsigned testTimeout = vm["test-timeout"].as<unsigned>();
+
+  if (vm.count("localize")) {
+    cfg.filesToLocalize = vm["localize"].as<unsigned>();
+  }
 
   if (!vm.count("files")) {
     BOOST_LOG_TRIVIAL(error) << "files are not specified (use --help)";
