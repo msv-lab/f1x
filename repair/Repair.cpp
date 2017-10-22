@@ -144,28 +144,29 @@ bool repair(Project &project,
     BOOST_LOG_TRIVIAL(error) << "failed to infer compile commands";
     return false;
   }
-
+  if (cfg.filesToLocalize > 0)
+  {
   /**
    * testing fault localization module
    */
-  FaultLocalization faultLocal(tests,tester,project);
-  vector<struct TarantulaScore> vFaultLocal = faultLocal.getFaultLocalization();
-  if (!vFaultLocal.empty())
-  {
-		for (int i = 0 ; i < vFaultLocal.size(); i++)
+	for (auto &file : project.getFiles())
+	{
+		FaultLocalization faultLocal(tests,tester,project,file.relpath);
+		vector<struct TarantulaScore> vFaultLocal = faultLocal.getFaultLocalization();
+		if (!vFaultLocal.empty())
 		{
-				BOOST_LOG_TRIVIAL(info) << vFaultLocal[i].line << "    " << vFaultLocal[i].score;
+			BOOST_LOG_TRIVIAL(info) << file.relpath;
+			for (int i = 0 ; i < vFaultLocal.size(); i++)
+			{
+					BOOST_LOG_TRIVIAL(info) << vFaultLocal[i].line << "    " << vFaultLocal[i].score;
+			}
 		}
+		else
+		{
+		  BOOST_LOG_TRIVIAL(info) << "Does not find fault localize";
+		}
+	}
   }
-  else
-  {
-	  BOOST_LOG_TRIVIAL(info) << "Does not find fault localize";
-  }
-
-
-  /**
-   * finishing
-   */
 
   fs::path traceFile = fs::path(cfg.dataDir) / TRACE_FILE_NAME;
 
@@ -402,3 +403,4 @@ bool repair(Project &project,
 
   return patchCount > 0;
 }
+

@@ -24,11 +24,13 @@
 using namespace rapidxml;
 
 FaultLocalization::FaultLocalization(const std::vector<std::string> &tests,
-										TestingFramework &tester,
-										Project &project ):
+									 TestingFramework &tester,
+									 Project &project,
+									 const boost::filesystem::path &fileName):
 										tests(tests),
 										tester(tester),
-										project(project){
+										project(project),
+										fileName(fileName){
 	this->FolderTmp = this->creatingFolderTmp();
 	/*
 	 * test whether folder is created
@@ -49,14 +51,14 @@ std::vector<struct TarantulaScore> FaultLocalization::getFaultLocalization()
  * be checked
  * Does not finish
  */
-	if(this->executingGovr())
+	if(project.build())
 	{
 		this->executingTest();
 		this->acquiringTarantulaArgs();
 		this->calculatingTarantulaScore(vTarantulaArgs);
-		std::sort(vTarantulaScore.begin(),vTarantulaScore.end(),
-					[](const TarantulaScore &tmp1, const TarantulaScore &tmp2)->
-					bool {return (&tmp1.score > &tmp2.score);});
+//		std::sort(vTarantulaScore.begin(),vTarantulaScore.end(),
+//					[](const TarantulaScore &tmp1, const TarantulaScore &tmp2)->
+//					bool {return (&tmp1.score < &tmp2.score);});
 	}
 	return vTarantulaScore;
 }
@@ -216,7 +218,6 @@ void FaultLocalization::executingTest()
 				{
 					for (auto &item : sBasedTmp.contentOfXML)
 					{
-						BOOST_LOG_TRIVIAL(info) << "false";
 						struct TarantulaArgs tArgsTmp;
 						this->creatingNewTarantulaArgs(tArgsTmp);
 						tArgsTmp.line = item.line;
@@ -271,21 +272,42 @@ std::vector<struct HitsEachLine> FaultLocalization::analyzingXMLFiles(const std:
 		std::string content(buff_file.str());
 		doc_tmp.parse<0>(&content[0]);
 		/*
+		 * pointing to classes
+		 */
+		xml_node<> *classRoot = doc_tmp.first_node()->first_node("packages")->first_node()->first_node()->first_node();
+		xml_node<> *cRoottmp = NULL;
+		while(classRoot)
+		{
+			std::stringstream fn;
+			std::string fileName;
+			fn << classRoot->first_attribute("filename")->value();
+			fn >> fileName;
+			if (fileName.compare(this->fileName.string()) == 0)
+			{
+				cRoottmp = classRoot;
+			}
+			classRoot = classRoot->next_sibling();
+		}
+		/*
 		 * pointing to lines node
 		 */
-		xml_node<> *lineRoot = doc_tmp.first_node()->first_node("packages")->first_node()->first_node()->first_node()->first_node("lines")->first_node();
-		//xml_node<> *lineRoot = doc_tmp.first_node();
-		while(lineRoot)
+		if (cRoottmp != nullptr)
 		{
-			struct HitsEachLine hELine_tmp;
-			std::stringstream ss, sn;
-			ss << lineRoot->first_attribute("hits")->value();
-			ss >> hELine_tmp.hits;
-			sn << lineRoot->first_attribute("number")->value();
-			sn >> hELine_tmp.line;
-			vHELine.push_back(hELine_tmp);
-			lineRoot = lineRoot->next_sibling();
+			xml_node<> *lineRoot = cRoottmp->first_node("lines")->first_node();
+			while(lineRoot)
+			{
+				struct HitsEachLine hELine_tmp;
+				std::stringstream ss, sn;
+				ss << lineRoot->first_attribute("hits")->value();
+				ss >> hELine_tmp.hits;
+				sn << lineRoot->first_attribute("number")->value();
+				sn >> hELine_tmp.line;
+				vHELine.push_back(hELine_tmp);
+				lineRoot = lineRoot->next_sibling();
+			}
 		}
+		//xml_node<> *lineRoot = doc_tmp.first_node()->first_node("packages")->first_node()->first_node()->first_node()->first_node("lines")->first_node();
+		//xml_node<> *lineRoot = doc_tmp.first_node();
 		return vHELine;
 	}
 	else
@@ -356,28 +378,4 @@ bool FaultLocalization::executingCMD(const std::string &Cmd)
 	return results;
 }
 
-
-bool FaultLocalization::executingGovr()
-{
-	bool result = false;
-	int numSourceFile = 0;
-	std::stringstream cmd;
-	cmd << "gcc -fprofile-arcs -ftest-coverage -o ";
-	for (auto &file : project.getFiles())
-	{
-		if(isSourceFile(file.relpath))
-		{
-			numSourceFile++;
-			std::string sFile = file.relpath.string();
-			int pos = sFile.find(".");
-			sFile.erase(sFile.begin()+pos,sFile.end());
-			cmd << sFile.c_str() << " " << file.relpath.string().c_str();
-			if (executingCMD(cmd.str()))
-			{
-				result = true;
-			}
-		}
-	}
-	return result;
-}
 

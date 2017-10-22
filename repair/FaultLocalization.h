@@ -8,8 +8,9 @@
 class FaultLocalization {
 public:
 	FaultLocalization(const std::vector<std::string> &tests,
-						TestingFramework &tester,
-						Project &project );		//constructor
+					  TestingFramework &tester,
+					  Project &project,
+					  const boost::filesystem::path &fileName);		//constructor
 	~FaultLocalization();		//destructor
 	/**
 	*
@@ -29,12 +30,13 @@ private:
 	std::string FolderTmp;
 	std::string fullPathXMLFiles;
 	TestingFramework tester;
+	std::vector<std::string> tests;
+	Project project;
+	boost::filesystem::path fileName;
 	std::vector<struct TarantulaArgs> vTarantulaArgs;
 	std::vector<struct TarantulaScore> vTarantulaScore;
 	std::vector<struct SpectrumBased> vSpectrumBased;
 	std::vector<struct TestCaseInfo> vTestCaseInfo;
-	std::vector<std::string> tests;
-	Project project;
 	void creatingNewTarantulaArgs(struct TarantulaArgs &tArgsCollection);
 	double tarantulaFormula(const int &nf_e,
 							const int &ns_e,
@@ -121,3 +123,4 @@ struct TestCaseInfo
 /*
  * End define
  */
+
