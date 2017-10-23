@@ -10,7 +10,8 @@ public:
 	FaultLocalization(const std::vector<std::string> &tests,
 					  TestingFramework &tester,
 					  Project &project,
-					  const boost::filesystem::path &fileName);		//constructor
+					  const boost::filesystem::path &fileName,
+					  const std::string &tmpFolder);		//constructor
 	~FaultLocalization();		//destructor
 	/**
 	*
@@ -33,6 +34,7 @@ private:
 	std::vector<std::string> tests;
 	Project project;
 	boost::filesystem::path fileName;
+	std::string tmpFolder;
 	std::vector<struct TarantulaArgs> vTarantulaArgs;
 	std::vector<struct TarantulaScore> vTarantulaScore;
 	std::vector<struct SpectrumBased> vSpectrumBased;
@@ -48,6 +50,7 @@ private:
 	bool isXMLFile(const std::string &relpath) const;
 	bool isSourceFile(const boost::filesystem::path &) const;
 	std::string generatingXMLFiles(const std::string &);
+	void getFileFromJson();
 	/**
 	 * creating temporary folder that stores XML coverage files
 	 */
@@ -123,4 +126,5 @@ struct TestCaseInfo
 /*
  * End define
  */
+
 

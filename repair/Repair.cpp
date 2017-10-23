@@ -151,7 +151,7 @@ bool repair(Project &project,
    */
 	for (auto &file : project.getFiles())
 	{
-		FaultLocalization faultLocal(tests,tester,project,file.relpath);
+		FaultLocalization faultLocal(tests,tester,project,file.relpath,cfg.dataDir);
 		vector<struct TarantulaScore> vFaultLocal = faultLocal.getFaultLocalization();
 		if (!vFaultLocal.empty())
 		{
@@ -403,4 +403,5 @@ bool repair(Project &project,
 
   return patchCount > 0;
 }
+
 

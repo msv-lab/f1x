@@ -2,10 +2,15 @@
  * include XML parse 3th library - rapid XML
  */
 #include <rapidxml/rapidxml.hpp>
+#include <rapidjson/document.h>
+#include <rapidjson/istreamwrapper.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <rapidjson/writer.h>
 /*
  */
 
 #include <boost/log/trivial.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 #include <stdio.h>
 #include <iomanip>
@@ -21,16 +26,21 @@
 
 #include "FaultLocalization.h"
 
+namespace fs = boost::filesystem;
+namespace json = rapidjson;
 using namespace rapidxml;
 
 FaultLocalization::FaultLocalization(const std::vector<std::string> &tests,
 									 TestingFramework &tester,
 									 Project &project,
-									 const boost::filesystem::path &fileName):
+									 const boost::filesystem::path &fileName,
+									 const std::string &tmpFolder
+									 ):
 										tests(tests),
 										tester(tester),
 										project(project),
-										fileName(fileName){
+										fileName(fileName),
+										tmpFolder(tmpFolder){
 	this->FolderTmp = this->creatingFolderTmp();
 	/*
 	 * test whether folder is created
@@ -51,6 +61,7 @@ std::vector<struct TarantulaScore> FaultLocalization::getFaultLocalization()
  * be checked
  * Does not finish
  */
+	this->getFileFromJson();
 	if(project.build())
 	{
 		this->executingTest();
@@ -63,10 +74,32 @@ std::vector<struct TarantulaScore> FaultLocalization::getFaultLocalization()
 	return vTarantulaScore;
 }
 
+void FaultLocalization::getFileFromJson()
+{
+	fs::path root = project.getRoot();
+	FromDirectory dir(root);
+	fs::path compileDB("compile_commands.json");
+	json::Document db;
+	/*
+	 * parse JSON file to array
+	 */
+	fs::ifstream ifs(compileDB);
+	json::IStreamWrapper isw(ifs);
+	db.ParseStream(isw);
+
+	/*
+	 * collecting all file from JSON file
+	 */
+	for (auto &entry : db.GetArray())
+	{
+		std::string dbFile = entry.GetObject()["file"].GetString();
+	}
+}
+
 double FaultLocalization::tarantulaFormula(	const int &nf_e,
 											const int &ns_e,
-											const int &ns,
-											const int &nf)
+											const int &nf,
+											const int &ns)
 /*
  * must be check divide by zero before call this function
  */
@@ -249,7 +282,7 @@ std::string FaultLocalization::generatingXMLFiles(const std::string &testID)
 	/**
 	 * creating xml file
 	 */
-	pathToGeneration 	<< "/tmp/" << this->FolderTmp << "/"
+	pathToGeneration 	<< this->FolderTmp << "/"
 						<< testID << ".xml";
 	pathToGeneration >> tmp;
 	cmd << "gcovr -r . --xml-pretty > " <<  tmp;
@@ -316,19 +349,15 @@ std::vector<struct HitsEachLine> FaultLocalization::analyzingXMLFiles(const std:
 
 std::string FaultLocalization::creatingFolderTmp()
 {
-	std::time_t curTime = std::time(NULL);
-	char strBuff[128];
-	if (std::strftime(strBuff, 128, "%d_%m_%Y_%T", std::localtime(&curTime)))
+	std::string covDir;
+	std::stringstream cmd;
+	covDir = this->tmpFolder + "/coverage";
+	cmd << "mkdir -p " << covDir;
+	if (this->executingCMD(cmd.str()))
 	{
-		std::stringstream cmd;
-		cmd << "mkdir -p" << " /tmp/" << strBuff;
-		BOOST_LOG_TRIVIAL(info) << cmd.str().c_str();
-		if (this->executingCMD(cmd.str()))
-		{
-			this->folderCreateFlag = true;
-		}
+		this->folderCreateFlag = true;
 	}
-	return strBuff;
+	return covDir;
 }
 
 bool FaultLocalization::isXMLFile(const std::string &relpath) const
@@ -377,5 +406,6 @@ bool FaultLocalization::executingCMD(const std::string &Cmd)
 	}
 	return results;
 }
+
 
 
