@@ -25,6 +25,7 @@
 #include <algorithm>
 
 #include "FaultLocalization.h"
+#include "Global.h"
 
 namespace fs = boost::filesystem;
 namespace json = rapidjson;
@@ -33,14 +34,12 @@ using namespace rapidxml;
 FaultLocalization::FaultLocalization(const std::vector<std::string> &tests,
 									 TestingFramework &tester,
 									 Project &project,
-									 const boost::filesystem::path &fileName,
-									 const std::string &tmpFolder
+									 const boost::filesystem::path &fileName
 									 ):
 										tests(tests),
 										tester(tester),
 										project(project),
-										fileName(fileName),
-										tmpFolder(tmpFolder){
+										fileName(fileName){
 	this->FolderTmp = this->creatingFolderTmp();
 	/*
 	 * test whether folder is created
@@ -61,7 +60,7 @@ std::vector<struct TarantulaScore> FaultLocalization::getFaultLocalization()
  * be checked
  * Does not finish
  */
-	this->getFileFromJson();
+	//this->getFileFromJson();
 	if(project.build())
 	{
 		this->executingTest();
@@ -74,10 +73,10 @@ std::vector<struct TarantulaScore> FaultLocalization::getFaultLocalization()
 	return vTarantulaScore;
 }
 
-void FaultLocalization::getFileFromJson()
+std::vector<std::string> FaultLocalization::getFileFromJson(const boost::filesystem::path &rootDir)
 {
-	fs::path root = project.getRoot();
-	FromDirectory dir(root);
+	std::vector<std::string> fileFromJson;
+	FromDirectory dir(fs::path(rootDir));
 	fs::path compileDB("compile_commands.json");
 	json::Document db;
 	/*
@@ -93,8 +92,14 @@ void FaultLocalization::getFileFromJson()
 	for (auto &entry : db.GetArray())
 	{
 		std::string dbFile = entry.GetObject()["file"].GetString();
-		BOOST_LOG_TRIVIAL(info) << basename(fs::path(dbFile.c_str())) << "." << fs::extension(fs::path(dbFile.c_str()));
+		std::stringstream fTmp;
+		fTmp << std::string(basename(fs::path(dbFile.c_str())))
+			 << "."
+			 << std::string(fs::extension(fs::path(dbFile.c_str())));
+		if (isSourceFile(fs::path(fTmp.str())))
+			fileFromJson.push_back(fTmp.str());
 	}
+	return fileFromJson;
 }
 
 double FaultLocalization::tarantulaFormula(	const int &nf_e,
@@ -329,7 +334,7 @@ std::string FaultLocalization::creatingFolderTmp()
 {
 	std::string covDir;
 	std::stringstream cmd;
-	covDir = this->tmpFolder + "/coverage";
+	covDir = cfg.dataDir + "/coverage";
 	cmd << "mkdir -p " << covDir;
 	if (this->executingCMD(cmd.str()))
 	{
@@ -351,7 +356,7 @@ bool FaultLocalization::isXMLFile(const std::string &relpath) const
 	return results;
 }
 
-bool FaultLocalization::isSourceFile(const boost::filesystem::path &relpath) const
+bool FaultLocalization::isSourceFile(const boost::filesystem::path &relpath)
 {
 	bool results = false;
 	std::string p_tmp = relpath.string();
@@ -375,7 +380,9 @@ bool FaultLocalization::executingCMD(const std::string &Cmd)
 	bool results = false;
 	if (!Cmd.empty())
 	{
-		unsigned long status = std::system(Cmd.c_str());
+		std::stringstream cmd;
+		cmd << "timeout 1s " << Cmd;
+		unsigned long status = std::system(cmd.str().c_str());
 		if (WEXITSTATUS(status) == 0)
 		{
 			// folder is created success

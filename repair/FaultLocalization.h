@@ -10,14 +10,14 @@ public:
 	FaultLocalization(const std::vector<std::string> &tests,
 					  TestingFramework &tester,
 					  Project &project,
-					  const boost::filesystem::path &fileName,
-					  const std::string &tmpFolder);		//constructor
+					  const boost::filesystem::path &fileName);		//constructor
 	~FaultLocalization();		//destructor
 	/**
 	*
 	*/
 	std::vector<struct TarantulaScore> getFaultLocalization();
 	std::string getPathFolderTmp();
+	static std::vector<std::string> getFileFromJson(const boost::filesystem::path &);
 	/**
 	*
 	*/
@@ -34,7 +34,6 @@ private:
 	std::vector<std::string> tests;
 	Project project;
 	boost::filesystem::path fileName;
-	std::string tmpFolder;
 	std::vector<struct TarantulaArgs> vTarantulaArgs;
 	std::vector<struct TarantulaScore> vTarantulaScore;
 	std::vector<struct SpectrumBased> vSpectrumBased;
@@ -48,9 +47,8 @@ private:
 	void acquiringTarantulaArgs();
 	std::vector<struct HitsEachLine> analyzingXMLFiles(const std::string &);
 	bool isXMLFile(const std::string &relpath) const;
-	bool isSourceFile(const boost::filesystem::path &) const;
+	static bool isSourceFile(const boost::filesystem::path &);
 	std::string generatingXMLFiles(const std::string &);
-	void getFileFromJson();
 	/**
 	 * creating temporary folder that stores XML coverage files
 	 */
@@ -66,36 +64,6 @@ private:
 	*
 	*/
 };
-
-/**
- * define structure for acquiring data from GCOV XML files
- */
-//class HitsEachLine
-//{
-//public:
-//	HitsEachLine()
-//	{
-//	}
-//	void setHits(int hits)
-//	{
-//		this->hits = hits;
-//	}
-//	void setLine(int line)
-//	{
-//		this->line = line;
-//	}
-//	int getHits()
-//	{
-//		return this->hits;
-//	}
-//	int getLine()
-//	{
-//		return this->line;
-//	}
-//private:
-//	int hits = 0;
-//	int line = 0;
-//};
 
 struct HitsEachLine {
 	int hits;

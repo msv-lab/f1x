@@ -144,27 +144,49 @@ bool repair(Project &project,
     BOOST_LOG_TRIVIAL(error) << "failed to infer compile commands";
     return false;
   }
-  if (cfg.filesToLocalize > 0)
+  std::vector<std::string> fFromJson;
+  if (project.getFiles().empty())
   {
   /**
    * testing fault localization module
    */
-	for (auto &file : project.getFiles())
+    if (cfg.filesToLocalize > 0)
+    {
+      fFromJson = FaultLocalization::getFileFromJson(project.getRoot());
+    }
+    if (cfg.filesToLocalize < fFromJson.size())
+    {
+      int nGt = fFromJson.size() - cfg.filesToLocalize;
+      fFromJson.erase(fFromJson.begin(),fFromJson.begin() + nGt);
+    }
+  }
+  else
+  {
+	  for (auto &file : project.getFiles())
+	  {
+		  fFromJson.push_back(file.relpath.string());
+	  }
+  }
+  if (!fFromJson.empty())
+  {
 	{
-		FaultLocalization faultLocal(tests,tester,project,file.relpath,cfg.dataDir);
-		vector<struct TarantulaScore> vFaultLocal = faultLocal.getFaultLocalization();
-		if (!vFaultLocal.empty())
-		{
-			BOOST_LOG_TRIVIAL(info) << file.relpath;
-			for (int i = 0 ; i < vFaultLocal.size(); i++)
-			{
-					BOOST_LOG_TRIVIAL(info) << vFaultLocal[i].line << "    " << vFaultLocal[i].score;
-			}
-		}
-		else
-		{
-		  BOOST_LOG_TRIVIAL(info) << "Does not find fault localize";
-		}
+      for (auto &file : fFromJson)
+      {
+        FaultLocalization faultLocal(tests,tester,project,fs::path(file));
+        vector<struct TarantulaScore> vFaultLocal = faultLocal.getFaultLocalization();
+        if (!vFaultLocal.empty())
+        {
+          BOOST_LOG_TRIVIAL(info) << file;
+          for (int i = 0 ; i < vFaultLocal.size(); i++)
+          {
+            BOOST_LOG_TRIVIAL(info) << vFaultLocal[i].line << "    " << vFaultLocal[i].score;
+          }
+        }
+        else
+        {
+          BOOST_LOG_TRIVIAL(info) << "Does not find fault localize";
+        }
+      }
 	}
   }
 
@@ -403,5 +425,4 @@ bool repair(Project &project,
 
   return patchCount > 0;
 }
-
 
