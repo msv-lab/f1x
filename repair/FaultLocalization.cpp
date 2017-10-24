@@ -93,6 +93,7 @@ void FaultLocalization::getFileFromJson()
 	for (auto &entry : db.GetArray())
 	{
 		std::string dbFile = entry.GetObject()["file"].GetString();
+		BOOST_LOG_TRIVIAL(info) << basename(fs::path(dbFile.c_str())) << "." << fs::extension(fs::path(dbFile.c_str()));
 	}
 }
 
@@ -139,65 +140,68 @@ void FaultLocalization::acquiringTarantulaArgs()
 	if (!vSpectrumBased.empty())
 	{
 		int vSpectrumSize = vSpectrumBased.size();
-		if (vSpectrumSize > 1)
+		for (int i = 0; i < vSpectrumSize; i++)
 		{
-			for (int i = 1; i < vSpectrumSize; i++)
+			int contentSize = vSpectrumBased[i].contentOfXML.size();
+			for (int j = 0; j < contentSize; j++)
 			{
-				int contentSize = vSpectrumBased[i].contentOfXML.size();
-				for (int j = 0; j < contentSize; j++)
+				auto results = std::find_if(vTarantulaArgs.begin(), vTarantulaArgs.end(),
+											[=](const TarantulaArgs &tmp) ->
+											bool {return tmp.line == vSpectrumBased[i].contentOfXML[j].line;});
+				/*
+				 * check whether line number was existed
+				 */
+				if (results != vTarantulaArgs.end())
 				{
-					auto results = std::find_if(vTarantulaArgs.begin(), vTarantulaArgs.end(),
-												[=](const TarantulaArgs &tmp) ->
-												bool {return tmp.line == vSpectrumBased[i].contentOfXML[j].line;});
-					/*
-					 * check whether line number was existed
+					auto index = results - vTarantulaArgs.begin();
+					/**
+					 * check whether index is out of bound
 					 */
-					if (results != vTarantulaArgs.end())
+					if (index < vTarantulaArgs.size() && index >= 0)
 					{
-						auto index = results - vTarantulaArgs.begin();
 						/**
-						 * check whether index is out of bound
+						 * check whether line is reached in this test case
 						 */
-						if (index < vTarantulaArgs.size() && index >= 0)
+						if (vSpectrumBased[i].contentOfXML[j].hits != 0)
 						{
-							/**
-							 * check whether line is reached in this test case
-							 */
-							if (vSpectrumBased[i].contentOfXML[j].hits != 0
-								&& vSpectrumBased[i].contentOfXML[j].hits > vSpectrumBased[i - 1].contentOfXML[j].hits)
-							{
-								vSpectrumBased[i].statusOfTestCase ? vTarantulaArgs[index].ns_e++ : vTarantulaArgs[index].nf_e++;
-							}
-						}
-						else
-						{
-							/**
-							 * creating new structure to archive line reaching frequency
-							 */
-							struct TarantulaArgs tArgsTmp;
-							this->creatingNewTarantulaArgs(tArgsTmp);
-							tArgsTmp.line = vSpectrumBased[i].contentOfXML[j].line;
-							if (vSpectrumBased[i].contentOfXML[j].hits != 0
-								&& vSpectrumBased[i].contentOfXML[j].hits > vSpectrumBased[i - 1].contentOfXML[j].hits)
-							{
-								vSpectrumBased[i].statusOfTestCase ? tArgsTmp.ns_e++ : tArgsTmp.nf_e++;
-							}
-							vTarantulaArgs.push_back(tArgsTmp);
+							vSpectrumBased[i].statusOfTestCase ? vTarantulaArgs[index].ns_e++ : vTarantulaArgs[index].nf_e++;
 						}
 					}
-					/**
-					 * end if()
-					 */
 				}
-				/**
-				 * end for(;;)
-				 */
+				else
+				{
+					if(vSpectrumBased[i].statusOfTestCase)
+					{
+						/*
+						 * test case is true
+						 */
+						(vSpectrumBased[i].contentOfXML[j].hits > 0) ?
+							vTarantulaArgs.push_back(TarantulaArgs(vSpectrumBased[i].contentOfXML[j].line,0,1)) :
+							vTarantulaArgs.push_back(TarantulaArgs(vSpectrumBased[i].contentOfXML[j].line));
+
+					}
+					else
+					{
+						/*
+						 * test case is false
+						 */
+						(vSpectrumBased[i].contentOfXML[j].hits > 0) ?
+							vTarantulaArgs.push_back(TarantulaArgs(vSpectrumBased[i].contentOfXML[j].line,1,0)) :
+							vTarantulaArgs.push_back(TarantulaArgs(vSpectrumBased[i].contentOfXML[j].line));
+					}
+				}
 			}
 			/**
-			 * end for(;;)
+			 * end if()
 			 */
 		}
+		/**
+		 * end for(;;)
+		 */
 	}
+	/**
+	 * end for(;;)
+	 */
 }
 
 void FaultLocalization::executingTest()
@@ -231,37 +235,6 @@ void FaultLocalization::executingTest()
 				sBasedTmp.statusOfTestCase = false;
 			}
 			this->vSpectrumBased.push_back(sBasedTmp);
-			if (vTarantulaArgs.empty())
-			{
-				if (status == TestStatus::PASS)
-				{
-					for (auto &item : sBasedTmp.contentOfXML)
-					{
-						struct TarantulaArgs tArgsTmp;
-						this->creatingNewTarantulaArgs(tArgsTmp);
-						tArgsTmp.line = item.line;
-						if (item.hits > 0)
-						{
-							tArgsTmp.ns_e = 1;
-						}
-						vTarantulaArgs.push_back(tArgsTmp);
-					}
-				}
-				else
-				{
-					for (auto &item : sBasedTmp.contentOfXML)
-					{
-						struct TarantulaArgs tArgsTmp;
-						this->creatingNewTarantulaArgs(tArgsTmp);
-						tArgsTmp.line = item.line;
-						if (item.hits > 0)
-						{
-							tArgsTmp.nf_e = 1;
-						}
-						vTarantulaArgs.push_back(tArgsTmp);
-					}
-				}
-			}
 		}
 	}
 	else
@@ -285,7 +258,12 @@ std::string FaultLocalization::generatingXMLFiles(const std::string &testID)
 	pathToGeneration 	<< this->FolderTmp << "/"
 						<< testID << ".xml";
 	pathToGeneration >> tmp;
-	cmd << "gcovr -r . --xml-pretty > " <<  tmp;
+	/*
+	 * Defines the root directory for source files
+	 * Generate XML instead of the normal tabular output
+	 * Delete the coverage files after they are processed
+	 */
+	cmd << "gcovr -r . -x -d > " <<  tmp;
 	/*
 	 * return full file path if generation is success
 	 */

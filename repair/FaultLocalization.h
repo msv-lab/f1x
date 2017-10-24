@@ -111,6 +111,9 @@ struct TarantulaArgs {
 	int line;
 	int nf_e;
 	int ns_e;
+public:
+	TarantulaArgs(int &line, int nf_e = 0, int ns_e = 0):
+		line(line), nf_e(nf_e), ns_e(ns_e){}
 };
 
 struct TarantulaScore {
