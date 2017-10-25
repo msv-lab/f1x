@@ -8,7 +8,6 @@
 #include <rapidjson/writer.h>
 /*
  */
-
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem/fstream.hpp>
 
@@ -33,13 +32,11 @@ using namespace rapidxml;
 
 FaultLocalization::FaultLocalization(const std::vector<std::string> &tests,
 									 TestingFramework &tester,
-									 Project &project,
-									 const boost::filesystem::path &fileName
+									 Project &project
 									 ):
-										tests(tests),
-										tester(tester),
-										project(project),
-										fileName(fileName){
+									tests(tests),
+									tester(tester),
+									project(project){
 	this->FolderTmp = this->creatingFolderTmp();
 	/*
 	 * test whether folder is created
@@ -47,14 +44,14 @@ FaultLocalization::FaultLocalization(const std::vector<std::string> &tests,
 }
 FaultLocalization::~FaultLocalization() {}
 
-void FaultLocalization::creatingNewTarantulaArgs(struct TarantulaArgs &tArgsCollection)
+void FaultLocalization::clearingDataStruct()
 {
-	tArgsCollection.line = 0;
-	tArgsCollection.nf_e = 0;
-	tArgsCollection.ns_e = 0;
+	this->vSpectrumBased.clear();
+	this->vTarantulaArgs.clear();
+	this->vTarantulaScore.clear();
 }
 
-std::vector<struct TarantulaScore> FaultLocalization::getFaultLocalization()
+std::vector<struct XMLCoverageFile> FaultLocalization::getFaultLocalization(const std::vector<std::string> &vFiles)
 {
 /*
  * be checked
@@ -63,14 +60,20 @@ std::vector<struct TarantulaScore> FaultLocalization::getFaultLocalization()
 	//this->getFileFromJson();
 	if(project.build())
 	{
-		this->executingTest();
-		this->acquiringTarantulaArgs();
-		this->calculatingTarantulaScore(vTarantulaArgs);
-//		std::sort(vTarantulaScore.begin(),vTarantulaScore.end(),
-//					[](const TarantulaScore &tmp1, const TarantulaScore &tmp2)->
-//					bool {return (&tmp1.score < &tmp2.score);});
+		for (auto file : vFiles)
+		{
+			XMLCoverageFile xCovFileTmp;
+			this->clearingDataStruct();
+			this->executingTest(file);
+			this->acquiringTarantulaArgs();
+			this->calculatingTarantulaScore(vTarantulaArgs);
+			xCovFileTmp.fileName = file;
+			xCovFileTmp.vTScore = vTarantulaScore;
+			vXMLCovFile.push_back(xCovFileTmp);
+		}
+		return vXMLCovFile;
 	}
-	return vTarantulaScore;
+	return {};
 }
 
 std::vector<std::string> FaultLocalization::getFileFromJson(const boost::filesystem::path &rootDir)
@@ -197,19 +200,16 @@ void FaultLocalization::acquiringTarantulaArgs()
 				}
 			}
 			/**
-			 * end if()
+			 * end for(;;)
 			 */
 		}
 		/**
 		 * end for(;;)
 		 */
 	}
-	/**
-	 * end for(;;)
-	 */
 }
 
-void FaultLocalization::executingTest()
+void FaultLocalization::executingTest(const std::string &fName)
 {
 	/**
 	 * main of class
@@ -222,7 +222,7 @@ void FaultLocalization::executingTest()
 		{
 			sBasedTmp.contentOfXML.clear();
 			status = tester.execute(test);
-			sBasedTmp.contentOfXML = this->analyzingXMLFiles(this->generatingXMLFiles(test));
+			sBasedTmp.contentOfXML = this->analyzingXMLFiles(this->generatingXMLFiles(test),fName);
 			if (status == TestStatus::PASS)
 			{
 				/*
@@ -275,7 +275,7 @@ std::string FaultLocalization::generatingXMLFiles(const std::string &testID)
 	return (this->executingCMD(cmd.str()) == true) ? tmp : "";
 }
 
-std::vector<struct HitsEachLine> FaultLocalization::analyzingXMLFiles(const std::string &relpath)
+std::vector<struct HitsEachLine> FaultLocalization::analyzingXMLFiles(const std::string &relpath,const std::string &fName)
 {
 	std::vector<struct HitsEachLine> vHELine;
 	xml_document<> doc_tmp;
@@ -298,7 +298,7 @@ std::vector<struct HitsEachLine> FaultLocalization::analyzingXMLFiles(const std:
 			std::string fileName;
 			fn << classRoot->first_attribute("filename")->value();
 			fn >> fileName;
-			if (fileName.compare(this->fileName.string()) == 0)
+			if (fileName.compare(fName) == 0)
 			{
 				cRoottmp = classRoot;
 			}

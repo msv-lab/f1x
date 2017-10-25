@@ -153,11 +153,11 @@ bool repair(Project &project,
     if (cfg.filesToLocalize > 0)
     {
       fFromJson = FaultLocalization::getFileFromJson(project.getRoot());
-    }
-    if (cfg.filesToLocalize < fFromJson.size())
-    {
-      int nGt = fFromJson.size() - cfg.filesToLocalize;
-      fFromJson.erase(fFromJson.begin(),fFromJson.begin() + nGt);
+      if (cfg.filesToLocalize < fFromJson.size())
+      {
+        int nGt = fFromJson.size() - cfg.filesToLocalize;
+        fFromJson.erase(fFromJson.begin(),fFromJson.begin() + nGt);
+      }
     }
   }
   else
@@ -169,24 +169,20 @@ bool repair(Project &project,
   }
   if (!fFromJson.empty())
   {
+	FaultLocalization faultLocal(tests,tester,project);
+	vector<struct XMLCoverageFile> vFaultLocal = faultLocal.getFaultLocalization(fFromJson);
+	if (!vFaultLocal.empty())
 	{
-      for (auto &file : fFromJson)
-      {
-        FaultLocalization faultLocal(tests,tester,project,fs::path(file));
-        vector<struct TarantulaScore> vFaultLocal = faultLocal.getFaultLocalization();
-        if (!vFaultLocal.empty())
-        {
-          BOOST_LOG_TRIVIAL(info) << file;
-          for (int i = 0 ; i < vFaultLocal.size(); i++)
-          {
-            BOOST_LOG_TRIVIAL(info) << vFaultLocal[i].line << "    " << vFaultLocal[i].score;
-          }
-        }
-        else
-        {
-          BOOST_LOG_TRIVIAL(info) << "Does not find fault localize";
-        }
-      }
+	  for (auto &file : vFaultLocal)
+	  {
+		BOOST_LOG_TRIVIAL(info) << file.fileName;
+		for(auto &Score : file.vTScore)
+		  BOOST_LOG_TRIVIAL(info) << Score.line << "    " << Score.score;
+	  }
+	}
+	else
+	{
+	  BOOST_LOG_TRIVIAL(info) << "Does not find fault localize";
 	}
   }
 
