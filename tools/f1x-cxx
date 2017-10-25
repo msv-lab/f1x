@@ -17,7 +17,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if [[ ! -z "$F1X_RUNTIME_H" ]]; then
-    ${F1X_PROJECT_CXX:-g++ --coverage} -include "$F1X_RUNTIME_H" $@ "-L$F1X_RUNTIME_LIB" "-lf1xrt"
+    ${F1X_PROJECT_CXX:-g++} --coverage -include "$F1X_RUNTIME_H" $@ "-L$F1X_RUNTIME_LIB" "-lf1xrt"
 else
-    ${F1X_PROJECT_CXX:-g++ --coverage} $@
+    ${F1X_PROJECT_CXX:-g++} --coverage $@
 fi
