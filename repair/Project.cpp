@@ -42,9 +42,7 @@ using std::map;
 using std::shared_ptr;
 
 
-bool projectFilesInCompileDB(fs::path root, vector<ProjectFile> files) {
-  FromDirectory dir(root);
-  
+bool projectFilesInCompileDB(vector<ProjectFile> files) {
   fs::path compileDB("compile_commands.json");
   json::Document db;
   {
@@ -80,12 +78,11 @@ bool projectFilesInCompileDB(fs::path root, vector<ProjectFile> files) {
       Sometime if the transformed program contains undefined symbolic, transformation fails
       (e.g. gmp-13420-13421, it may depend on compiler flags)
  */
-void adjustCompileDB(fs::path projectRoot) {
+void adjustCompileDB() {
   fs::path compileDB("compile_commands.json");
-  fs::path path = projectRoot / compileDB;
   json::Document db;
   {
-    fs::ifstream ifs(path);
+    fs::ifstream ifs(compileDB);
     json::IStreamWrapper isw(ifs);
     db.ParseStream(isw);
   }
@@ -108,7 +105,7 @@ void adjustCompileDB(fs::path projectRoot) {
   }
   
   {
-    fs::ofstream ofs(path);
+    fs::ofstream ofs(compileDB);
     json::OStreamWrapper osw(ofs);
     json::Writer<json::OStreamWrapper> writer(osw);
     db.Accept(writer);
@@ -116,10 +113,8 @@ void adjustCompileDB(fs::path projectRoot) {
 }
 
 
-Project::Project(const boost::filesystem::path &root,
-                 const std::vector<ProjectFile> &files,
+Project::Project(const std::vector<ProjectFile> &files,
                  const std::string &buildCmd):
-  root(root),
   files(files),
   buildCmd(buildCmd) {
   saveOriginalFiles();
@@ -129,17 +124,12 @@ Project::~Project() {
   restoreOriginalFiles();
 }
 
-fs::path Project::getRoot() const {
-  return root;
-}
-
 vector<ProjectFile> Project::getFiles() const {
   return files;
 }
 
 bool Project::buildInEnvironment(const std::map<std::string, std::string> &environment,
                                  const std::string &baseCmd) {
-  FromDirectory dir(root);
   InEnvironment env(environment);
 
   std::stringstream cmd;
@@ -156,8 +146,8 @@ bool Project::buildInEnvironment(const std::map<std::string, std::string> &envir
   return WEXITSTATUS(status) == 0;
 }
 
-bool reusableCompilationDatabaseExists(fs::path root) {
-  fs::path compileDB = root / "compile_commands.json";
+bool reusableCompilationDatabaseExists() {
+  fs::path compileDB("compile_commands.json");
   if (! fs::exists(compileDB)) {
     return false;
   }
@@ -176,7 +166,7 @@ std::pair<bool, bool> Project::initialBuild() {
 
   std::stringstream cmd;
   // FIXME: ideally, I should use "bear --append", but due to its implementation this corrupts compile db
-  if (reusableCompilationDatabaseExists(root)) {
+  if (reusableCompilationDatabaseExists()) {
     BOOST_LOG_TRIVIAL(info) << "using existing compilation database (compile_commands.json)";
     cmd << buildCmd;
   } else {
@@ -184,11 +174,11 @@ std::pair<bool, bool> Project::initialBuild() {
   }
   bool compilationSuccess = buildInEnvironment({ {"CC", "f1x-cc"}, {"CXX", "f1x-cxx"} }, cmd.str());
 
-  bool inferenceSuccess = fs::exists(root / "compile_commands.json");
+  bool inferenceSuccess = fs::exists("compile_commands.json");
 
   if (inferenceSuccess) {
-    if (projectFilesInCompileDB(root, files)) {
-      adjustCompileDB(root);
+    if (projectFilesInCompileDB(files)) {
+      adjustCompileDB();
     } else {
       inferenceSuccess = false;
     }
@@ -224,16 +214,16 @@ void Project::saveFilesWithPrefix(const string &prefix) {
     if(fs::exists(destination)) {
       fs::remove(destination);
     }
-    fs::copy(root / files[i].relpath, destination);
+    fs::copy(files[i].relpath, destination);
   }
 }
 
 void Project::restoreFilesWithPrefix(const string &prefix) {
   for (int i = 0; i < files.size(); i++) {
-    if(fs::exists(root / files[i].relpath)) {
-      fs::remove(root / files[i].relpath);
+    if(fs::exists(files[i].relpath)) {
+      fs::remove(files[i].relpath);
     }
-    fs::copy(fs::path(cfg.dataDir) / fs::path(prefix + std::to_string(i) + ".c"), root / files[i].relpath);
+    fs::copy(fs::path(cfg.dataDir) / fs::path(prefix + std::to_string(i) + ".c"), files[i].relpath);
   }
 }
 
@@ -284,7 +274,6 @@ bool Project::instrumentFile(const ProjectFile &file,
                              const boost::filesystem::path *profile) {
   unsigned id = getFileId(file);
 
-  FromDirectory dir(root);
   std::stringstream cmd;
   cmd << "f1x-transform " << file.relpath.string();
   
@@ -326,7 +315,6 @@ unsigned Project::getFileId(const ProjectFile &file) {
 
 bool Project::applyPatch(const SearchSpaceElement &patch) {
   BOOST_LOG_TRIVIAL(debug) << "applying patch";
-  FromDirectory dir(root);
   unsigned beginLine = patch.app->location.beginLine;
   unsigned beginColumn = patch.app->location.beginColumn;
   unsigned endLine = patch.app->location.endLine;
@@ -358,7 +346,6 @@ TestingFramework::TestingFramework(const Project &project,
 
 
 TestStatus TestingFramework::execute(const std::string &testId) {
-  FromDirectory dir(project.getRoot());
   InEnvironment env(map<string, string>{{"LD_LIBRARY_PATH", cfg.dataDir}});
   std::stringstream cmd;
   cmd << "timeout " << std::setprecision(3) << ((double) testTimeout) / 1000.0 << "s"

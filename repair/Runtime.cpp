@@ -87,7 +87,7 @@ return fs::path(cfg.dataDir) / RUNTIME_SOURCE_FILE_NAME;
 
 bool Runtime::compile() {
   BOOST_LOG_TRIVIAL(info) << "compiling analysis runtime";
-FromDirectory dir(fs::path(cfg.dataDir));
+  FromDirectory dir(fs::path(cfg.dataDir));
   std::stringstream cmd;
   cmd << RUNTIME_COMPILER
       << " " << RUNTIME_OPTIMIZATION

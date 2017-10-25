@@ -57,8 +57,7 @@ void initializeTrivialLogger(bool verbose) {
 }
 
 
-std::vector<ProjectFile> parseFilesArg(const boost::filesystem::path &root,
-                                       const std::vector<std::string> &args) {
+std::vector<ProjectFile> parseFilesArg(const std::vector<std::string> &args) {
   std::vector<ProjectFile> files;
   for (auto &arg : args) {
     boost::filesystem::path file;
@@ -90,9 +89,8 @@ std::vector<ProjectFile> parseFilesArg(const boost::filesystem::path &root,
         }
       }
     }
-    boost::filesystem::path fullPath = root / file;
-    if (! boost::filesystem::exists(fullPath)) {
-      throw parse_error("source file does not exist: " + fullPath.string());
+    if (! boost::filesystem::exists(file)) {
+      throw parse_error("source file does not exist: " + file.string());
     }
     files.push_back(ProjectFile{file, fromLine, toLine});    
   }
@@ -101,17 +99,13 @@ std::vector<ProjectFile> parseFilesArg(const boost::filesystem::path &root,
 
 
 int main (int argc, char *argv[]) {
-  po::positional_options_description positional;
-  positional.add("root", -1);
-  
-  // Declare supported options.
-  po::options_description general("Usage: f1x PATH OPTIONS\n\nSupported options");
+  po::options_description general("Usage: f1x OPTIONS\n\nSupported options");
   general.add_options()
-    ("files,f", po::value<vector<string>>()->multitoken()->value_name("RELPATH..."), "list of source files to repair")
+    ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("tests,t", po::value<vector<string>>()->multitoken()->value_name("ID..."), "list of test IDs")
     ("test-timeout,T", po::value<unsigned>()->value_name("MS"), "test execution timeout")
-    ("localize,l", po::value<unsigned>(), "number of files to localize")
-    ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
+    ("files,f", po::value<vector<string>>()->multitoken()->value_name("PATH..."), "list of source files to repair")
+    ("localize,l", po::value<unsigned>()->value_name("NUM"), "number of files to localize")
     ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
     ("output,o", po::value<string>()->value_name("PATH"), "output patch file or directory (default: SRC-TIME)")
     ("all,a", "generate all patches")
@@ -131,18 +125,10 @@ int main (int argc, char *argv[]) {
     ("disable-testprior", "[DEBUG] don't prioritize tests")
     ;
 
-  po::options_description hidden("Hidden options");
-  hidden.add_options()  
-    ("root", po::value<string>(), "project root directory")
-    ;
-
-  po::options_description allOptions("All options");
-  allOptions.add(general).add(hidden);
-
   po::variables_map vm;
 
   try {
-    po::store(po::command_line_parser(argc, argv).options(allOptions).positional(positional).run(), vm);
+    po::store(po::command_line_parser(argc, argv).options(general).run(), vm);
     po::notify(vm);
   } catch(po::error& e) {
     BOOST_LOG_TRIVIAL(error) << e.what() << " (use --help)";
@@ -198,17 +184,6 @@ int main (int argc, char *argv[]) {
     cfg.searchSpaceFile = fs::absolute(vm["dump-space"].as<string>()).string();
   }
 
-  if (!vm.count("root")) {
-    BOOST_LOG_TRIVIAL(error) << "project root directory is not specified (use --help)";
-    return 1;
-  }
-  fs::path root(vm["root"].as<string>());
-  root = fs::absolute(root);
-  if (! (fs::exists(root) && fs::is_directory(root))) {
-    BOOST_LOG_TRIVIAL(error) << "project root directory " << root.string() << " does not exist";
-    return 1;
-  }
-
   if (!vm.count("test-timeout")) {
     BOOST_LOG_TRIVIAL(error) << "test execution timeout is not specified (use --help)";
     return 1;
@@ -226,7 +201,7 @@ int main (int argc, char *argv[]) {
   vector<string> fileArgs = vm["files"].as<vector<string>>();
   vector<ProjectFile> files;
   try {
-    files = parseFilesArg(root, fileArgs);
+    files = parseFilesArg(fileArgs);
   } catch (const parse_error& e) {
     BOOST_LOG_TRIVIAL(error) << e.what();
     return 1;
@@ -264,13 +239,9 @@ int main (int argc, char *argv[]) {
     struct std::tm tstruct;
     char timeRepr[80];
     tstruct = *localtime(&now);
-    strftime(timeRepr, sizeof(timeRepr), "-%Y_%m_%d-%H_%M_%S", &tstruct);
-    string dirname;
-    for(auto& e : root)
-      if (e.string() != ".")
-        dirname = e.string();
+    strftime(timeRepr, sizeof(timeRepr), "f1x-%Y_%m_%d-%H_%M_%S", &tstruct);
     std::stringstream name;
-    name << dirname << timeRepr;
+    name << timeRepr;
     if (!cfg.generateAll)
       name << ".patch";
     output = fs::path(name.str());
@@ -291,7 +262,7 @@ int main (int argc, char *argv[]) {
 
   bool found = false;
   {
-    Project project(root, files, buildCmd);
+    Project project(files, buildCmd);
     TestingFramework tester(project, driver, testTimeout);
     
     found = repair(project, tester, tests, output);

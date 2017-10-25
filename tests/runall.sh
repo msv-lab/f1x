@@ -25,80 +25,78 @@ require make
 
 
 get-cmd () {
-    test="$1"
-    dir="$2"
-    case "$test" in
+    case "$1" in
         if-condition)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         assign-in-condition)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         guarded-assignment)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         int-assignment)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         dangling-else)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         break)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         array-subscripts)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         cast-expr)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         return)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 --test-timeout 1000"
             ;;
         deletion)
-            echo "f1x $dir --files program.c:11 --driver $dir/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            echo "f1x --files program.c:11 --driver test.sh --tests n1 n2 n3 --test-timeout 1000"
             ;;
         loop-condition)
-            echo "f1x $dir --files program.c:7 --driver $dir/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            echo "f1x --files program.c:7 --driver test.sh --tests n1 n2 n3 --test-timeout 1000"
             ;;
         memberexpr)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         pointer)
-            echo "f1x $dir --files program.c:25 --driver $dir/test.sh --tests n1 n2 p1 --test-timeout 1000"
+            echo "f1x --files program.c:25 --driver test.sh --tests n1 n2 p1 --test-timeout 1000"
             ;;
         replace-constant)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 n2 n3 n4 p1 p2 p3 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 n2 n3 n4 p1 p2 p3 --test-timeout 1000"
             ;;
         substitute-bool2)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 n2 p1 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 n2 p1 --test-timeout 1000"
             ;;
         inside-ifdef)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         intersect-ifdef)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         non-integer-member)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         pointer-arithmetic)
-            echo "f1x $dir --files program.c:11 --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c:11 --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         divide-by-zero)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 n2 n3 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 n2 n3 --test-timeout 1000"
             ;;
         null-dereference)
-            echo "f1x $dir --files program.c:15 --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c:15 --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         incomplete-pointee)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         refine-condition)
-            echo "f1x $dir --files program.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         multifile)
-            echo "f1x $dir --files program.c lib.c --driver $dir/test.sh --tests n1 p1 p2 --test-timeout 1000"
+            echo "f1x --files program.c lib.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
         *)
             exit 1
@@ -119,17 +117,17 @@ for test in $TESTS; do
     work_dir=`mktemp -d`
     cp -r "$test"/* "$work_dir"
 
-    repair_cmd=$(get-cmd $test $work_dir)
+    repair_cmd=$(get-cmd $test)
     if [[ ($? != 0) ]]; then
         echo "command for test $test is not defined"
         exit 1
     fi
 
-    $repair_cmd  --output "$work_dir/output.patch" --enable-cleanup &> "$work_dir/log.txt"
+    (cd $work_dir; $repair_cmd  --output "$work_dir/output.patch" --enable-cleanup &> "$work_dir/log.txt")
     if [[ ($? != 0) || (! -f "$work_dir/output.patch") || (! -s "$work_dir/output.patch") ]]; then
         echo 'FAIL'
         echo "----------------------------------------"
-        echo "cmd: $repair_cmd"
+        echo "cmd: (cd $work_dir; $repair_cmd)"
         echo "log: $work_dir/log.txt"
         echo "----------------------------------------"
         exit 1

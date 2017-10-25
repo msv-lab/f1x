@@ -16,7 +16,7 @@ public:
 	*/
 	std::vector<struct XMLCoverageFile> getFaultLocalization(const std::vector<std::string> &vFiles);
 	std::string getPathFolderTmp();
-	static std::vector<std::string> getFileFromJson(const boost::filesystem::path &);
+	static std::vector<std::string> getFileFromJson();
 	/**
 	*
 	*/

@@ -134,8 +134,6 @@ bool repair(Project &project,
             const std::vector<std::string> &tests,
             const boost::filesystem::path &patchOutput) {
 
-  BOOST_LOG_TRIVIAL(info) << "repairing project " << project.getRoot();
-  
   pair<bool, bool> initialBuildStatus = project.initialBuild();
   if (! initialBuildStatus.first) {
     BOOST_LOG_TRIVIAL(warning) << "compilation returned non-zero exit code";
@@ -152,7 +150,7 @@ bool repair(Project &project,
    */
     if (cfg.filesToLocalize > 0)
     {
-      fFromJson = FaultLocalization::getFileFromJson(project.getRoot());
+      fFromJson = FaultLocalization::getFileFromJson();
       if (cfg.filesToLocalize < fFromJson.size())
       {
         int nGt = fFromJson.size() - cfg.filesToLocalize;

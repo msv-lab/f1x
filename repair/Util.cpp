@@ -47,7 +47,7 @@ std::string visualizeF1XID(const F1XID &id) {
 }
 
 FromDirectory::FromDirectory(const boost::filesystem::path &path):
-  original(path) {
+  original(fs::current_path()) {
   fs::current_path(path);
 }
   

@@ -34,8 +34,7 @@ class Project {
  public:
   /* project saves original files on creation
      the convention is to restore original after every modification */
-  Project(const boost::filesystem::path &root,
-          const std::vector<ProjectFile> &files,
+  Project(const std::vector<ProjectFile> &files,
           const std::string &buildCmd);
 
   /* restores original files on destruction, just in case of exception */
@@ -56,11 +55,9 @@ class Project {
                       const boost::filesystem::path &outputFile,
                       const boost::filesystem::path *profile = nullptr);
   bool applyPatch(const SearchSpaceElement &patch);
-  boost::filesystem::path getRoot() const;
   std::vector<ProjectFile> getFiles() const;
 
  private:
-  boost::filesystem::path root;
   std::vector<ProjectFile> files;
   std::string buildCmd;
 

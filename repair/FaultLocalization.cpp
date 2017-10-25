@@ -76,10 +76,9 @@ std::vector<struct XMLCoverageFile> FaultLocalization::getFaultLocalization(cons
 	return {};
 }
 
-std::vector<std::string> FaultLocalization::getFileFromJson(const boost::filesystem::path &rootDir)
+std::vector<std::string> FaultLocalization::getFileFromJson()
 {
 	std::vector<std::string> fileFromJson;
-	FromDirectory dir(fs::path(rootDir));
 	fs::path compileDB("compile_commands.json");
 	json::Document db;
 	/*
