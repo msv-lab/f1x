@@ -366,6 +366,15 @@ TestStatus TestingFramework::execute(const std::string &testId) {
   }
 }
 
+bool TestingFramework::driverIsOK() {
+  if (! fs::exists(driver)) {
+    return false;
+  }
+  if (! isExecutable(driver.string().c_str())) {
+    return false;
+  }
+  return true;
+}
 
 vector<string> getFailing(TestingFramework &tester, const vector<string> &tests) {
 

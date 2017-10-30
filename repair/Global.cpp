@@ -22,23 +22,23 @@
 
 
 struct Config cfg = {
-  /* globalVariables        = */ DEFAULT_GLOBAL_VARIABLES,
-  /* verbose                = */ DEFAULT_VERBOSE,
-  /* validatePatches        = */ DEFAULT_VALIDATE_PATCHES,
-  /* generateAll            = */ DEFAULT_GENERATE_ALL,
+  /* globalVariables        = */ false,
+  /* verbose                = */ false,
+  /* validatePatches        = */ false,
+  /* generateAll            = */ false,
   /* searchSpaceFile        = */ "",
   /* statisticsFile         = */ "",
   /* dataDir                = */ "",
-  /* outputPatchMetadata    = */ DEFAULT_OUTPUT_PATCH_METADATA,
-  /* removeIntermediateData = */ DEFAULT_REMOVE_INTERMEDIATE_DATA,
-  /* insertAssignments      = */ DEFAULT_INSERT_ASSIGNMENTS,
-  /* addGuards              = */ DEFAULT_ADD_GUARDS,
-  /* maxConditionParameter  = */ DEFAULT_MAX_CONDITION_PARAMETER,
-  /* maxExpressionParameter = */ DEFAULT_MAX_EXPRESSION_PARAMETER,
-  /* valueTEQ               = */ DEFAULT_VALUE_TEQ,
-  /* dependencyTEQ          = */ DEFAULT_DEPENDENCY_TEQ,
-  /* testPrioritization     = */ (DEFAULT_TEST_PRIORITIZATION ? TestPrioritization::MAX_FAILING : TestPrioritization::FIXED_ORDER),
-  /* filesToLocalize        = */ 0
+  /* outputPatchMetadata    = */ false,
+  /* removeIntermediateData = */ false,
+  /* insertAssignments      = */ true,
+  /* addGuards              = */ true,
+  /* maxConditionParameter  = */ 64,
+  /* maxExpressionParameter = */ 1,
+  /* valueTEQ               = */ true,
+  /* dependencyTEQ          = */ true,
+  /* testPrioritization     = */ TestPrioritization::MAX_FAILING,
+  /* filesToLocalize        = */ 10
 };
 
 

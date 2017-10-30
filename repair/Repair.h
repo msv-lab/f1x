@@ -21,13 +21,14 @@
 #include <boost/filesystem.hpp>
 
 #include "Config.h"
+#include "Core.h"
 #include "Project.h"
 
 
 /*
   Initializes repair process, performs search, saves patch(es) if found.
  */
-bool repair(Project &project,
-            TestingFramework &tester,
-            const std::vector<std::string> &tests,
-            const boost::filesystem::path &patchOutput);
+RepairStatus repair(Project &project,
+                    TestingFramework &tester,
+                    const std::vector<std::string> &tests,
+                    const boost::filesystem::path &patchOutput);

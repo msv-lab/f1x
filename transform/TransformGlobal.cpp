@@ -17,7 +17,6 @@
 */
 
 #include "Config.h"
-#include "Core.h"
 #include "TransformGlobal.h"
 
 
@@ -33,8 +32,8 @@ struct Config cfg = {
   /* endColumn           = */ 0,
   /* patch               = */ "",
   /* baseAppId           = */ 0,
-  /* useGlobalVariables  = */ DEFAULT_GLOBAL_VARIABLES,
-  /* addGuards           = */ DEFAULT_ADD_GUARDS,
+  /* useGlobalVariables  = */ false,
+  /* addGuards           = */ true,
   /* inplaceModification = */ true
 };
 

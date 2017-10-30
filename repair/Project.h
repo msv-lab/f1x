@@ -75,6 +75,7 @@ class TestingFramework {
                    const unsigned long testTimeout);
   
   TestStatus execute(const std::string &testId);
+  bool driverIsOK();
 
  private:
   Project project;

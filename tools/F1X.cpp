@@ -100,15 +100,22 @@ std::vector<ProjectFile> parseFilesArg(const std::vector<std::string> &args) {
 
 
 int main (int argc, char *argv[]) {
+  string buildCmd = "make -e";
+  vector<ProjectFile> files;
+  fs::path output;
+  vector<string> tests;
+  unsigned testTimeout;
+  fs::path driver;
+
   po::options_description general("Usage: f1x OPTIONS\n\nSupported options");
   general.add_options()
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("tests,t", po::value<vector<string>>()->multitoken()->value_name("ID..."), "list of test IDs")
     ("test-timeout,T", po::value<unsigned>()->value_name("MS"), "test execution timeout")
     ("files,f", po::value<vector<string>>()->multitoken()->value_name("PATH..."), "list of source files to repair")
-    ("localize,l", po::value<unsigned>()->value_name("NUM"), "number of files to localize")
-    ("build,b", po::value<string>()->value_name("CMD"), "build command (default: make -e)")
-    ("output,o", po::value<string>()->value_name("PATH"), "output patch file or directory (default: SRC-TIME)")
+    ("localize,l", po::value<unsigned>()->value_name("NUM"), ("number of files to localize (default: " + std::to_string(cfg.filesToLocalize) + ")").c_str())
+    ("build,b", po::value<string>()->value_name("CMD"), ("build command (default: " + buildCmd + ")").c_str())
+    ("output,o", po::value<string>()->value_name("PATH"), "output patch file or directory (default: f1x-TIME)")
     ("all,a", "generate all patches")
     ("cost,c", po::value<string>()->value_name("FUNCTION"), "patch prioritization (default: syntax-diff)")
     ("verbose,v", "produce extended output")
@@ -133,19 +140,19 @@ int main (int argc, char *argv[]) {
     po::notify(vm);
   } catch(po::error& e) {
     BOOST_LOG_TRIVIAL(error) << e.what() << " (use --help)";
-    return 0;
+    return ERROR_EXIT_CODE;    
   }
 
   if (vm.count("help")) {
     std::cout << general << std::endl;
-    return 1;
+    return ERROR_EXIT_CODE;    
   }
 
   if (vm.count("version")) {
     std::cout << "f1x " << F1X_VERSION_MAJOR <<
                     "." << F1X_VERSION_MINOR <<
                     "." << F1X_VERSION_PATCH << std::endl;
-    return 1;
+    return ERROR_EXIT_CODE;    
   }
 
   if (vm.count("verbose")) {
@@ -187,54 +194,40 @@ int main (int argc, char *argv[]) {
 
   if (!vm.count("test-timeout")) {
     BOOST_LOG_TRIVIAL(error) << "test execution timeout is not specified (use --help)";
-    return 1;
+    return ERROR_EXIT_CODE;    
   }
-  unsigned testTimeout = vm["test-timeout"].as<unsigned>();
+  testTimeout = vm["test-timeout"].as<unsigned>();
 
   if (vm.count("localize")) {
     cfg.filesToLocalize = vm["localize"].as<unsigned>();
   }
 
-  if (!vm.count("files")) {
-    BOOST_LOG_TRIVIAL(error) << "files are not specified (use --help)";
-    return 1;
-  }
-  vector<string> fileArgs = vm["files"].as<vector<string>>();
-  vector<ProjectFile> files;
-  try {
-    files = parseFilesArg(fileArgs);
-  } catch (const parse_error& e) {
-    BOOST_LOG_TRIVIAL(error) << e.what();
-    return 1;
+  if (vm.count("files")) {
+    vector<string> fileArgs = vm["files"].as<vector<string>>();
+    try {
+      files = parseFilesArg(fileArgs);
+    } catch (const parse_error& e) {
+      BOOST_LOG_TRIVIAL(error) << e.what();
+      return ERROR_EXIT_CODE;    
+    }
   }
 
   if (!vm.count("tests")) {
     BOOST_LOG_TRIVIAL(error) << "tests are not specified (use --help)";
-    return 1;
+    return ERROR_EXIT_CODE;    
   }
-  vector<string> tests = vm["tests"].as<vector<string>>();
+  tests = vm["tests"].as<vector<string>>();
 
   if (!vm.count("driver")) {
     BOOST_LOG_TRIVIAL(error) << "test driver is not specified (use --help)";
-    return 1;
+    return ERROR_EXIT_CODE;    
   }
-  fs::path driver(vm["driver"].as<string>());
-  driver = fs::absolute(driver);
-  if (! fs::exists(driver)) {
-    BOOST_LOG_TRIVIAL(error) << "driver " << driver.string() << " does not exist";
-    return 1;
-  }
-  if (! isExecutable(driver.string().c_str())) {
-    BOOST_LOG_TRIVIAL(error) << "driver " << driver.string() << " is not executable";
-    return 1;
-  }
+  driver = fs::absolute(vm["driver"].as<string>());
 
-  string buildCmd = "make -e";
   if (vm.count("build")) {
     buildCmd = vm["build"].as<string>();
   }
 
-  fs::path output;
   if (!vm.count("output")) {
     std::time_t now = std::time(0);
     struct std::tm tstruct;
@@ -261,12 +254,12 @@ int main (int argc, char *argv[]) {
   BOOST_LOG_TRIVIAL(info) << "intermediate data directory: " << dataDir;
   cfg.dataDir = dataDir.string();
 
-  bool found = false;
+  RepairStatus status;
   {
     Project project(files, buildCmd);
     TestingFramework tester(project, driver, testTimeout);
     
-    found = repair(project, tester, tests, output);
+    status = repair(project, tester, tests, output);
   }
 
   // NOTE: project is already destroyed here
@@ -274,15 +267,23 @@ int main (int argc, char *argv[]) {
     fs::remove_all(dataDir);
   }
 
-  if (found) {
+  switch (status) {
+  case RepairStatus::SUCCESS:
     if (cfg.generateAll) {
       BOOST_LOG_TRIVIAL(info) << "patches successfully generated: " << output;
     } else {
       BOOST_LOG_TRIVIAL(info) << "patch successfully generated: " << output;
     }
     return SUCCESS_EXIT_CODE;
-  } else {
-    BOOST_LOG_TRIVIAL(info) << "failed to generated a patch";
+  case RepairStatus::FAILURE:
+    BOOST_LOG_TRIVIAL(info) << "failed to find a patch";
     return FAILURE_EXIT_CODE;
+  case RepairStatus::ERROR:
+    BOOST_LOG_TRIVIAL(info) << "error occurred during search";
+    return ERROR_EXIT_CODE;
+  case RepairStatus::NO_NEGATIVE_TESTS:
+    return NO_NEGATIVE_TESTS_EXIT_CODE;
   }
+
+  return ERROR_EXIT_CODE;
 }

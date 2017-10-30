@@ -129,7 +129,7 @@ shared_ptr<unordered_map<unsigned long, unordered_set<F1XID>>> getPartitionable(
 }
 
 
-bool repair(Project &project,
+RepairStatus repair(Project &project,
             TestingFramework &tester,
             const std::vector<std::string> &tests,
             const boost::filesystem::path &patchOutput) {
@@ -140,8 +140,15 @@ bool repair(Project &project,
   }
   if (! initialBuildStatus.second) {
     BOOST_LOG_TRIVIAL(error) << "failed to infer compile commands";
-    return false;
+    return RepairStatus::ERROR;
   }
+
+  //NOTE: checking here because it can be compiled
+  if (!tester.driverIsOK()) {
+    BOOST_LOG_TRIVIAL(error) << "driver does not exist or not executable";
+    return RepairStatus::ERROR;
+  }
+
   std::vector<std::string> fFromJson;
   if (project.getFiles().empty())
   {
@@ -200,7 +207,7 @@ bool repair(Project &project,
   bool profilerBuildSuccess = profiler.compile();
   if (! profilerBuildSuccess) {
     BOOST_LOG_TRIVIAL(error) << "profiler runtime compilation failed";
-    return false;
+    return RepairStatus::ERROR;
   }
 
   bool profileRebuildSucceeded = project.buildWithRuntime(profiler.getHeader());
@@ -229,8 +236,8 @@ bool repair(Project &project,
     profiler.mergeTrace(i, (status == TestStatus::PASS));
   }
   if (numNegative == 0) {
-    BOOST_LOG_TRIVIAL(error) << "no negative tests";
-    return false;
+    BOOST_LOG_TRIVIAL(info) << "no negative tests";
+    return RepairStatus::NO_NEGATIVE_TESTS;
   }
 
   BOOST_LOG_TRIVIAL(info) << "number of positive tests: " << numPositive;
@@ -266,7 +273,7 @@ bool repair(Project &project,
     }
     if (! fs::exists(saFile)) {
       BOOST_LOG_TRIVIAL(error) << "failed to extract candidate locations";
-      return false;
+      return RepairStatus::ERROR;
     }
   }
 
@@ -302,7 +309,7 @@ bool repair(Project &project,
 
   if (! runtimeSuccess) {
     BOOST_LOG_TRIVIAL(error) << "runtime compilation failed";
-    return false;
+    return RepairStatus::ERROR;
   }
 
   bool rebuildSucceeded = project.buildWithRuntime(runtime.getHeader());
@@ -417,5 +424,8 @@ bool repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "plausible patches: " << patchCount;
   BOOST_LOG_TRIVIAL(info) << "fix locations: " << fixLocations.size();
 
-  return patchCount > 0;
+  if (patchCount > 0)
+    return RepairStatus::SUCCESS;
+  else
+    return RepairStatus::FAILURE;
 }
