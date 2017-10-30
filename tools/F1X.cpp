@@ -93,7 +93,7 @@ std::vector<ProjectFile> parseFilesArg(const std::vector<std::string> &args) {
     if (! boost::filesystem::exists(file)) {
       throw parse_error("source file does not exist: " + file.string());
     }
-    files.push_back(ProjectFile{file, fromLine, toLine});    
+    files.push_back(ProjectFile{file, fromLine, toLine});
   }
   return files;
 }

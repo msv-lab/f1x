@@ -336,6 +336,26 @@ bool Project::applyPatch(const SearchSpaceElement &patch) {
   return WEXITSTATUS(status) == 0;
 }
 
+vector<fs::path> Project::filesFromCompilationDB() {
+  std::vector<fs::path> files;
+  fs::path compileDB("compile_commands.json");
+  json::Document db;
+  fs::ifstream ifs(compileDB);
+  json::IStreamWrapper isw(ifs);
+  db.ParseStream(isw);
+
+  for (auto &entry : db.GetArray()) {
+    std::string fileStr = entry.GetObject()["file"].GetString();
+    files.push_back(relativeTo(fs::current_path(), fs::path(fileStr)));
+  }
+  return files;
+}
+
+void Project::setFiles(const std::vector<ProjectFile> &fs) {
+  files = fs;
+  saveOriginalFiles();
+}
+
 
 TestingFramework::TestingFramework(const Project &project,
                                    const boost::filesystem::path &driver,

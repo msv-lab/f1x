@@ -56,6 +56,8 @@ class Project {
                       const boost::filesystem::path *profile = nullptr);
   bool applyPatch(const SearchSpaceElement &patch);
   std::vector<ProjectFile> getFiles() const;
+  void setFiles(const std::vector<ProjectFile> &files);
+  std::vector<boost::filesystem::path> filesFromCompilationDB();
 
  private:
   std::vector<ProjectFile> files;

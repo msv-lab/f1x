@@ -149,46 +149,16 @@ RepairStatus repair(Project &project,
     return RepairStatus::ERROR;
   }
 
-  std::vector<std::string> fFromJson;
-  if (project.getFiles().empty())
-  {
-  /**
-   * testing fault localization module
-   */
-    if (cfg.filesToLocalize > 0)
-    {
-      fFromJson = FaultLocalization::getFileFromJson();
-      if (cfg.filesToLocalize < fFromJson.size())
-      {
-        int nGt = fFromJson.size() - cfg.filesToLocalize;
-        fFromJson.erase(fFromJson.begin(),fFromJson.begin() + nGt);
-      }
+  if (project.getFiles().empty()) {
+    BOOST_LOG_TRIVIAL(info) << "localizing suspicious files";
+    FaultLocalization faultLocal(tests,tester);
+    vector<fs::path> allFiles = project.filesFromCompilationDB();
+    vector<fs::path> localized = faultLocal.localize(allFiles);
+    std::vector<ProjectFile> projectFiles;
+    for (auto &file : localized) {
+      projectFiles.push_back(ProjectFile{file, 0, 0});
     }
-  }
-  else
-  {
-	  for (auto &file : project.getFiles())
-	  {
-		  fFromJson.push_back(file.relpath.string());
-	  }
-  }
-  if (!fFromJson.empty())
-  {
-	FaultLocalization faultLocal(tests,tester,project);
-	vector<struct XMLCoverageFile> vFaultLocal = faultLocal.getFaultLocalization(fFromJson);
-	if (!vFaultLocal.empty())
-	{
-	  for (auto &file : vFaultLocal)
-	  {
-		BOOST_LOG_TRIVIAL(info) << file.fileName;
-		for(auto &Score : file.vTScore)
-		  BOOST_LOG_TRIVIAL(info) << Score.line << "    " << Score.score;
-	  }
-	}
-	else
-	{
-	  BOOST_LOG_TRIVIAL(info) << "Does not find fault localize";
-	}
+    project.setFiles(projectFiles);
   }
 
   fs::path traceFile = fs::path(cfg.dataDir) / TRACE_FILE_NAME;
@@ -348,7 +318,6 @@ RepairStatus repair(Project &project,
       
       fs::path relpath = project.getFiles()[searchSpace[last].app->location.fileId].relpath;
       BOOST_LOG_TRIVIAL(info) << "plausible patch: " << visualizeChange(searchSpace[last]) 
-                              << " with score " << std::setprecision(3) << simplicityScore(searchSpace[last])
                               << " in " << relpath.string() << ":" << searchSpace[last].app->location.beginLine;
       
       bool appSuccess = project.applyPatch(searchSpace[last]);
