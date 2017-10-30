@@ -89,6 +89,7 @@ std::vector<ProjectFile> parseFilesArg(const std::vector<std::string> &args) {
         }
       }
     }
+    file = relativeTo(fs::current_path(), fs::canonical(file));
     if (! boost::filesystem::exists(file)) {
       throw parse_error("source file does not exist: " + file.string());
     }

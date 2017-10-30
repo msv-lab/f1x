@@ -295,3 +295,6 @@ std::vector<std::shared_ptr<SchemaApplication>> loadSchemaApplications(const std
 
 
 bool isExecutable(const char *file);
+
+
+boost::filesystem::path relativeTo(boost::filesystem::path from, boost::filesystem::path to);

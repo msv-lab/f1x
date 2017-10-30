@@ -419,4 +419,3 @@ bool repair(Project &project,
 
   return patchCount > 0;
 }
-
