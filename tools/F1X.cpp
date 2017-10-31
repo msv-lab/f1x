@@ -117,7 +117,7 @@ int main (int argc, char *argv[]) {
     ("build,b", po::value<string>()->value_name("CMD"), ("build command (default: " + buildCmd + ")").c_str())
     ("output,o", po::value<string>()->value_name("PATH"), "output patch file or directory (default: f1x-TIME)")
     ("all,a", "generate all patches")
-    ("cost,c", po::value<string>()->value_name("FUNCTION"), "patch prioritization (default: syntax-diff)")
+    ("cost,c", po::value<string>()->value_name("FUNCTION"), "patch prioritization (default: syntactic-diff)")
     ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")

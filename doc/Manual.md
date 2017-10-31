@@ -28,9 +28,18 @@ In order to address this, f1x implements several test-equivalence analyses that 
 
 ### Prioritization ###
 
-Search space prioritization can be thought of as a function that assigns lower cost to better patches. It is straightforward to implement prioritization strategies in f1x, since the search space is represented explicitly and applying prioritization is simply sorting an array. f1x currently supports the following prioritization strategies:
+Search space prioritization can be thought of as a function that assigns lower cost to better patches.
+f1x support two kinds of prioritization: static and dynamic.
+In static prioritization, the score of each patch is known before testing and therefore the search algorithm can explore candidates in the order defined by the cost function (starting from the candidate with the lowest cost) and stop immediately after a plausible patch is found.
+In dynamic prioritization, the score of each patch is known only after testing and therefore the search algorithm has to explore the entire search space in order to find the patch with the lowest cost.
 
-1. `syntax-diff`: minimize syntactic change (patches that are syntactically closer to the original program are assigned lower cost). The motivation behind this prioritization is that small changes are easier to understand and they are less likely to break existing functionality.
+f1x currently supports the following static prioritization strategies:
+
+1. `syntactic-diff`: minimize syntactic change (patches that are syntactically closer to the original program are assigned lower cost).
+
+f1x currently supports the following dynamic prioritization strategies:
+
+1. `semantic-diff`: minimize semantic change (patches that produce execution traces closer to the execution traces of the original program are assigned lower cost).
 
 ## Usage ##
 
@@ -55,7 +64,10 @@ f1x needs to be able to execute an arbitrary test to identify if this test passe
 
 When executing tests, f1x appends a path to its runtime library (libf1xrt.so) to the `LD_LIBRARY_PATH` environment variable. Therefore, the testing framework should not overwrite this variable.
 
-In order to perfrom `dteq` analysis, f1x uses dynamic program instrumentation. To enable this, the testing framework has to execute the application binary using the command stored in `F1X_RUN` environment variable, if it is defined. For Bash test scripts, this can be achieved by simply placing `$F1X_RUN` in front of the program execution command:
+Some analyses implemented in f1x require additional runtime instrumentation.
+Specifically, it is needed to perform `dteq` analysis required for condition synthesis, to automatically localize suspicious files, and to support dynamic prioritization.
+To enable this, the testing framework has to execute the application binary using a command stored in `F1X_RUN` environment variable, if it is defined.
+For Bash test scripts, this can be achieved by simply placing `$F1X_RUN` in front of the program execution command:
 
     assert-equal () {
         diff -q <($F1X_RUN $1) <(echo -ne "$2") > /dev/null
@@ -67,7 +79,7 @@ In order to perfrom `dteq` analysis, f1x uses dynamic program instrumentation. T
             ;;
     esac
 
-Note that `F1X_RUN` is only required to optimize assignment synthesis. If you disable assignment synthesis (e.g. using `--disable-assignment` option), instrumenting tests with `F1X_RUN` is not needed.
+If may choose not to instrument your tests with `F1X_RUN` if you (1) disable assignment synthesis (`--disable-assignment` option), (2) manually specify suspicious files (`--files` option), (3) do not use dynamic patch prioritization.
 
 By default, f1x compiles the project using gcc/g++. The compilers can be redefined through `F1X_PROJECT_CC` and `F1X_PROJECT_CXX` environment variables.
 
@@ -108,11 +120,11 @@ Options summary:
 - `-T [ --test-timeout ] MS` - the test execution timeout in milliseconds.
 - `-d [ --driver ] PATH` - the path to the test driver. The test driver is executed from the project root directory.
 - `-f [ --files ] PATH...` - the list of suspicious files (that may contain a bug). f1x allows to restrict the search space to certain parts of the source code files. For the arguments `--files main.c:20 lib.c:5-45`, the candidate locations will be restricted to the line 20 of `main.c` and from the line 5 to the line 45 (inclusive) of `lib.c`.
-- `-l [ --localize ] NUM` - the number of source files to localize (when `--files` is not provided).
+- `-l [ --localize ] NUM` - the number of source files to localize. If omitted, 10 files are localized.
 - `-b [ --build ] CMD` - the build command. If omitted, `make -e` is used. The build command is executed from the project root directory.
 - `-o [ --output ] PATH` - the path to the output patch (or directory when used with `--all`). If omitted, the patch is generated in the current directory with the name `f1x-<TIME>.patch` (or in the directory `f1x-<TIME>` when used with `--all`)
 - `-a [ --all ]` - generates all plausible patches.
-- `-c [ --cost ] FUNCTION` - the cost function used to prioritize patches. If omitted, `syntax-diff` is used.
+- `-c [ --cost ] FUNCTION` - the cost function used to prioritize patches. If omitted, `syntactic-diff` is used.
 - `-v [ --verbose ]` - enables extended output for troubleshooting.
 - `-h [ --help ]` - prints help message and exits.
 - `--version` - prints version and exits.
