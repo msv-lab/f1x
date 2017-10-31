@@ -60,7 +60,7 @@ f1x needs to be able to execute an arbitrary test to identify if this test passe
 
 When executing tests, f1x appends a path to its runtime library (libf1xrt.so) to the `LD_LIBRARY_PATH` environment variable. Therefore, the testing framework should not overwrite this variable.
 
-The following analyses implemented in f1x require additional runtime instrumentation: `dteq` analysis needed for condition synthesis, localization of suspicious files, and dynamic patch prioritization.
+The following analyses implemented in f1x require additional runtime instrumentation: `dteq` analysis needed for assignment synthesis, localization of suspicious files, and dynamic patch prioritization.
 To enable this, the testing framework has to execute the application binary using a command stored in `F1X_RUN` environment variable, if it is defined.
 For tests written in Bash, this can be achieved by simply placing `$F1X_RUN` in front of the program execution command:
 
