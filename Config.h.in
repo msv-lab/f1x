@@ -24,13 +24,10 @@
 const unsigned F1X_VERSION_MAJOR    = @F1X_VERSION_MAJOR@;
 const unsigned F1X_VERSION_MINOR    = @F1X_VERSION_MINOR@;
 const unsigned F1X_VERSION_PATCH    = @F1X_VERSION_PATCH@;
+
 const std::string F1X_CLANG_INCLUDE = "@F1X_CLANG_INCLUDE@";
 
-const std::string RUNTIME_COMPILER         = "g++";
-const std::string RUNTIME_OPTIMIZATION     = "-O1";
-const std::string TRACE_FILE_NAME          = "trace.txt";
-const std::string PROFILE_FILE_NAME        = "profile.txt";
-const std::string PROFILE_SOURCE_FILE_NAME = "profile.cpp";
-const std::string PROFILE_HEADER_FILE_NAME = "profile.h";
-const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
-const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
+const std::string RUNTIME_COMPILER     = "g++";
+const std::string RUNTIME_OPTIMIZATION = "-O1";
+
+const std::string SOURCE_FILE_EXTENSIONS[] = { ".c" };

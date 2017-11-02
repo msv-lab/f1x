@@ -27,6 +27,10 @@
 #include "Config.h"
 #include "Util.h"
 
+
+const std::string RUNTIME_SOURCE_FILE_NAME = "rt.cpp";
+const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
+
 const unsigned long MAX_PARTITION_SIZE = 1000000;
 const std::string PARTITION_FILE_NAME = "/f1x_partition";
 const F1XID INPUT_TERMINATOR = F1XID{0, 0, 0, 0, 0};

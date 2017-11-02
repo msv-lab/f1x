@@ -12,15 +12,14 @@ f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs.
 
 ## How does it work? ##
 
-f1x generates bug fixes by enumerating and testing a large number of source code changes. Suppose we have a program `p` and a set of tests `[t1, t2, t3, ...]`. f1x generates a space of modifications `[p1, p2, p3, ...]` and test each of these programs until it finds one that passes all the tests. In the other words, it fills the following table:
+f1x generates bug fixes by enumerating and testing a large number of source code changes. Suppose we have a buggy program `p` and a set of tests `[t1, t2, t3, t4, ...]`. f1x generates a space of modifications `[p1, p2, p3, p4, ...]` and test each of these programs until it finds one that passes all the tests. In the other words, it fills the following table:
 
 |    | t1 | t2 | t3 | t4 | t5 | ...
 |----|----|----|----|----|----|----
-| p1 | Pass | Pass | Pass | Fail | Fail
-| p2 | Fail | Fail | Pass | Fail | Fail
-| p3 | Pass | Pass | Pass | Pass | Pass
-| p4 | Pass | Fail | Fail | Fail | Pass
-| p5 | Pass | Fail | Pass | Fail | Pass
+| p1 | Pass | Pass | Pass | Fail
+| p2 | Fail | Fail | Pass | Fail
+| p3 | Pass | Pass | Pass | Pass
+| p4 | Pass | Fail | Fail | Pass
 |... |
 
 As has been shown in previous research, this approach has two shortcomings:
@@ -28,9 +27,9 @@ As has been shown in previous research, this approach has two shortcomings:
 * ***Efficiency***. Testing a large number of patches can be very time-consuming.
 * ***Overfitting***. Even if a patch passes all the tests, it may still be incorrect.
 
-In order to address the efficiency issue, f1x uses test-equivalence analyses in order to group patches that produce the same results on a given test. For example, after executing the program `p4` with the test `t2`, it can detect that `p5` has the same result on `t2` as `p4` and skip redundant executions. As a result, f1x tests around 1000 different patches in a single test execution.
+In order to address the efficiency issue, f1x uses test-equivalence analyses in order to group patches that produce the same results on a given test. For example, after executing the program `p1` with the test `t2`, it can detect that `p3` has the same result on `t2` as `p1` and skip a redundant execution of `p3` on `t2`. As a result, f1x tests around 1000 different patches in a single test execution.
 
-In order to address the overfitting issue, f1x allows to prioritize patches. It assigns a cost (a rational number) to each patch and search for a patch with the lowest cost. For example, if both `p3` and `p6` pass all the tests, but `cost(p6) < cost(p3)`, then f1x outputs `p6` as the result. f1x supports both static (source code-based) and dynamic (execution-based) cost functions.
+In order to address the overfitting issue, f1x allows to prioritize patches. It assigns a cost (a rational number) to each patch and searches for a patch with the lowest cost. For example, if both `p3` and `p6` pass all the tests, but `cost(p6) < cost(p3)`, then f1x outputs `p6` as the result. f1x supports both static (source code-based) and dynamic (execution-based) cost functions.
 
 ## Documentation ##
 

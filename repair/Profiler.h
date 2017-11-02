@@ -25,6 +25,13 @@
 
 #include "Util.h"
 
+
+const std::string TRACE_FILE_NAME          = "trace.txt";
+const std::string PROFILE_FILE_NAME        = "profile.txt";
+const std::string PROFILE_SOURCE_FILE_NAME = "profile.cpp";
+const std::string PROFILE_HEADER_FILE_NAME = "profile.h";
+
+
 class Profiler {
  public:
   boost::filesystem::path getHeader();

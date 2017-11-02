@@ -282,6 +282,7 @@ int main (int argc, char *argv[]) {
     BOOST_LOG_TRIVIAL(info) << "error occurred during search";
     return ERROR_EXIT_CODE;
   case RepairStatus::NO_NEGATIVE_TESTS:
+    BOOST_LOG_TRIVIAL(info) << "nothing to do";
     return NO_NEGATIVE_TESTS_EXIT_CODE;
   }
 

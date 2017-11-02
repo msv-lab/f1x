@@ -154,6 +154,7 @@ RepairStatus repair(Project &project,
     FaultLocalization faultLocal(tests,tester);
     vector<fs::path> allFiles = project.filesFromCompilationDB();
     vector<fs::path> localized = faultLocal.localize(allFiles);
+    BOOST_LOG_TRIVIAL(info) << "number of localized files: " << localized.size();
     std::vector<ProjectFile> projectFiles;
     for (auto &file : localized) {
       projectFiles.push_back(ProjectFile{file, 0, 0});
@@ -206,25 +207,13 @@ RepairStatus repair(Project &project,
     profiler.mergeTrace(i, (status == TestStatus::PASS));
   }
   if (numNegative == 0) {
-    BOOST_LOG_TRIVIAL(info) << "no negative tests";
+    BOOST_LOG_TRIVIAL(error) << "no negative tests";
     return RepairStatus::NO_NEGATIVE_TESTS;
   }
 
   BOOST_LOG_TRIVIAL(info) << "number of positive tests: " << numPositive;
-  const unsigned long MAX_PRINT_TESTS = 5;
-  std::stringstream printTests;
-  bool firstTest = true;
-  for (int i=0; i<std::min(negativeTests.size(), MAX_PRINT_TESTS); i++) {
-    if (!firstTest)
-      printTests << ", ";
-    firstTest = false;
-    printTests << negativeTests[i];
-  }
-  if (MAX_PRINT_TESTS < negativeTests.size())
-    printTests << ", ...";
-  
   BOOST_LOG_TRIVIAL(info) << "number of negative tests: " << numNegative;
-  BOOST_LOG_TRIVIAL(info) << "negative tests: [" << printTests.str() << "]";
+  BOOST_LOG_TRIVIAL(info) << "negative tests: " << prettyPrintTests(negativeTests);
   
   fs::path profile = profiler.getProfile();
 

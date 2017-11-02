@@ -533,3 +533,20 @@ boost::filesystem::path relativeTo(boost::filesystem::path from, boost::filesyst
 
   return finalPath;
 }
+
+
+std::string prettyPrintTests(const std::vector<std::string> &tests) {
+  std::stringstream printTests;
+  printTests << "[";
+  bool firstTest = true;
+  for (int i=0; i<std::min(tests.size(), MAX_PRINT_TESTS); i++) {
+    if (!firstTest)
+      printTests << ", ";
+    firstTest = false;
+    printTests << tests[i];
+  }
+  if (MAX_PRINT_TESTS < tests.size())
+    printTests << ", ...";
+  printTests << "]";
+  return printTests.str();
+}

@@ -28,45 +28,25 @@ using std::unordered_set;
 const bool USE_CUSTOM_SCORE = true;
 
 
-FaultLocalization::FaultLocalization(const std::vector<std::string> &tests, 
-                                     const TestingFramework &tester):
-  tests(tests),
-  tester(tester) {
-  coverageDir = fs::path(cfg.dataDir) / "coverage";
-  fs::create_directory(coverageDir);
-}
+Coverage extractAndSaveCoverage(fs::path coverageFile) {
+  Coverage coverage;
 
-// From "Empirical Evaluation of the Tarantula Automatic Fault-Localization Technique" by James A. Jones and Mary Jean Harrold
-double tarantula(unsigned passedStmt, unsigned failedStmt, unsigned totalPassed, unsigned totalFailed) {
-  double a = (totalFailed == 0 ? 0 : (double) failedStmt / (double) totalFailed);
-  double b = (totalPassed == 0 ? 0 : (double) passedStmt / (double) totalPassed);
-  return (a + b == 0 ? 0 : a / (a + b));
-}
-
-// assuming statement should be executed by all failing tests
-double tarantula_custom(unsigned passedStmt, unsigned failedStmt, unsigned totalPassed, unsigned totalFailed) {
-  double a = (totalFailed == failedStmt ? 1 : 0);
-  double b = (totalPassed == 0 ? 0 : (double) passedStmt / (double) totalPassed);
-  return (a + b == 0 ? 0 : a / (a + b));
-}
-
-unordered_map<string, unordered_set<unsigned>> FaultLocalization::loadCoverage(string test) {
-  unordered_map<string, unordered_set<unsigned>> coverage;
-
-  fs::path coverageFile = coverageDir / (test + ".xml");
   std::stringstream cmd;
   cmd << "gcovr --xml --delete --output=" << coverageFile.string() << " >/dev/null 2>&1";
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   unsigned long status = std::system(cmd.str().c_str());
   if (WEXITSTATUS(status) != 0) {
-    BOOST_LOG_TRIVIAL(warning) << "failed to extract coverage for test " << test;
+    throw std::runtime_error("gcovr failed");
   }
 
   rapidxml::file<> xmlFile(coverageFile.string().c_str());
   rapidxml::xml_document<> doc;
   doc.parse<0>(xmlFile.data());
 
-  xml_node<> *classRoot = doc.first_node()->first_node("packages")->first_node()->first_node()->first_node();
+  xml_node<> *root = doc.first_node()->first_node("packages")->first_node();
+  if (!root)
+    throw std::runtime_error("empty coverage file");
+  xml_node<> *classRoot = root->first_node()->first_node();
   while(classRoot) {
     std::stringstream filename;
     filename << classRoot->first_attribute("filename")->value();
@@ -86,30 +66,61 @@ unordered_map<string, unordered_set<unsigned>> FaultLocalization::loadCoverage(s
     coverage[file] = lines;
     classRoot = classRoot->next_sibling();
   }
-  
+
   return coverage;
 }
 
+
+// From "Empirical Evaluation of the Tarantula Automatic Fault-Localization Technique" by James A. Jones and Mary Jean Harrold
+double tarantula(unsigned passedStmt, unsigned failedStmt, unsigned totalPassed, unsigned totalFailed) {
+  double a = (totalFailed == 0 ? 0 : (double) failedStmt / (double) totalFailed);
+  double b = (totalPassed == 0 ? 0 : (double) passedStmt / (double) totalPassed);
+  return (a + b == 0 ? 0 : a / (a + b));
+}
+
+
+// assuming statement should be executed by all failing tests
+double tarantula_custom(unsigned passedStmt, unsigned failedStmt, unsigned totalPassed, unsigned totalFailed) {
+  double a = (totalFailed == failedStmt ? 1 : 0);
+  double b = (totalPassed == 0 ? 0 : (double) passedStmt / (double) totalPassed);
+  return (a + b == 0 ? 0 : a / (a + b));
+}
+
+
+FaultLocalization::FaultLocalization(const std::vector<std::string> &tests, 
+                                     const TestingFramework &tester):
+  tests(tests),
+  tester(tester) {
+  coverageDir = fs::path(cfg.dataDir) / "coverage";
+  fs::create_directory(coverageDir);
+}
+
+
 vector<fs::path> FaultLocalization::localize(vector<fs::path> allFiles) {
   // test -> file -> set of locations
-  unordered_map<string, unordered_map<string, unordered_set<unsigned>>> coverage;
+  unordered_map<string, Coverage> coverage;
   unordered_set<string> passedTests;
 
   for (auto &test : tests) {
     TestStatus status = tester.execute(test);
-    
-    switch (status) {
-    case TestStatus::PASS:
-      passedTests.insert(test);
-      coverage[test] = loadCoverage(test);
-      break;
-    case TestStatus::FAIL:
-      coverage[test] = loadCoverage(test);
-      break;
-    case TestStatus::TIMEOUT:
-      //FIXME: skipping this case because it requires runtime support
-      BOOST_LOG_TRIVIAL(warning) << "localization for tests with timeout is not supported";
-      break;
+
+    fs::path coverageFile = coverageDir / (test + ".xml");
+    try {
+      switch (status) {
+      case TestStatus::PASS:
+        passedTests.insert(test);
+        coverage[test] = extractAndSaveCoverage(coverageFile);
+        break;
+      case TestStatus::FAIL:
+        coverage[test] = extractAndSaveCoverage(coverageFile);
+        break;
+      case TestStatus::TIMEOUT:
+        //FIXME: skipping this case because it requires runtime support
+        BOOST_LOG_TRIVIAL(warning) << "localization for tests with timeout is not supported";
+        break;
+      }
+    } catch (const std::exception& e) {
+      BOOST_LOG_TRIVIAL(warning) << "failed to extract coverage: " << e.what();
     }
   }
 

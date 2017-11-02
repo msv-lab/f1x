@@ -136,3 +136,8 @@ bool isExecutable(const char *file);
 
 
 boost::filesystem::path relativeTo(boost::filesystem::path from, boost::filesystem::path to);
+
+
+const unsigned long MAX_PRINT_TESTS = 5;
+
+std::string prettyPrintTests(const std::vector<std::string> &tests);

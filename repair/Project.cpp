@@ -346,7 +346,16 @@ vector<fs::path> Project::filesFromCompilationDB() {
 
   for (auto &entry : db.GetArray()) {
     std::string fileStr = entry.GetObject()["file"].GetString();
-    files.push_back(relativeTo(fs::current_path(), fs::path(fileStr)));
+    bool supportedExtension = false;
+    for (const string &extension : SOURCE_FILE_EXTENSIONS) {
+      if (fileStr.length() > extension.length()
+          && fileStr.compare(fileStr.length()-extension.length(), string::npos, extension) == 0) {
+        supportedExtension = true;
+        break;
+      }
+    }
+    if (supportedExtension)
+      files.push_back(relativeTo(fs::current_path(), fs::path(fileStr)));
   }
   return files;
 }
