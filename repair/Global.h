@@ -40,6 +40,7 @@ struct Config {
   bool valueTEQ;
   bool dependencyTEQ;
   TestPrioritization testPrioritization;
+  PatchPrioritization patchPrioritization;
   unsigned filesToLocalize;
 };
 

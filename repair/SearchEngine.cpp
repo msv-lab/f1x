@@ -35,6 +35,8 @@ using std::shared_ptr;
 using std::string;
 using std::to_string;
 
+namespace fs = boost::filesystem;
+
 const unsigned SHOW_PROGRESS_STEP = 10;
 
 SearchEngine::SearchEngine(const std::vector<std::string> &tests,
@@ -135,6 +137,8 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
       }
 
       passAll = (status == TestStatus::PASS);
+
+ 
         
       if (cfg.valueTEQ) {
         unordered_set<F1XID> partition = runtime.getPartition();
@@ -143,9 +147,32 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
                                      << visualizeF1XID(elem.id)
                                      << " with test " << test;
         }
+
+	if(cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF)
+	{
+	  //retrieve coverage for last test case
+	  fs::path coverageFile = fs::path(cfg.dataDir) / "coverage" / (test + "_" + std::to_string(candIdx) + ".xml");
+	  std::shared_ptr<Coverage> curCoverage(new Coverage(extractAndSaveCoverage(coverageFile)));
+
+          //insert all coverages into F1XID hashmap
+ 	  std::unordered_map<F1XID, std::shared_ptr<Coverage>> f1xpartition_coverage;
+          f1xpartition_coverage[elem.id] = curCoverage;
+
+	  /* for (auto &id : partition) */
+	  for (auto itr = partition.begin(); itr != partition.end(); ++itr) {
+	    f1xpartition_coverage[*itr] = curCoverage;
+	  }
+
+	  //insert F1XID hashmap into coverage set with current test id
+	  coverageSet[test] = f1xpartition_coverage;
+
+
+ 	}
+
         if (passAll) {
           passing[test].insert(elem.id);
           passing[test].insert(partition.begin(), partition.end());
+	  
         } else {
           failing.insert(elem.id);
           failing.insert(partition.begin(), partition.end());

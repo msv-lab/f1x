@@ -44,6 +44,11 @@ enum class TestPrioritization {
   MAX_FAILING       // dynamically prioritize tests based on previous failures
 };
 
+enum class PatchPrioritization {
+  SYNTACTIC_DIFF,   	//patches that are syntactically closer to the original program are assigned lower cost
+  SEMANTIC_DIFF		//patches that produce execution traces closer to the execution traces of the original program are assigned lower cost
+};
+
 
 struct F1XID {
   unsigned long base;  // 0 is reserved for special purpose

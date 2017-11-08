@@ -26,6 +26,7 @@
 #include "Util.h"
 #include "Project.h"
 #include "Runtime.h"
+#include "FaultLocalization.h"
 
 
 struct SearchStatistics {
@@ -59,5 +60,6 @@ class SearchEngine {
   std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<F1XID>>> partitionable;
   std::unordered_set<F1XID> failing;
   std::unordered_map<std::string, std::unordered_set<F1XID>> passing;
+  std::unordered_map<std::string, std::unordered_map<F1XID, std::shared_ptr<Coverage>>> coverageSet; //Define hashmap to store coverage data
   std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes;
 };

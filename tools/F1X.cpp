@@ -148,6 +148,19 @@ int main (int argc, char *argv[]) {
     return ERROR_EXIT_CODE;    
   }
 
+  if (vm.count("cost")) {
+    std::string costFunction = fs::absolute(vm["cost"].as<string>()).string();
+
+    if(costFunction == "syntactic-diff")
+    {
+	std::cout << "Hello World" << std::endl;
+	cfg.patchPrioritization = PatchPrioritization::SYNTACTIC_DIFF;
+    }
+
+    if(costFunction == "semantic-diff")
+ 	cfg.patchPrioritization = PatchPrioritization::SEMANTIC_DIFF;
+  }
+
   if (vm.count("version")) {
     std::cout << "f1x " << F1X_VERSION_MAJOR <<
                     "." << F1X_VERSION_MINOR <<
