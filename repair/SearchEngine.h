@@ -47,6 +47,7 @@ class SearchEngine {
                std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes);
 
   unsigned long findNext(const std::vector<SearchSpaceElement> &searchSpace, unsigned long fromIdx);
+  std::unordered_map<std::string, std::unordered_map<F1XID, std::shared_ptr<Coverage>>> getCoverageSet();
   SearchStatistics getStatistics();
 
  private:
@@ -62,4 +63,5 @@ class SearchEngine {
   std::unordered_map<std::string, std::unordered_set<F1XID>> passing;
   std::unordered_map<std::string, std::unordered_map<F1XID, std::shared_ptr<Coverage>>> coverageSet; //Define hashmap to store coverage data
   std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes;
+  boost::filesystem::path coverageDir;
 };

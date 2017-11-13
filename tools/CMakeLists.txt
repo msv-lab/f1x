@@ -56,3 +56,4 @@ set_target_properties(f1x-transform PROPERTIES COMPILE_FLAGS "-fno-rtti -fno-exc
 ## f1x-cc and f1x-cxx targets
 configure_file(f1x-cc f1x-cc COPYONLY)
 configure_file(f1x-cxx f1x-cxx COPYONLY)
+configure_file(f1x-llvm-cov f1x-llvm-cov COPYONLY)

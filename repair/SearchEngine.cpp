@@ -64,6 +64,10 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
   for (auto &test : tests) {
     passing[test] = {};
   }
+
+  coverageDir = fs::path(cfg.dataDir) / "patch-coverage";
+  fs::create_directory(coverageDir);
+
 }
 
 unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace,
@@ -151,7 +155,7 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
 	if(cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF)
 	{
 	  //retrieve coverage for last test case
-	  fs::path coverageFile = fs::path(cfg.dataDir) / "coverage" / (test + "_" + std::to_string(candIdx) + ".xml");
+	  fs::path coverageFile = coverageDir / (test + "_" + std::to_string(candIdx) + ".xml");
 	  std::shared_ptr<Coverage> curCoverage(new Coverage(extractAndSaveCoverage(coverageFile)));
 
           //insert all coverages into F1XID hashmap
@@ -197,6 +201,10 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
 
 SearchStatistics SearchEngine::getStatistics() {
   return stat;
+}
+
+std::unordered_map<std::string, std::unordered_map<F1XID, std::shared_ptr<Coverage>>> SearchEngine::getCoverageSet() {
+  return coverageSet;
 }
 
 void SearchEngine::prioritizeTest(std::vector<unsigned> &testOrder, unsigned index) {

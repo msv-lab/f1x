@@ -149,11 +149,10 @@ int main (int argc, char *argv[]) {
   }
 
   if (vm.count("cost")) {
-    std::string costFunction = fs::absolute(vm["cost"].as<string>()).string();
+    std::string costFunction = vm["cost"].as<string>();
 
     if(costFunction == "syntactic-diff")
     {
-	std::cout << "Hello World" << std::endl;
 	cfg.patchPrioritization = PatchPrioritization::SYNTACTIC_DIFF;
     }
 
