@@ -17,6 +17,7 @@
 */
 
 #include <iostream>
+#include <iomanip>
 #include <memory>
 #include <cstdlib>
 #include <string>
@@ -40,7 +41,7 @@ using std::vector;
 using std::shared_ptr;
 
 
-std::string visualizeF1XID(const F1XID &id) {
+std::string visualizePatchID(const PatchID &id) {
   std::stringstream result;
   result << id.base << ":" << id.int2 << ":" << id.bool2 << ":" << id.cond3 << ":" << id.param;
   return result.str();
@@ -336,35 +337,35 @@ std::string visualizeTransformationSchema(const TransformationSchema &schema) {
 }
 
 
-std::string visualizeModificationKind(const ModificationKind &kind) {
-  switch (kind) {
-  case ModificationKind::OPERATOR:
+std::string visualizeSynthesisRule(const SynthesisRule &rule) {
+  switch (rule) {
+  case SynthesisRule::OPERATOR:
     return "replace operator";
-  case ModificationKind::SWAPING:
+  case SynthesisRule::SWAPING:
     return "swap arguments";
-  case ModificationKind::SIMPLIFICATION:
+  case SynthesisRule::SIMPLIFICATION:
     return "simplify";
-  case ModificationKind::GENERALIZATION:
+  case SynthesisRule::GENERALIZATION:
     return "generalize";
-  case ModificationKind::CONCRETIZATION:
+  case SynthesisRule::CONCRETIZATION:
     return "concretize";
-  case ModificationKind::LOOSENING:
+  case SynthesisRule::LOOSENING:
     return "loosen";
-  case ModificationKind::TIGHTENING:
+  case SynthesisRule::TIGHTENING:
     return "tighten";
-  case ModificationKind::NEGATION:
+  case SynthesisRule::NEGATION:
     return "negate";
-  case ModificationKind::NULL_CHECK:
+  case SynthesisRule::NULL_CHECK:
     return "null check";
-  case ModificationKind::SUBSTITUTION:
+  case SynthesisRule::SUBSTITUTION:
     return "substitute";
   default:
-    throw std::invalid_argument("unsupported modification kind");
+    throw std::invalid_argument("unsupported synthesis rule");
   }
 }
 
 
-std::string visualizeChange(const SearchSpaceElement &el) {
+std::string visualizeChange(const Patch &el) {
   std::stringstream result;
   result << "\"" << expressionToString(el.app->original) << "\""
          << " ---> "
@@ -373,12 +374,12 @@ std::string visualizeChange(const SearchSpaceElement &el) {
 }                                                          
 
 
-std::string visualizeElement(const SearchSpaceElement &el,
+std::string visualizeElement(const Patch &el,
                              const boost::filesystem::path &file) {
   std::stringstream result;
-  result << visualizeF1XID(el.id) << " "
+  result << visualizePatchID(el.id) << " "
          << visualizeTransformationSchema(el.app->schema) 
-         << " [" << visualizeModificationKind(el.meta.kind) << "] "
+         << " [" << visualizeSynthesisRule(el.meta.rule) << "] "
          << visualizeChange(el)
          << " in " << file.string() << ":" << el.app->location.beginLine;
   return result.str();
@@ -549,4 +550,16 @@ std::string prettyPrintTests(const std::vector<std::string> &tests) {
     printTests << ", ...";
   printTests << "]";
   return printTests.str();
+}
+
+
+void dumpSearchSpace(vector<Patch> &searchSpace,
+                     const fs::path &file,
+                     const vector<fs::path> &files,
+                     std::unordered_map<PatchID, double> &cost) {
+  fs::ofstream os(file);
+  for (auto &el : searchSpace) {
+    os << std::setprecision(3) << cost[el.id] << " " 
+       << visualizeElement(el, files[el.app->location.fileId]) << "\n";
+  }
 }

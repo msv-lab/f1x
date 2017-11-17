@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <unordered_map>
 #include "Config.h"
 #include "Core.h"
 
@@ -35,8 +36,8 @@ inline void hash_combine(std::size_t & s, const T & v) {
 
 namespace std {
   template<>
-    struct hash<F1XID> {
-    inline size_t operator()(const F1XID& id) const {
+    struct hash<PatchID> {
+    inline size_t operator()(const PatchID& id) const {
       size_t value = 0;
       hash_combine(value, id.base);
       hash_combine(value, id.int2);
@@ -95,12 +96,12 @@ namespace std {
   };
 }
 
-std::string visualizeF1XID(const F1XID &id);
+std::string visualizePatchID(const PatchID &id);
 
-std::string visualizeChange(const SearchSpaceElement &el);
+std::string visualizeChange(const Patch &el);
 
 
-std::string visualizeElement(const SearchSpaceElement &el, const boost::filesystem::path &file);
+std::string visualizeElement(const Patch &el, const boost::filesystem::path &file);
 
 
 class FromDirectory {
@@ -141,3 +142,9 @@ boost::filesystem::path relativeTo(boost::filesystem::path from, boost::filesyst
 const unsigned long MAX_PRINT_TESTS = 5;
 
 std::string prettyPrintTests(const std::vector<std::string> &tests);
+
+
+void dumpSearchSpace(std::vector<Patch> &searchSpace,
+                     const boost::filesystem::path &file,
+                     const std::vector<boost::filesystem::path> &files,
+                     std::unordered_map<PatchID, double> &cost);

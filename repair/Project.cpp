@@ -253,7 +253,7 @@ void Project::restoreInstrumentedFiles() {
 
 void Project::deleteCoverageFiles() {
   std::stringstream cmdGcovr;
-  cmdGcovr << "gcovr --delete";
+  cmdGcovr << "gcovr --delete --xml";
   if (cfg.useLLVMCov)
     cmdGcovr << " --gcov-executable=f1x-llvm-cov";
   cmdGcovr << " >/dev/null 2>&1";
@@ -326,7 +326,7 @@ unsigned Project::getFileId(const ProjectFile &file) {
   return id;
 }
 
-bool Project::applyPatch(const SearchSpaceElement &patch) {
+bool Project::applyPatch(const Patch &patch) {
   BOOST_LOG_TRIVIAL(debug) << "applying patch";
   unsigned beginLine = patch.app->location.beginLine;
   unsigned beginColumn = patch.app->location.beginColumn;
@@ -416,17 +416,4 @@ bool TestingFramework::driverIsOK() {
     return false;
   }
   return true;
-}
-
-vector<string> getFailing(TestingFramework &tester, const vector<string> &tests) {
-
-  vector<string> failingTests;
-
-  for (auto &test : tests) {
-    if (tester.execute(test) != TestStatus::PASS) {
-      failingTests.push_back(test);
-    }
-  }
-
-  return failingTests;
 }

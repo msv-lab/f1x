@@ -42,7 +42,7 @@ const unsigned SHOW_PROGRESS_STEP = 10;
 SearchEngine::SearchEngine(const std::vector<std::string> &tests,
                            TestingFramework &tester,
                            Runtime &runtime,
-                           shared_ptr<unordered_map<unsigned long, unordered_set<F1XID>>> partitionable,
+                           shared_ptr<unordered_map<unsigned long, unordered_set<PatchID>>> partitionable,
                            std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes):
   tests(tests),
   tester(tester),
@@ -70,25 +70,50 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
 
 }
 
-unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &searchSpace,
-                                     unsigned long fromIdx) {
 
-  unsigned long candIdx = fromIdx;
-  for (; candIdx < searchSpace.size(); candIdx++) {
-    stat.explorationCounter++;
-    if ((100 * candIdx) / searchSpace.size() >= progress) {
+void SearchEngine::showProgress(unsigned long current, unsigned long total) {
+      if ((100 * current) / total >= progress) {
       BOOST_LOG_TRIVIAL(info) << "exploration progress: " << progress << "%";
       progress += SHOW_PROGRESS_STEP;
     }
+}
 
-    const SearchSpaceElement &elem = searchSpace[candIdx];
+
+SearchStatistics SearchEngine::getStatistics() {
+  return stat;
+}
+
+
+std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> SearchEngine::getCoverageSet() {
+  return coverageSet;
+}
+
+
+//FIXME: this probably does not work. Tests should be prioritized based on global score
+void SearchEngine::prioritizeTest(std::vector<unsigned> &testOrder, unsigned index) {
+    std::vector<unsigned>::iterator it = testOrder.begin() + index;
+    unsigned temp = testOrder[index];
+    testOrder.erase(it);
+    testOrder.insert(testOrder.begin(), temp);
+}
+
+
+unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
+                                     unsigned long from) {
+
+  unsigned long index = from;
+  for (; index < searchSpace.size(); index++) {
+    stat.explorationCounter++;
+    showProgress(index, searchSpace.size());
+
+    const Patch &elem = searchSpace[index];
 
     if (cfg.valueTEQ) {
       if (failing.count(elem.id))
         continue;
     }
 
-    InEnvironment env({ { "F1X_APP", to_string(elem.app->appId) },
+    InEnvironment env({ { "F1X_APP", to_string(elem.app->id) },
                         { "F1X_ID_BASE", to_string(elem.id.base) },
                         { "F1X_ID_INT2", to_string(elem.id.int2) },
                         { "F1X_ID_BOOL2", to_string(elem.id.bool2) },
@@ -96,27 +121,21 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
                         { "F1X_ID_PARAM", to_string(elem.id.param) } });
 
     bool passAll = true;
-    
-    std::shared_ptr<SchemaApplication> sa = elem.app;
-    
+
     std::vector<unsigned> testOrder = relatedTestIndexes[elem.app->location];
-    
-    for (unsigned orderIdx = 0; orderIdx < testOrder.size(); orderIdx++) {
-      auto test = tests[testOrder[orderIdx]];
+
+    for (unsigned orderIndex = 0; orderIndex < testOrder.size(); orderIndex++) {
+      auto test = tests[testOrder[orderIndex]];
 
       if (cfg.valueTEQ) {
-
-	//check if previously there has been equivalent partition that pass this test
         if (passing[test].count(elem.id))
-	{
           continue;
-	}
 
-        //FIXME: select unexplored candidates
-        runtime.setPartition((*partitionable)[elem.app->appId]);
+        //FIXME: select only unexplored candidates
+        runtime.setPartition((*partitionable)[elem.app->id]);
       }
 
-      BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizeF1XID(elem.id) 
+      BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizePatchID(elem.id) 
                                << " with test " << test;
 
       std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -147,41 +166,31 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
 
       passAll = (status == TestStatus::PASS);
 
- 
-        
       if (cfg.valueTEQ) {
-        unordered_set<F1XID> partition = runtime.getPartition();
+        unordered_set<PatchID> partition = runtime.getPartition();
         if (partition.empty()) {
+          //NOTE: it should contain at least the current element
           BOOST_LOG_TRIVIAL(warning) << "partitioning failed for "
-                                     << visualizeF1XID(elem.id)
+                                     << visualizePatchID(elem.id)
                                      << " with test " << test;
         }
 
-	if(cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF)
-	{
-	  //retrieve coverage for last test case
-	  fs::path coverageFile = coverageDir / (test + "_" + std::to_string(candIdx) + ".xml");
-	  std::shared_ptr<Coverage> curCoverage(new Coverage(extractAndSaveCoverage(coverageFile)));
+        if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
+          fs::path coverageFile = coverageDir / (test + "_" + std::to_string(index) + ".xml");
+          std::shared_ptr<Coverage> curCoverage(new Coverage(extractAndSaveCoverage(coverageFile)));
 
-          //insert all coverages into F1XID hashmap
- 	  std::unordered_map<F1XID, std::shared_ptr<Coverage>> f1xpartition_coverage;
-          f1xpartition_coverage[elem.id] = curCoverage;
+          if (!coverageSet.count(test))
+            coverageSet[test] = std::unordered_map<PatchID, std::shared_ptr<Coverage>>();
 
-	  /* for (auto &id : partition) */
-	  for (auto itr = partition.begin(); itr != partition.end(); ++itr) {
-	    f1xpartition_coverage[*itr] = curCoverage;
-	  }
-
-	  //insert F1XID hashmap into coverage set with current test id
-	  coverageSet[test] = f1xpartition_coverage;
-
-
- 	}
+          coverageSet[test][elem.id] = curCoverage;
+          for (auto &id : partition)
+            coverageSet[test][id] = curCoverage;
+        }
 
         if (passAll) {
           passing[test].insert(elem.id);
           passing[test].insert(partition.begin(), partition.end());
-	  
+
         } else {
           failing.insert(elem.id);
           failing.insert(partition.begin(), partition.end());
@@ -190,31 +199,16 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
 
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
-          prioritizeTest(relatedTestIndexes[elem.app->location], orderIdx);
+          prioritizeTest(relatedTestIndexes[elem.app->location], orderIndex);
         }
         break;
       }
     }
 
     if (passAll) {
-      return candIdx;
+      return index;
     }
   }
 
-  return candIdx;
-}
-
-SearchStatistics SearchEngine::getStatistics() {
-  return stat;
-}
-
-std::unordered_map<std::string, std::unordered_map<F1XID, std::shared_ptr<Coverage>>> SearchEngine::getCoverageSet() {
-  return coverageSet;
-}
-
-void SearchEngine::prioritizeTest(std::vector<unsigned> &testOrder, unsigned index) {
-    std::vector<unsigned>::iterator it = testOrder.begin() + index;
-    unsigned temp = testOrder[index];
-    testOrder.erase(it);
-    testOrder.insert(testOrder.begin(), temp);
+  return index;
 }

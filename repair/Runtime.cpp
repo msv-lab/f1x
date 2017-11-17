@@ -40,16 +40,16 @@ using std::unordered_set;
 
 Runtime::Runtime() {
 
-  size_t size = sizeof(F1XID) * MAX_PARTITION_SIZE;
+  size_t size = sizeof(PatchID) * MAX_PARTITION_SIZE;
   int fd = shm_open(PARTITION_FILE_NAME.c_str(),
                     O_CREAT | O_RDWR,
                     S_IRUSR | S_IWUSR);
   ftruncate(fd, size);
-  partition = (F1XID*) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
+  partition = (PatchID*) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
   close(fd);
   };
 
-void Runtime::setPartition(std::unordered_set<F1XID> ids) {
+void Runtime::setPartition(std::unordered_set<PatchID> ids) {
   assert(ids.size() < MAX_PARTITION_SIZE);
   unsigned long index = 0;
   for (auto &id : ids) {
@@ -59,17 +59,17 @@ void Runtime::setPartition(std::unordered_set<F1XID> ids) {
   partition[index] = INPUT_TERMINATOR;
 }
 
-unordered_set<F1XID> Runtime::getPartition() {
-  unordered_set<F1XID> result;
+unordered_set<PatchID> Runtime::getPartition() {
+  unordered_set<PatchID> result;
   unsigned long index = 0;
   while (!(partition[index] == OUTPUT_TERMINATOR)) {
     if (partition[index] == INPUT_TERMINATOR) {
       BOOST_LOG_TRIVIAL(debug) << "wrongly terminated partition";
-      return unordered_set<F1XID>();
+      return unordered_set<PatchID>();
     }
     if (index > MAX_PARTITION_SIZE) {
       BOOST_LOG_TRIVIAL(debug) << "unterminated partition";
-      return unordered_set<F1XID>();
+      return unordered_set<PatchID>();
     }
     result.insert(partition[index]);
     index++;

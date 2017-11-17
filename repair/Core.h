@@ -33,10 +33,10 @@ enum class RepairStatus {
 };
 
 
-const unsigned SUCCESS_EXIT_CODE=0;
-const unsigned FAILURE_EXIT_CODE=122;
-const unsigned ERROR_EXIT_CODE=1;
-const unsigned NO_NEGATIVE_TESTS_EXIT_CODE=123;
+const unsigned SUCCESS_EXIT_CODE = 0;
+const unsigned FAILURE_EXIT_CODE = 122;
+const unsigned ERROR_EXIT_CODE = 1;
+const unsigned NO_NEGATIVE_TESTS_EXIT_CODE = 123;
 
 
 enum class TestPrioritization {
@@ -46,19 +46,19 @@ enum class TestPrioritization {
 
 
 enum class PatchPrioritization {
-  SYNTACTIC_DIFF, //patches that are syntactically closer to the original program are assigned lower cost
-  SEMANTIC_DIFF   //patches that produce execution traces closer to the execution traces of the original program are assigned lower cost
+  SYNTACTIC_DIFF, // patches that are syntactically closer to the original program are assigned lower cost
+  SEMANTIC_DIFF   // patches that produce execution traces closer to the execution traces of the original program are assigned lower cost
 };
 
 
-struct F1XID {
+struct PatchID {
   unsigned long base;  // 0 is reserved for special purpose
   unsigned long int2;  // 0 means disabled
   unsigned long bool2; // 0 means disabled
   unsigned long cond3; // 0 means disabled
   unsigned long param; // this is expression parameter
 
-  bool operator==(const F1XID &other) const { 
+  bool operator==(const PatchID &other) const {
     return (base == other.base
          && int2 == other.int2
          && bool2 == other.bool2
@@ -66,6 +66,9 @@ struct F1XID {
          && param == other.param);
   }
 };
+
+
+typedef unsigned long AppID;
 
 
 enum class TestStatus {
@@ -162,7 +165,7 @@ enum class TransformationSchema {
 };
 
 
-enum class ModificationKind {
+enum class SynthesisRule {
   OPERATOR,       // operator replacement e.g. > --> >=
   SWAPING,        // swaping arguments
   SIMPLIFICATION, // simplifying expression
@@ -183,7 +186,7 @@ enum struct LocationContext {
 
 
 struct SchemaApplication {
-  unsigned long appId;
+  AppID id;
   TransformationSchema schema;
   Location location;
   LocationContext context;
@@ -194,13 +197,13 @@ struct SchemaApplication {
 
 
 struct PatchMetadata {
-  ModificationKind kind;
+  SynthesisRule rule;
   unsigned long distance;
 };
 
 
-struct SearchSpaceElement {
-  F1XID id;
+struct Patch {
+  PatchID id;
   std::shared_ptr<SchemaApplication> app;
   Expression modified;
   PatchMetadata meta;

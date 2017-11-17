@@ -43,12 +43,13 @@ class SearchEngine {
   SearchEngine(const std::vector<std::string> &tests,
                TestingFramework &tester,
                Runtime &runtime,
-               std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<F1XID>>> partitionable,
+               std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<PatchID>>> partitionable,
                std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes);
 
-  unsigned long findNext(const std::vector<SearchSpaceElement> &searchSpace, unsigned long fromIdx);
-  std::unordered_map<std::string, std::unordered_map<F1XID, std::shared_ptr<Coverage>>> getCoverageSet();
+  unsigned long findNext(const std::vector<Patch> &searchSpace, unsigned long fromIdx);
+  std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> getCoverageSet();
   SearchStatistics getStatistics();
+  void showProgress(unsigned long current, unsigned long total);
 
  private:
  
@@ -58,10 +59,10 @@ class SearchEngine {
   Runtime runtime;
   SearchStatistics stat;
   unsigned long progress;
-  std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<F1XID>>> partitionable;
-  std::unordered_set<F1XID> failing;
-  std::unordered_map<std::string, std::unordered_set<F1XID>> passing;
-  std::unordered_map<std::string, std::unordered_map<F1XID, std::shared_ptr<Coverage>>> coverageSet; //Define hashmap to store coverage data
+  std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<PatchID>>> partitionable;
+  std::unordered_set<PatchID> failing;
+  std::unordered_map<std::string, std::unordered_set<PatchID>> passing;
+  std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> coverageSet;
   std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes;
   boost::filesystem::path coverageDir;
 };

@@ -39,6 +39,7 @@
 #include "Synthesis.h"
 #include "SearchEngine.h"
 #include "FaultLocalization.h"
+#include "Prioritization.h"
 
 namespace fs = boost::filesystem;
 using std::vector;
@@ -49,83 +50,68 @@ using std::unordered_map;
 using std::unordered_set;
 
 
-string getSchemaApplicationsFileName(unsigned index) {
-  std::stringstream name;
-  name << "applications" << index << ".json";
-  return name.str();
-}
+const string APPLICATIONS_FILE_PREFIX = "applications";
 
-double simplicityScore(const SearchSpaceElement &el) {
-  double result = (double) el.meta.distance;
-  const double GOOD = 0.2;
-  const double OK = 0.1;
-  switch (el.app->schema) {
-  case TransformationSchema::EXPRESSION:
-    switch (el.meta.kind) {
-    case ModificationKind::OPERATOR:
-      result -= GOOD;
-      break;
-    case ModificationKind::SWAPING:
-      result -= GOOD;
-      break;
-    case ModificationKind::SIMPLIFICATION:
-      result -= GOOD;
-      break;
-    case ModificationKind::GENERALIZATION:
-      result -= GOOD;
-      break;
-    case ModificationKind::SUBSTITUTION:
-      result -= GOOD;
-      break;
-    case ModificationKind::LOOSENING:
-      result -= OK;
-      break;
-    case ModificationKind::TIGHTENING:
-      result -= OK;
-      break;
-    default:
-      break; // everything else is bad
-    }
-    break;
-  case TransformationSchema::IF_GUARD:
-    result -= GOOD;
-    break;
-  default:
-    break;
-  }
-  return result;
+
+void prioritize(vector<Patch> &searchSpace,
+                unordered_map<PatchID, double> &cost) {
+  std::stable_sort(searchSpace.begin(),
+                   searchSpace.end(),
+                   [&cost](const Patch &a, const Patch &b) -> bool {
+                     return cost[a.id] < cost[b.id];
+                   });
 }
 
 
-bool comparePatches(const SearchSpaceElement &a, const SearchSpaceElement &b) {
-  return simplicityScore(a) < simplicityScore(b);
-}
-
-
-void prioritize(std::vector<SearchSpaceElement> &searchSpace) {
-  std::stable_sort(searchSpace.begin(), searchSpace.end(), comparePatches);
-}
-
-
-void dumpSearchSpace(std::vector<SearchSpaceElement> &searchSpace, const fs::path &file, const vector<ProjectFile> &files) {
-  fs::ofstream os(file);
+//FIXME: this should be a mapping from a patch to a set of patches and should be computed during search space generation
+shared_ptr<unordered_map<unsigned long, unordered_set<PatchID>>> getPartitionable(const std::vector<Patch> &searchSpace) {
+  shared_ptr<unordered_map<unsigned long, unordered_set<PatchID>>> result(new unordered_map<ulong, unordered_set<PatchID>>);
   for (auto &el : searchSpace) {
-    os << std::setprecision(3) << simplicityScore(el) << " " 
-       << visualizeElement(el, files[el.app->location.fileId].relpath) << "\n";
-  }
-}
-
-
-shared_ptr<unordered_map<unsigned long, unordered_set<F1XID>>> getPartitionable(const std::vector<SearchSpaceElement> &searchSpace) {
-  shared_ptr<unordered_map<unsigned long, unordered_set<F1XID>>> result(new unordered_map<ulong, unordered_set<F1XID>>);
-  for (auto &el : searchSpace) {
-    unsigned long locId = el.app->appId;
+    unsigned long locId = el.app->id;
     if (! result->count(locId)) {
-      (*result)[locId] = unordered_set<F1XID>();
+      (*result)[locId] = unordered_set<PatchID>();
     }
     (*result)[locId].insert(el.id);
   }
   return result;
+}
+
+
+bool validatePatch(Project &project,
+                   TestingFramework &tester,
+                   const std::vector<std::string> &tests,
+                   Patch &patch) {
+
+    bool appSuccess = project.applyPatch(patch);
+    if (! appSuccess) {
+      BOOST_LOG_TRIVIAL(warning) << "patch application returned non-zero code";
+    }
+    project.savePatchedFiles();
+
+    bool rebuildSuccess = project.build();
+    if (! rebuildSuccess) {
+      BOOST_LOG_TRIVIAL(warning) << "compilation with patch returned non-zero exit code";
+    }
+
+    BOOST_LOG_TRIVIAL(info) << "validating patch " << visualizePatchID(patch.id);
+    vector<string> failingTests;
+
+    for (auto &test : tests) {
+      if (tester.execute(test) != TestStatus::PASS) {
+        failingTests.push_back(test);
+      }
+    }
+
+    project.restoreOriginalFiles();
+    
+    if (!failingTests.empty()) {
+      BOOST_LOG_TRIVIAL(warning) << "generated patch failed validation";
+      for (auto &t : failingTests) {
+        BOOST_LOG_TRIVIAL(info) << "failed test: " << t;
+      }
+      return false;
+    }
+    return true;
 }
 
 
@@ -226,7 +212,9 @@ RepairStatus repair(Project &project,
 
   BOOST_LOG_TRIVIAL(info) << "applying transfomation schemas to source files";
   for (int i=0; i<project.getFiles().size(); i++) {
-    fs::path saFile = fs::path(cfg.dataDir) / getSchemaApplicationsFileName(i);
+    std::stringstream schemaAppFile;
+    schemaAppFile << APPLICATIONS_FILE_PREFIX << i << ".json";
+    fs::path saFile = fs::path(cfg.dataDir) / schemaAppFile.str();
     saFiles.push_back(saFile);
     bool instrSuccess = project.instrumentFile(project.getFiles()[i], saFile, &profile);
     if (! instrSuccess) {
@@ -253,7 +241,7 @@ RepairStatus repair(Project &project,
     sa->original = correctTypes(sa->original, context);
   }
 
-  vector<SearchSpaceElement> searchSpace;
+  vector<Patch> searchSpace;
 
   Runtime runtime;
 
@@ -281,116 +269,123 @@ RepairStatus repair(Project &project,
 
   project.restoreOriginalFiles();
 
+  unordered_map<PatchID, double> cost;
+
+  for (auto &el : searchSpace)
+    cost[el.id] = syntacticDiff(el);
+
   BOOST_LOG_TRIVIAL(info) << "prioritizing search space";
-  prioritize(searchSpace);
+  prioritize(searchSpace, cost);
 
   if (!cfg.searchSpaceFile.empty()) {
     auto path = fs::path(cfg.searchSpaceFile);
     BOOST_LOG_TRIVIAL(info) << "dumping search space: " << path;
-    dumpSearchSpace(searchSpace, path, project.getFiles());
+    vector<fs::path> filePaths;
+    for (auto &pFile: project.getFiles())
+      filePaths.push_back(pFile.relpath);
+    dumpSearchSpace(searchSpace, path, filePaths, cost);
   }
 
   SearchEngine engine(tests, tester, runtime, getPartitionable(searchSpace), relatedTestIndexes);
 
   unsigned long last = 0;
-  unsigned long patchCount = 0;
-  unordered_set<unsigned long> fixLocations;
+  unordered_set<AppID> fixLocations;
+  unordered_set<AppID> moreThanOneFound;
 
+  vector<Patch> plausiblePatches;
+
+  // generate plausible patches
   while (last < searchSpace.size()) {
     last = engine.findNext(searchSpace, last);
+    if (last == searchSpace.size())
+      break;
 
-    if (last < searchSpace.size()) {
-      //FIXME: this logic with --all may be incorrect, needs to be simplified
-      if (! cfg.generateAll && fixLocations.count(searchSpace[last].app->appId)) {
-        last++;
-        patchCount++;
-        continue;
+    Patch patch = searchSpace[last];
+
+    if (!moreThanOneFound.count(patch.app->id) || cfg.verbose) {
+      fs::path relpath = project.getFiles()[patch.app->location.fileId].relpath;
+      if (!fixLocations.count(patch.app->id) || cfg.verbose) {
+        BOOST_LOG_TRIVIAL(info) << "plausible patch: " << visualizeChange(patch) 
+                                << " in " << relpath.string() << ":" << patch.app->location.beginLine;
+      } else {
+        BOOST_LOG_TRIVIAL(info) << "more patches found in " << relpath.string() << ":" << patch.app->location.beginLine;
       }
-      
-      fs::path relpath = project.getFiles()[searchSpace[last].app->location.fileId].relpath;
-      BOOST_LOG_TRIVIAL(info) << "plausible patch: " << visualizeChange(searchSpace[last]) 
-                              << " in " << relpath.string() << ":" << searchSpace[last].app->location.beginLine;
-      
-      bool appSuccess = project.applyPatch(searchSpace[last]);
-      if (! appSuccess) {
-        BOOST_LOG_TRIVIAL(warning) << "patch application returned non-zero code";
-      }
+    }
 
-      project.savePatchedFiles();
+    //NOTE: if we generate all patches, then just save the current one and apply/validate later;
+    // if we generate a single patch, then validate now and continue search if it fails
 
+    if (! cfg.generateAll) {
       bool valid = true;
-
-      if (cfg.validatePatches) {
-        bool rebuildSuccess = project.build();
-        if (! rebuildSuccess) {
-          BOOST_LOG_TRIVIAL(warning) << "compilation with patch returned non-zero exit code";
-        }
-
-        BOOST_LOG_TRIVIAL(info) << "validating patch";
-        vector<string> failing = getFailing(tester, tests);
-
-        if (!failing.empty()) {
-          valid = false;
-          BOOST_LOG_TRIVIAL(warning) << "generated patch failed validation";
-          for (auto &t : failing) {
-            BOOST_LOG_TRIVIAL(info) << "failed test: " << t;
-          }
-        }
-
-        if (cfg.generateAll) {
-          project.restoreInstrumentedFiles();
-          project.buildWithRuntime(runtime.getHeader());
-        }
-      }
-
-      project.restoreOriginalFiles();
-
-      if (!valid) {
-        last++;
-        continue;
-      }
-
-      fs::path patchFile = patchOutput;
-      if (cfg.generateAll) {
-        if (! fs::exists(patchFile)) {
-          fs::create_directory(patchFile);
-        }
-        patchFile = patchFile / (std::to_string(patchCount) + ".patch");
-      }
-
-      patchCount++;
-      fixLocations.insert(searchSpace[last].app->appId);
-
-      unsigned fileId = searchSpace[last].app->location.fileId;
-
-      project.computeDiff(project.getFiles()[fileId], patchFile);
-
-      if (!cfg.generateAll)
+      if (cfg.validatePatches)
+        validatePatch(project, tester, tests, patch);
+      if (valid) {
+        fixLocations.insert(patch.app->id);
+        plausiblePatches.push_back(patch);
         break;
+      } else {
+        project.restoreInstrumentedFiles();
+        project.buildWithRuntime(runtime.getHeader());
+      }
+    } else {
+      if (fixLocations.count(patch.app->id))
+        moreThanOneFound.insert(patch.app->id);
+      fixLocations.insert(patch.app->id);
+      plausiblePatches.push_back(patch);
     }
 
     last++;
   }
 
-  auto coverageSet = engine.getCoverageSet();
+  // validate patches if needed
+  if (cfg.validatePatches && cfg.generateAll && plausiblePatches.size() > 0) {
+    vector<Patch> validPatches;
+    for (auto &patch : plausiblePatches) {
+      if (validatePatch(project, tester, tests, patch)) {
+        validPatches.push_back(patch);
+      }
+    }
+    plausiblePatches = validPatches;
+  }
 
-  for (auto &curTest : coverageSet) {
-    BOOST_LOG_TRIVIAL(info) << "test: " << curTest.first;
-
-    std::unordered_map<F1XID, std::shared_ptr<Coverage>> patches = curTest.second;
-
-    for(auto &curPatch : patches) {
-      BOOST_LOG_TRIVIAL(info) << "patch: " << visualizeF1XID(curPatch.first);
-      std::shared_ptr<Coverage> files = curPatch.second;
-
-      for (auto &curFile : *files) {
-        BOOST_LOG_TRIVIAL(info) << "file: " << curFile.first;
-
-        for (auto &curLine : curFile.second) {
-          BOOST_LOG_TRIVIAL(info) << "line: " << curLine;
+  if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
+    auto coverageSet = engine.getCoverageSet();
+    for (auto &testCoverage : coverageSet) {
+      BOOST_LOG_TRIVIAL(info) << "test: " << testCoverage.first;
+      std::unordered_map<PatchID, std::shared_ptr<Coverage>> patchCoverage = testCoverage.second;
+      for (auto &patch : plausiblePatches) {
+        BOOST_LOG_TRIVIAL(info) << "patch: " << visualizePatchID(patch.id);
+        Coverage coverage = *patchCoverage[patch.id];
+        for (auto &entry : coverage) {
+          BOOST_LOG_TRIVIAL(info) << "file: " << entry.first;
+          for (auto &line : entry.second) {
+            BOOST_LOG_TRIVIAL(info) << "line: " << line;
+          }
         }
       }
+    }
+  }
 
+  if (plausiblePatches.size() > 0) {
+    BOOST_LOG_TRIVIAL(info) << "computing source diffs";
+    if (! cfg.generateAll) {
+      unsigned fileId = plausiblePatches[0].app->location.fileId;
+      project.applyPatch(plausiblePatches[0]);
+      project.savePatchedFiles();
+      project.computeDiff(project.getFiles()[fileId], patchOutput);
+      project.restoreOriginalFiles();
+    } else {
+      if (! fs::exists(patchOutput)) {
+        fs::create_directory(patchOutput);
+      }
+      for (int i=0; i<plausiblePatches.size(); i++) {
+        fs::path patchFile = patchOutput / (std::to_string(i) + ".patch");
+        project.applyPatch(plausiblePatches[i]);
+        project.savePatchedFiles();
+        unsigned fileId = plausiblePatches[i].app->location.fileId;
+        project.computeDiff(project.getFiles()[fileId], patchFile);
+        project.restoreOriginalFiles();
+      }
     }
   }
 
@@ -403,10 +398,10 @@ RepairStatus repair(Project &project,
     double executionsPerSec = (stat.nonTimeoutCounter * 1000.0) / stat.nonTimeoutTestTime;
     BOOST_LOG_TRIVIAL(info) << "execution speed: " << std::setprecision(3) << executionsPerSec << " exe/sec";
   }
-  BOOST_LOG_TRIVIAL(info) << "plausible patches: " << patchCount;
+  BOOST_LOG_TRIVIAL(info) << "plausible patches: " << plausiblePatches.size();
   BOOST_LOG_TRIVIAL(info) << "fix locations: " << fixLocations.size();
 
-  if (patchCount > 0)
+  if (plausiblePatches.size() > 0)
     return RepairStatus::SUCCESS;
   else
     return RepairStatus::FAILURE;

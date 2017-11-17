@@ -33,19 +33,19 @@ const std::string RUNTIME_HEADER_FILE_NAME = "rt.h";
 
 const unsigned long MAX_PARTITION_SIZE = 1000000;
 const std::string PARTITION_FILE_NAME = "/f1x_partition";
-const F1XID INPUT_TERMINATOR = F1XID{0, 0, 0, 0, 0};
-const F1XID OUTPUT_TERMINATOR = F1XID{0, 0, 0, 0, 1};
+const PatchID INPUT_TERMINATOR = PatchID{0, 0, 0, 0, 0};
+const PatchID OUTPUT_TERMINATOR = PatchID{0, 0, 0, 0, 1};
 
 
 class Runtime {
  public:
   Runtime();
-  void setPartition(std::unordered_set<F1XID> ids);
-  std::unordered_set<F1XID> getPartition();
+  void setPartition(std::unordered_set<PatchID> ids);
+  std::unordered_set<PatchID> getPartition();
   boost::filesystem::path getSource();
   boost::filesystem::path getHeader();
   bool compile();
 
  private:
-  F1XID *partition;
+  PatchID *partition;
 };

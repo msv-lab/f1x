@@ -55,7 +55,7 @@ class Project {
   bool instrumentFile(const ProjectFile &file,
                       const boost::filesystem::path &outputFile,
                       const boost::filesystem::path *profile = nullptr);
-  bool applyPatch(const SearchSpaceElement &patch);
+  bool applyPatch(const Patch &patch);
   std::vector<ProjectFile> getFiles() const;
   void setFiles(const std::vector<ProjectFile> &files);
   std::vector<boost::filesystem::path> filesFromCompilationDB();
@@ -85,6 +85,3 @@ class TestingFramework {
   boost::filesystem::path driver;
   unsigned testTimeout;
 };
-
-
-std::vector<std::string> getFailing(TestingFramework &tester, const std::vector<std::string> &tests);

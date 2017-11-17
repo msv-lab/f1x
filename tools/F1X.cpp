@@ -152,13 +152,18 @@ int main (int argc, char *argv[]) {
   if (vm.count("cost")) {
     std::string costFunction = vm["cost"].as<string>();
 
-    if(costFunction == "syntactic-diff")
-    {
-	cfg.patchPrioritization = PatchPrioritization::SYNTACTIC_DIFF;
+    if (costFunction == "syntactic-diff") {
+      cfg.patchPrioritization = PatchPrioritization::SYNTACTIC_DIFF;
+    } else if (costFunction == "semantic-diff") {
+      cfg.patchPrioritization = PatchPrioritization::SEMANTIC_DIFF;
+      if (!vm.count("all")) {
+        cfg.generateAll = true;
+        BOOST_LOG_TRIVIAL(info) << "generating all patches to apply dynamic prioritization";
+      }
+    } else {
+      BOOST_LOG_TRIVIAL(error) << "supported cost functions: syntactic-diff, semantic-diff";
+      return ERROR_EXIT_CODE;
     }
-
-    if(costFunction == "semantic-diff")
- 	cfg.patchPrioritization = PatchPrioritization::SEMANTIC_DIFF;
   }
 
   if (vm.count("version")) {

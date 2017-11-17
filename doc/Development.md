@@ -6,7 +6,7 @@ The system consists of three main parts:
 2. Code transformation module (f1x-transform)
 3. Analysis runtime (libf1xrt.so)
 
-The repair module is responsible for running tests, maintaining search space and partitioning, and synthesizing meta-program. f1x-transform is responsible for instrumenting buggy code, applying transformation schemas to suspicious locations and applying generated patches. The analysis runtime library is responsible for computing test-equivalence partitions.
+The repair module is responsible for running tests, maintaining search space and partitioning, and synthesizing analysis runtime. f1x-transform is responsible for instrumenting buggy code, applying transformation schemas to suspicious locations and applying generated patches. The analysis runtime library is responsible for computing test-equivalence partitions.
 
 ## Repair workflow ##
 
@@ -19,11 +19,11 @@ The entire search space is explicitly represented as a C++ vector `searchSpace` 
 The following data structures are used for search space representation (in `repair/Core.h`):
 
 - `TransformationSchema` is a high-level transformation rule (e.g. adding guard)
-- `ModificationKind` is a kind of expression modification (e.g. operator replacement)
+- `SynthesisRule` is a kind of expression modification (e.g. operator replacement)
 - `SchemaApplication` is an application of a schema to a program location
-- `SearchSpaceElement` is a concrete patch
+- `Patch` is a concrete patch
 
-Search space elements are assigned unique identifiers. Each application of a transformation schema is identified using a positive integer `f1xapp`. Each candidate patch is transparently identified using five positive integers: `f1xid_base`, `f1xid_int2`, `f1xid_bool2`, `f1xid_comp3`, `f1xid_param`. These integers are used by the synthesizer and the runtime to encode the structure of synthesized expressions.
+Search space elements are assigned unique identifiers. Each application of a transformation schema is identified using a positive integer `f1xapp`. Each candidate patch is transparently identified using five positive integers: `f1xid_base`, `f1xid_int2`, `f1xid_bool2`, `f1xid_comp3`, `f1xid_param` (`PatchId` data structure in `repair/Core.h`) .
 
 ## Runtime ##
 

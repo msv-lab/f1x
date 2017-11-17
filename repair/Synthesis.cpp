@@ -273,7 +273,7 @@ namespace synthesis {
     vector<pair<Expression, PatchMetadata>> result;
     if (expr.type == Type::BOOLEAN) {
       //TODO: distance computation
-      auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, substitutionDistance(expr, BOOL2_NODE)};
+      auto meta = PatchMetadata{SynthesisRule::SUBSTITUTION, substitutionDistance(expr, BOOL2_NODE)};
       result.push_back(make_pair(BOOL2_NODE, meta));
     }
     if (expr.args.size() == 0) {
@@ -281,11 +281,11 @@ namespace synthesis {
         if (expr.type == Type::INTEGER) {
           for (auto &c : components) {
             if (c.type == Type::INTEGER) {
-              auto meta = PatchMetadata{ModificationKind::GENERALIZATION, ATOMIC_EDIT};
+              auto meta = PatchMetadata{SynthesisRule::GENERALIZATION, ATOMIC_EDIT};
               result.push_back(make_pair(c, meta));
             }
           }
-          auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+          auto meta = PatchMetadata{SynthesisRule::SUBSTITUTION, ATOMIC_EDIT};
           result.push_back(make_pair(PARAMETER_NODE, meta));
         }
       } else if (expr.kind == NodeKind::VARIABLE ||
@@ -293,21 +293,21 @@ namespace synthesis {
         if (expr.type == Type::INTEGER) {
           for (auto &c : components) {
             if (c.type == Type::INTEGER) {
-              auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+              auto meta = PatchMetadata{SynthesisRule::SUBSTITUTION, ATOMIC_EDIT};
               result.push_back(make_pair(c, meta));
             }
           }
-          auto meta = PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT};
+          auto meta = PatchMetadata{SynthesisRule::CONCRETIZATION, ATOMIC_EDIT};
           result.push_back(make_pair(PARAMETER_NODE, meta));
         }
         if (expr.type == Type::POINTER) {
           for (auto &c : components) {
             if (c.type == Type::POINTER && expr.rawType == c.rawType) {
-              auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+              auto meta = PatchMetadata{SynthesisRule::SUBSTITUTION, ATOMIC_EDIT};
               result.push_back(make_pair(c, meta));
             }
           }
-          auto meta = PatchMetadata{ModificationKind::CONCRETIZATION, ATOMIC_EDIT};
+          auto meta = PatchMetadata{SynthesisRule::CONCRETIZATION, ATOMIC_EDIT};
           result.push_back(make_pair(NULL_NODE, meta));
         }
       }
@@ -322,7 +322,7 @@ namespace synthesis {
         Expression e = expr;
         e.op = m;
         e.repr = operatorToString(m);
-        auto meta = PatchMetadata{ModificationKind::OPERATOR, ATOMIC_EDIT};
+        auto meta = PatchMetadata{SynthesisRule::OPERATOR, ATOMIC_EDIT};
         result.push_back(make_pair(std::move(e), meta));
       }
 
@@ -334,7 +334,7 @@ namespace synthesis {
         if (isSimplifiable(expr)) {
           Expression argCopy = expr.args[0];
           //TODO: distance computation
-          auto meta = PatchMetadata{ModificationKind::SIMPLIFICATION, ATOMIC_EDIT};
+          auto meta = PatchMetadata{SynthesisRule::SIMPLIFICATION, ATOMIC_EDIT};
           result.push_back(make_pair(argCopy, meta));
         }
       } else if (expr.args.size() == 2) {
@@ -353,8 +353,8 @@ namespace synthesis {
           Expression leftCopy = expr.args[0];
           Expression rightCopy = expr.args[1];
           //TODO: distance computation
-          auto leftMeta = PatchMetadata{ModificationKind::SIMPLIFICATION, expressionDepth(rightCopy)};
-          auto rightMeta = PatchMetadata{ModificationKind::SIMPLIFICATION, expressionDepth(leftCopy)};
+          auto leftMeta = PatchMetadata{SynthesisRule::SIMPLIFICATION, expressionDepth(rightCopy)};
+          auto rightMeta = PatchMetadata{SynthesisRule::SIMPLIFICATION, expressionDepth(leftCopy)};
           result.push_back(make_pair(leftCopy, leftMeta));
           result.push_back(make_pair(rightCopy, rightMeta));
         }
@@ -367,24 +367,24 @@ namespace synthesis {
                                                             const Expression &expr,
                                                             const vector<Expression> &components) {
     vector<pair<Expression, PatchMetadata>> baseModifications;
-    auto bool2Meta = PatchMetadata{ModificationKind::SUBSTITUTION, expressionDepth(BOOL2_NODE)};
+    auto bool2Meta = PatchMetadata{SynthesisRule::SUBSTITUTION, expressionDepth(BOOL2_NODE)};
     switch (schema) {
     case TransformationSchema::EXPRESSION:
       baseModifications = baseSubstitutions(expr, components);
       if (expr.type == Type::BOOLEAN) {
-        auto looseningMeta = PatchMetadata{ModificationKind::LOOSENING, expressionDepth(BOOL2_NODE)};
+        auto looseningMeta = PatchMetadata{SynthesisRule::LOOSENING, expressionDepth(BOOL2_NODE)};
         baseModifications.push_back(make_pair(applyBoolOperator(Operator::OR, expr, BOOL2_NODE), looseningMeta));
-        auto tighteningMeta = PatchMetadata{ModificationKind::TIGHTENING, expressionDepth(BOOL2_NODE)};
+        auto tighteningMeta = PatchMetadata{SynthesisRule::TIGHTENING, expressionDepth(BOOL2_NODE)};
         baseModifications.push_back(make_pair(applyBoolOperator(Operator::AND, expr, BOOL2_NODE), tighteningMeta));
       }
       break;
     case TransformationSchema::IF_GUARD:
       if (expr.repr == TRUE_NODE.repr) {
-        auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+        auto meta = PatchMetadata{SynthesisRule::SUBSTITUTION, ATOMIC_EDIT};
         baseModifications.push_back(make_pair(FALSE_NODE, meta));
       }
       if (expr.repr == FALSE_NODE.repr) {
-        auto meta = PatchMetadata{ModificationKind::SUBSTITUTION, ATOMIC_EDIT};
+        auto meta = PatchMetadata{SynthesisRule::SUBSTITUTION, ATOMIC_EDIT};
         baseModifications.push_back(make_pair(TRUE_NODE, meta));
       }
       //TODO: compute distance
@@ -680,17 +680,17 @@ namespace generator {
     }
   }
 
-  vector<pair<F1XID, Expression>> generateParameterInstances(const F1XID &partialId,
-                                                             const Expression &expression,
-                                                             const unsigned long &paramBound) {
-    vector<pair<F1XID, Expression>> result;
+  vector<pair<PatchID, Expression>> generateParameterInstances(const PatchID &partialId,
+                                                               const Expression &expression,
+                                                               const unsigned long &paramBound) {
+    vector<pair<PatchID, Expression>> result;
     return result;
   }
 
   void candidateDispatch(shared_ptr<SchemaApplication> sa,
                                 unsigned long &baseId,
                                 std::ostream &OS,
-                                vector<SearchSpaceElement> &ss) {
+                                vector<Patch> &ss) {
     unordered_map<string, string> runtimeReprBySource = runtimeRenaming(sa);
     unordered_map<string, string> sizeByType = typeSizes(sa);
     unordered_map<string, string> nullDerefByName = nullDerefCondition(sa, runtimeReprBySource);
@@ -728,22 +728,22 @@ namespace generator {
       PatchMetadata metadata = candidate.second;
       substituteWithRuntimeRepr(runtimeExpr, runtimeReprBySource);
 
-      F1XID partialId{0};
+      PatchID partialId{0};
       partialId.base = baseId;
 
       OS << "case " << partialId.base << ":" << "\n"
          << "base_value = " << runtimeSemantics(runtimeExpr, sizeByType, nullDerefByName) << ";" << "\n"
          << "break;" << "\n";
       
-      stack<pair<F1XID, Expression>> parametrizedCandidates;
+      stack<pair<PatchID, Expression>> parametrizedCandidates;
       parametrizedCandidates.push(std::make_pair(partialId, candidate.first));
       
       while (!parametrizedCandidates.empty()) {
-        pair<F1XID, Expression> current = parametrizedCandidates.top();
+        pair<PatchID, Expression> current = parametrizedCandidates.top();
         parametrizedCandidates.pop();
         if (hasNodeOfKind(current.second, NodeKind::BOOL2)) {
           for (int i = 0; i < bool2Expressions.size(); i++) {
-            F1XID instanceId = current.first;
+            PatchID instanceId = current.first;
             instanceId.bool2 = i + 1; // 0 means disabled
             Expression instance = current.second;
             substituteNodeOfKind(instance, NodeKind::BOOL2, bool2Expressions[i]);
@@ -751,14 +751,14 @@ namespace generator {
           }
         } else if (hasNodeOfKind(current.second, NodeKind::PARAMETER)) {
           for (int i = 0; i <= paramBound; i++) {
-            F1XID instanceId = current.first;
+            PatchID instanceId = current.first;
             instanceId.param = i;
             Expression instance = current.second;
             substituteNodeOfKind(instance, NodeKind::PARAMETER, makeIntegerConst(i));
-            ss.push_back(SearchSpaceElement{instanceId, sa, instance, metadata});
+            ss.push_back(Patch{instanceId, sa, instance, metadata});
           }
         } else {
-          ss.push_back(SearchSpaceElement{current.first, sa, current.second, metadata});
+          ss.push_back(Patch{current.first, sa, current.second, metadata});
         }
       }
       
@@ -770,7 +770,7 @@ namespace generator {
 
   void partitioningFunctions(const vector<shared_ptr<SchemaApplication>> &schemaApplications,
                              std::ostream &OS,
-                             vector<SearchSpaceElement> &searchSpace) {
+                             vector<Patch> &searchSpace) {
 
     OS << "#include \"rt.h\"" << "\n"
        << "#include <stdlib.h>" << "\n"
@@ -866,7 +866,7 @@ namespace generator {
 }
 
 
-vector<SearchSpaceElement> 
+vector<Patch> 
 generateSearchSpace(const vector<shared_ptr<SchemaApplication>> &schemaApplications,
                     std::ostream &OS,
                     std::ostream &OH) {
@@ -898,7 +898,7 @@ generateSearchSpace(const vector<shared_ptr<SchemaApplication>> &schemaApplicati
 
   // source
 
-  vector<SearchSpaceElement> searchSpace;
+  vector<Patch> searchSpace;
   
   generator::partitioningFunctions(schemaApplications, OS, searchSpace);  
 

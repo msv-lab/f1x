@@ -44,7 +44,7 @@
   append || A (&& A) = depth(A) 
  */
 
-std::vector<SearchSpaceElement>
+std::vector<Patch>
 generateSearchSpace(const std::vector<std::shared_ptr<SchemaApplication>> &schemaApplications,
                     std::ostream &OS,
                     std::ostream &OH);

@@ -19,6 +19,7 @@ add_library (f1xRepair
   Global.cpp
   Typing.cpp
   Util.cpp
+  Prioritization.cpp  
   Project.cpp
   Profiler.cpp
   Runtime.cpp
