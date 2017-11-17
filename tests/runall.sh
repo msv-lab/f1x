@@ -98,6 +98,9 @@ get-cmd () {
         multifile)
             echo "f1x --files program.c lib.c --driver test.sh --tests n1 p1 p2 --test-timeout 1000"
             ;;
+        localization)
+            echo "f1x --localize 1 --driver test.sh --tests n1 n2 n3 --test-timeout 1000"
+            ;;
         *)
             exit 1
             ;;

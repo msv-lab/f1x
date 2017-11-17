@@ -76,7 +76,7 @@ For tests written in Bash, this can be achieved by simply placing `$F1X_RUN` in 
 
 You may choose not to instrument tests with `F1X_RUN` if you (1) disable assignment synthesis (`--disable-assignment` option), (2) manually specify suspicious files (`--files` option), (3) do not use dynamic patch prioritization.
 
-By default, f1x compiles the project using gcc/g++. The compilers can be redefined through `F1X_PROJECT_CC` and `F1X_PROJECT_CXX` environment variables.
+By default, f1x compiles the project using gcc/g++. The compilers can be redefined through `F1X_PROJECT_CC` and `F1X_PROJECT_CXX` environment variables. If the project compiler is clang, it is recommended to switch from gcov to llvm-cov using `--enable-llvm-cov` option.
 
 ### Side effects ###
 

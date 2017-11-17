@@ -85,6 +85,7 @@ boost::filesystem::path Runtime::getSource() {
 return fs::path(cfg.dataDir) / RUNTIME_SOURCE_FILE_NAME;
 }
 
+// FIXME: this should probably be built using F1X_PROJECT_CC instead of hard-coded compiler
 bool Runtime::compile() {
   BOOST_LOG_TRIVIAL(info) << "compiling analysis runtime";
   FromDirectory dir(fs::path(cfg.dataDir));

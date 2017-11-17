@@ -203,7 +203,7 @@ vector<fs::path> FaultLocalization::localize(vector<fs::path> allFiles) {
   
   for (length = 0;
        length < allFiles.size()
-         && length <= cfg.filesToLocalize
+         && length < cfg.filesToLocalize
          && fileScore[allFiles[length].string()] > 0.0;
        length++) {}
 

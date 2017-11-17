@@ -130,9 +130,9 @@ shared_ptr<unordered_map<unsigned long, unordered_set<F1XID>>> getPartitionable(
 
 
 RepairStatus repair(Project &project,
-            TestingFramework &tester,
-            const std::vector<std::string> &tests,
-            const boost::filesystem::path &patchOutput) {
+                    TestingFramework &tester,
+                    const std::vector<std::string> &tests,
+                    const boost::filesystem::path &patchOutput) {
 
   pair<bool, bool> initialBuildStatus = project.initialBuild();
   if (! initialBuildStatus.first) {

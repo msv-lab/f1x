@@ -121,8 +121,8 @@ int main (int argc, char *argv[]) {
     ("verbose,v", "produce extended output")
     ("help,h", "produce help message and exit")
     ("version", "print version and exit")
-    ("dump-stat", po::value<string>()->value_name("PATH"), "output execution statistics")
-    ("dump-space", po::value<string>()->value_name("PATH"), "[DEBUG] output search space")
+    ("output-stat", po::value<string>()->value_name("PATH"), "output execution statistics")
+    ("output-space", po::value<string>()->value_name("PATH"), "[DEBUG] output search space")
     ("enable-cleanup", "remove intermediate data")
     ("enable-metadata", "output patch metadata")
     ("enable-validation", "validate found patches")
@@ -205,9 +205,21 @@ int main (int argc, char *argv[]) {
     cfg.addGuards = false;
   }
 
-  if (vm.count("dump-space")) {
-    cfg.searchSpaceFile = fs::absolute(vm["dump-space"].as<string>()).string();
+  if (vm.count("output-space")) {
+    cfg.searchSpaceFile = fs::absolute(vm["output-space"].as<string>()).string();
   }
+
+  if (!vm.count("tests")) {
+    BOOST_LOG_TRIVIAL(error) << "tests are not specified (use --help)";
+    return ERROR_EXIT_CODE;
+  }
+  tests = vm["tests"].as<vector<string>>();
+
+  if (!vm.count("driver")) {
+    BOOST_LOG_TRIVIAL(error) << "test driver is not specified (use --help)";
+    return ERROR_EXIT_CODE;
+  }
+  driver = fs::absolute(vm["driver"].as<string>());
 
   if (!vm.count("test-timeout")) {
     BOOST_LOG_TRIVIAL(error) << "test execution timeout is not specified (use --help)";
@@ -228,18 +240,6 @@ int main (int argc, char *argv[]) {
       return ERROR_EXIT_CODE;    
     }
   }
-
-  if (!vm.count("tests")) {
-    BOOST_LOG_TRIVIAL(error) << "tests are not specified (use --help)";
-    return ERROR_EXIT_CODE;    
-  }
-  tests = vm["tests"].as<vector<string>>();
-
-  if (!vm.count("driver")) {
-    BOOST_LOG_TRIVIAL(error) << "test driver is not specified (use --help)";
-    return ERROR_EXIT_CODE;    
-  }
-  driver = fs::absolute(vm["driver"].as<string>());
 
   if (vm.count("build")) {
     buildCmd = vm["build"].as<string>();
