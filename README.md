@@ -12,10 +12,10 @@ f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs.
 
 ## How does it work? ##
 
-f1x generates bug fixes by enumerating and testing a large number of source code changes. Suppose we have a buggy program `p` and a set of tests `[t1, t2, t3, t4, ...]`. f1x generates a space of modifications `[p1, p2, p3, p4, ...]` and test each of these programs until it finds one that passes all the tests. In the other words, it fills the following table:
+f1x generates bug fixes by enumerating and testing a large number of source code changes. Suppose we have a buggy program `p` and a set of tests `[t1, t2, t3, t4, ...]`. f1x generates a space of modifications `[p1, p2, p3, p4, ...]` and validates each of these programs until it finds one that passes all the tests. In the other words, it fills the following table:
 
-|    | t1 | t2 | t3 | t4 | t5 | ...
-|----|----|----|----|----|----|----
+|    | t1   | t2   | t3   | t4   | ...
+|----|------|------|------|------|----
 | p1 | Pass | Pass | Pass | Fail
 | p2 | Fail | Fail | Pass | Fail
 | p3 | Pass | Pass | Pass | Pass
@@ -24,12 +24,12 @@ f1x generates bug fixes by enumerating and testing a large number of source code
 
 As has been shown in previous research, this approach has two shortcomings:
 
-* ***Efficiency***. Testing a large number of patches can be very time-consuming.
-* ***Overfitting***. Even if a patch passes all the tests, it may still be incorrect.
+* Efficiency: testing a large number of patches can be very time-consuming.
+* Overfitting: even if a patch passes all the tests, it may still be incorrect.
 
-In order to address the efficiency issue, f1x uses test-equivalence analyses in order to group patches that produce the same results on a given test. For example, after executing the program `p1` with the test `t2`, it can detect that `p3` has the same result on `t2` as `p1` and skip a redundant execution of `p3` on `t2`. As a result, f1x tests around 1000 different patches in a single test execution.
+To improve efficiency, f1x applies ***test-equivalence*** analyses to group patches that produce the same result on a given test. For example, after executing the program `p1` with the test `t2`, it can detect that `p3` has the same result on `t2` as `p1` and skip a redundant execution of `p3` on `t2`. As a result, f1x validates around 1000 different patches in a single test execution.
 
-In order to address the overfitting issue, f1x allows to prioritize patches. It assigns a cost (a rational number) to each patch and searches for a patch with the lowest cost. For example, if both `p3` and `p6` pass all the tests, but `cost(p6) < cost(p3)`, then f1x outputs `p6` as the result. f1x supports both static (source code-based) and dynamic (execution-based) cost functions.
+To address overfitting, f1x allows to ***prioritize*** patches. It assigns a cost (a rational number) to each patch and searches for a patch with the lowest cost. For example, if both `p3` and `p6` pass all the tests, but `cost(p6) < cost(p3)`, then f1x outputs `p6` as the result. f1x supports both static (source code-based) and dynamic (execution-based) cost functions.
 
 ## Documentation ##
 
@@ -39,7 +39,7 @@ To get started, please go though [Tutorial](doc/Tutorial.md). More detailed info
 ## Evaluation ##
 
 f1x has been evaluated on main automated program repair benchmarks.
-We provide a [benchmarking infrastructure](doc/Benchmarking.md) and instantly available environments for reproducing the results.
+We provide a [benchmarking infrastructure](doc/Benchmarking.md) and instantly available environments for reproducing our experiments.
 The following data is obtained with `f1x 0.1`:
 
 | Benchmark | Defects | Plausible patches | Correct patches | Avg. time | Reproduction package 
@@ -51,5 +51,6 @@ The following data is obtained with `f1x 0.1`:
 
 * Abhik Roychoudhury, Professor, Principal investigator
 * Sergey Mechtaev, PhD student, Developer
-* Gao Xiang, PhD student, Developer
+* Gao Xiang, PhD student, Contributor
 * Shin Hwei Tan, PhD Student, Contributor
+* Edwin Lesmana Tjiong, Contributor
