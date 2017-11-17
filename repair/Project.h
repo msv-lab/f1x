@@ -46,7 +46,6 @@ class Project {
   void saveOriginalFiles();
   void saveInstrumentedFiles();
   void saveProfileInstumentedFiles();
-  void savePatchedFiles();
   void restoreOriginalFiles();
   void restoreInstrumentedFiles();
   void deleteCoverageFiles();
@@ -63,6 +62,7 @@ class Project {
  private:
   std::vector<ProjectFile> files;
   std::string buildCmd;
+  boost::filesystem::path patchTemplateDir;
 
   void saveFilesWithPrefix(const std::string &prefix);
   void restoreFilesWithPrefix(const std::string &prefix);

@@ -86,8 +86,6 @@ bool validatePatch(Project &project,
     if (! appSuccess) {
       BOOST_LOG_TRIVIAL(warning) << "patch application returned non-zero code";
     }
-    project.savePatchedFiles();
-
     bool rebuildSuccess = project.build();
     if (! rebuildSuccess) {
       BOOST_LOG_TRIVIAL(warning) << "compilation with patch returned non-zero exit code";
@@ -140,6 +138,10 @@ RepairStatus repair(Project &project,
     FaultLocalization faultLocal(tests,tester);
     vector<fs::path> allFiles = project.filesFromCompilationDB();
     vector<fs::path> localized = faultLocal.localize(allFiles);
+    if (localized.size() == 0) {
+      BOOST_LOG_TRIVIAL(warning) << "no files localized";
+      return RepairStatus::FAILURE;
+    }
     BOOST_LOG_TRIVIAL(info) << "number of localized files: " << localized.size();
     std::vector<ProjectFile> projectFiles;
     for (auto &file : localized) {
@@ -201,7 +203,8 @@ RepairStatus repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "number of negative tests: " << numNegative;
   BOOST_LOG_TRIVIAL(info) << "negative tests: " << prettyPrintTests(negativeTests);
 
-  project.deleteCoverageFiles();
+  if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF)
+    project.deleteCoverageFiles();
  
   fs::path profile = profiler.getProfile();
 
@@ -371,7 +374,6 @@ RepairStatus repair(Project &project,
     if (! cfg.generateAll) {
       unsigned fileId = plausiblePatches[0].app->location.fileId;
       project.applyPatch(plausiblePatches[0]);
-      project.savePatchedFiles();
       project.computeDiff(project.getFiles()[fileId], patchOutput);
       project.restoreOriginalFiles();
     } else {
@@ -381,7 +383,6 @@ RepairStatus repair(Project &project,
       for (int i=0; i<plausiblePatches.size(); i++) {
         fs::path patchFile = patchOutput / (std::to_string(i) + ".patch");
         project.applyPatch(plausiblePatches[i]);
-        project.savePatchedFiles();
         unsigned fileId = plausiblePatches[i].app->location.fileId;
         project.computeDiff(project.getFiles()[fileId], patchFile);
         project.restoreOriginalFiles();

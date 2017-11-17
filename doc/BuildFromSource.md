@@ -1,6 +1,6 @@
 # Building f1x from source #
 
-Install dependencies (GCC, G++, Make, Boost.Filesystem, Boost.Program_options, Boost.Log, Gcovr, diff):
+Install dependencies (GCC, G++, Make, Boost.Filesystem, Boost.Program_options, Boost.Log, Gcovr, diff, patch):
 
     # Ubuntu:
     sudo apt-get install build-essential gcovr zlib1g-dev libtinfo-dev

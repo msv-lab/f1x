@@ -42,6 +42,27 @@ using std::map;
 using std::shared_ptr;
 
 
+const string PLACEHOLDER = "F1X_EXPRESSION_PLACEHOLDER";
+
+
+void replacePlaceholderInFile(const fs::path &file, const string replacement) {
+  fs::path replacementFile = fs::path(cfg.dataDir) / "replacement.c";
+  {
+    fs::ifstream in(file);
+    fs::ofstream out(replacementFile);
+    string line;
+    size_t len = PLACEHOLDER.length();
+    while (getline(in, line)) {
+      size_t pos = line.find(PLACEHOLDER);
+      if (pos != string::npos)
+        line.replace(pos, len, replacement);
+      out << line << '\n';
+    }
+  }
+  fs::rename(replacementFile, file);
+}
+
+
 bool projectFilesInCompileDB(vector<ProjectFile> files) {
   fs::path compileDB("compile_commands.json");
   json::Document db;
@@ -118,6 +139,8 @@ Project::Project(const std::vector<ProjectFile> &files,
   files(files),
   buildCmd(buildCmd) {
   saveOriginalFiles();
+  patchTemplateDir = fs::path(cfg.dataDir) / "templates";
+  fs::create_directory(patchTemplateDir);
   }
 
 Project::~Project() {
@@ -239,9 +262,6 @@ void Project::saveProfileInstumentedFiles() {
   saveFilesWithPrefix("profile_instrumented");
 }
 
-void Project::savePatchedFiles() {
-  saveFilesWithPrefix("patched");
-}
 
 void Project::restoreOriginalFiles() {
   restoreFilesWithPrefix("original");
@@ -327,26 +347,40 @@ unsigned Project::getFileId(const ProjectFile &file) {
 }
 
 bool Project::applyPatch(const Patch &patch) {
+  bool success = true;
   BOOST_LOG_TRIVIAL(debug) << "applying patch";
-  unsigned beginLine = patch.app->location.beginLine;
-  unsigned beginColumn = patch.app->location.beginColumn;
-  unsigned endLine = patch.app->location.endLine;
-  unsigned endColumn = patch.app->location.endColumn;
-  std::stringstream cmd;
-  cmd << "f1x-transform " << files[patch.app->location.fileId].relpath.string() << " --apply"
-      << " --bl " << beginLine
-      << " --bc " << beginColumn
-      << " --el " << endLine
-      << " --ec " << endColumn
-      << " --patch " << "\"" << expressionToString(patch.modified) << "\"";
-  if (cfg.verbose) {
-    cmd << " >&2";
+  fs::path patchTemplate = patchTemplateDir / (std::to_string(patch.app->id) + ".patch");
+  if (fs::exists(patchTemplate)) {
+    string cmd = "patch -p1 < " + patchTemplate.string() + " >/dev/null 2>&1";
+    BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd;
+    unsigned long status = std::system(cmd.c_str());
+    success = (WEXITSTATUS(status) == 0);
   } else {
-    cmd << " >/dev/null 2>&1";
+    unsigned beginLine = patch.app->location.beginLine;
+    unsigned beginColumn = patch.app->location.beginColumn;
+    unsigned endLine = patch.app->location.endLine;
+    unsigned endColumn = patch.app->location.endColumn;
+    std::stringstream cmd;
+    cmd << "f1x-transform " << files[patch.app->location.fileId].relpath.string() << " --apply"
+        << " --bl " << beginLine
+        << " --bc " << beginColumn
+        << " --el " << endLine
+        << " --ec " << endColumn
+        << " --patch " << "\"" << PLACEHOLDER << "\"";
+    if (cfg.verbose) {
+      cmd << " >&2";
+    } else {
+      cmd << " >/dev/null 2>&1";
+    }
+    BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
+    unsigned long status = std::system(cmd.str().c_str());
+    success = (WEXITSTATUS(status) == 0);
+    saveFilesWithPrefix("patched");
+    computeDiff(files[patch.app->location.fileId], patchTemplate);
   }
-  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
-  unsigned long status = std::system(cmd.str().c_str());
-  return WEXITSTATUS(status) == 0;
+  replacePlaceholderInFile(files[patch.app->location.fileId].relpath, expressionToString(patch.modified));
+  saveFilesWithPrefix("patched");
+  return success;
 }
 
 vector<fs::path> Project::filesFromCompilationDB() {

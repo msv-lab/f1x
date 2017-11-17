@@ -298,10 +298,9 @@ int main (int argc, char *argv[]) {
     }
     return SUCCESS_EXIT_CODE;
   case RepairStatus::FAILURE:
-    BOOST_LOG_TRIVIAL(info) << "failed to find a patch";
+    BOOST_LOG_TRIVIAL(info) << "no patch found";
     return FAILURE_EXIT_CODE;
   case RepairStatus::ERROR:
-    BOOST_LOG_TRIVIAL(info) << "error occurred during search";
     return ERROR_EXIT_CODE;
   case RepairStatus::NO_NEGATIVE_TESTS:
     BOOST_LOG_TRIVIAL(info) << "nothing to do";
