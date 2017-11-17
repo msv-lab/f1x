@@ -40,13 +40,14 @@ const unsigned NO_NEGATIVE_TESTS_EXIT_CODE=123;
 
 
 enum class TestPrioritization {
-  FIXED_ORDER,      // first run failing, then passing tests
-  MAX_FAILING       // dynamically prioritize tests based on previous failures
+  FIXED_ORDER, // first run failing, then passing tests
+  MAX_FAILING  // dynamically prioritize tests based on previous failures
 };
 
+
 enum class PatchPrioritization {
-  SYNTACTIC_DIFF,   	//patches that are syntactically closer to the original program are assigned lower cost
-  SEMANTIC_DIFF		//patches that produce execution traces closer to the execution traces of the original program are assigned lower cost
+  SYNTACTIC_DIFF, //patches that are syntactically closer to the original program are assigned lower cost
+  SEMANTIC_DIFF   //patches that produce execution traces closer to the execution traces of the original program are assigned lower cost
 };
 
 

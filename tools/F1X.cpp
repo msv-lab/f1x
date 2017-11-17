@@ -127,6 +127,7 @@ int main (int argc, char *argv[]) {
     ("enable-metadata", "output patch metadata")
     ("enable-validation", "validate found patches")
     ("enable-assignment", "synthesize assignments")
+    ("enable-llvm-cov", "use llvm-cov instead of gcov")
     ("disable-guard", "don't synthesize guards")
     ("disable-vteq", "[DEBUG] don't apply value-based analysis")
     ("disable-dteq", "[DEBUG] don't apply dependency-based analysis")
@@ -186,6 +187,10 @@ int main (int argc, char *argv[]) {
 
   if (vm.count("enable-validation")) {
     cfg.validatePatches = true;
+  }
+
+  if (vm.count("enable-llvm-cov")) {
+    cfg.useLLVMCov = true;
   }
 
   if (vm.count("disable-vteq")) {

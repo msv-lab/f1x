@@ -215,14 +215,7 @@ RepairStatus repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "number of negative tests: " << numNegative;
   BOOST_LOG_TRIVIAL(info) << "negative tests: " << prettyPrintTests(negativeTests);
 
-  //To delete coverage files
-  std::stringstream cmdGcovr;
-  cmdGcovr << "gcovr --delete --gcov-executable=f1x-llvm-cov --xml";
-  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmdGcovr.str();
-  unsigned long status = std::system(cmdGcovr.str().c_str());
-  if (WEXITSTATUS(status) != 0) {
-    BOOST_LOG_TRIVIAL(error) << "gcovr deletion failed";
-  }
+  project.deleteCoverageFiles();
  
   fs::path profile = profiler.getProfile();
 
@@ -371,7 +364,7 @@ RepairStatus repair(Project &project,
       unsigned fileId = searchSpace[last].app->location.fileId;
 
       project.computeDiff(project.getFiles()[fileId], patchFile);
-      
+
       if (!cfg.generateAll)
         break;
     }
@@ -379,31 +372,27 @@ RepairStatus repair(Project &project,
     last++;
   }
 
+  auto coverageSet = engine.getCoverageSet();
+
   for (auto &curTest : coverageSet) {
-     BOOST_LOG_TRIVIAL(info) << "Test ID: " + curTest.first;
+    BOOST_LOG_TRIVIAL(info) << "test: " << curTest.first;
 
-     std::unordered_map<F1XID, std::shared_ptr<Coverage>> patches = curTest.second;
+    std::unordered_map<F1XID, std::shared_ptr<Coverage>> patches = curTest.second;
 
-     for(auto &curPatch : patches) {
-        BOOST_LOG_TRIVIAL(info) << "Patch ID: Base: " + std::to_string(curPatch.first.base) +
-                     ", Int2: " + std::to_string(curPatch.first.int2) +
-                     ", Bool2: " + std::to_string(curPatch.first.bool2) +
-                     ", Cond3: " + std::to_string(curPatch.first.cond3) +
-                     ", Param: " + std::to_string(curPatch.first.param) << std::endl;
+    for(auto &curPatch : patches) {
+      BOOST_LOG_TRIVIAL(info) << "patch: " << visualizeF1XID(curPatch.first);
+      std::shared_ptr<Coverage> files = curPatch.second;
 
-        std::shared_ptr<Coverage> files = curPatch.second;
+      for (auto &curFile : *files) {
+        BOOST_LOG_TRIVIAL(info) << "file: " << curFile.first;
 
-        for (auto &curFile : *files) {
-            BOOST_LOG_TRIVIAL(info) << "Cur File: " + curFile.first << std::endl;
-
-            for (auto &curLine : curFile.second) {
-                BOOST_LOG_TRIVIAL(info) << "Line No: " + curLine << std::endl;
-            }
+        for (auto &curLine : curFile.second) {
+          BOOST_LOG_TRIVIAL(info) << "line: " << curLine;
         }
+      }
 
-     }
+    }
   }
-
 
   SearchStatistics stat = engine.getStatistics();
 

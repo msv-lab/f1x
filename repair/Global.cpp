@@ -39,7 +39,6 @@ struct Config cfg = {
   /* dependencyTEQ          = */ true,
   /* testPrioritization     = */ TestPrioritization::MAX_FAILING,
   /* patchPrioritization    = */ PatchPrioritization::SYNTACTIC_DIFF,
-  /* filesToLocalize        = */ 10
+  /* filesToLocalize        = */ 10,
+  /* useLLVMCov             = */ false
 };
-
-

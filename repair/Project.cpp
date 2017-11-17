@@ -251,6 +251,19 @@ void Project::restoreInstrumentedFiles() {
   restoreFilesWithPrefix("instrumented");
 }
 
+void Project::deleteCoverageFiles() {
+  std::stringstream cmdGcovr;
+  cmdGcovr << "gcovr --delete";
+  if (cfg.useLLVMCov)
+    cmdGcovr << " --gcov-executable=f1x-llvm-cov";
+  cmdGcovr << " >/dev/null 2>&1";
+  BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmdGcovr.str();
+  unsigned long status = std::system(cmdGcovr.str().c_str());
+  if (WEXITSTATUS(status) != 0) {
+    BOOST_LOG_TRIVIAL(warning) << "failed to delete coverage files";
+  }
+}
+
 void Project::computeDiff(const ProjectFile &file,
                           const fs::path &output) {
   {

@@ -42,6 +42,7 @@ struct Config {
   TestPrioritization testPrioritization;
   PatchPrioritization patchPrioritization;
   unsigned filesToLocalize;
+  bool useLLVMCov;
 };
 
 

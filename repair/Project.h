@@ -49,6 +49,7 @@ class Project {
   void savePatchedFiles();
   void restoreOriginalFiles();
   void restoreInstrumentedFiles();
+  void deleteCoverageFiles();
   void computeDiff(const ProjectFile &file,
                    const boost::filesystem::path &outputFile);
   bool instrumentFile(const ProjectFile &file,

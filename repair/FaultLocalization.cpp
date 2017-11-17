@@ -32,7 +32,10 @@ Coverage extractAndSaveCoverage(fs::path coverageFile) {
   Coverage coverage;
 
   std::stringstream cmd;
-  cmd << "gcovr --delete --gcov-executable=f1x-llvm-cov --xml --output=" << coverageFile.string() << " >/dev/null 2>&1";
+  cmd << "gcovr --delete --xml --output=" << coverageFile.string();
+  if (cfg.useLLVMCov)
+    cmd << " --gcov-executable=f1x-llvm-cov";
+  cmd << " >/dev/null 2>&1";
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   unsigned long status = std::system(cmd.str().c_str());
   if (WEXITSTATUS(status) != 0) {
