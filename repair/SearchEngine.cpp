@@ -105,8 +105,13 @@ unsigned long SearchEngine::findNext(const std::vector<SearchSpaceElement> &sear
       auto test = tests[testOrder[orderIdx]];
 
       if (cfg.valueTEQ) {
+
+	//check if previously there has been equivalent partition that pass this test
         if (passing[test].count(elem.id))
+	{
           continue;
+	}
+
         //FIXME: select unexplored candidates
         runtime.setPartition((*partitionable)[elem.app->appId]);
       }
