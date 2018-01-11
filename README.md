@@ -2,14 +2,6 @@
 
 f1x [ɛf-wʌn-ɛks] is a test-driven patch generation engine for C/C++ programs. It automatically finds and fixes software bugs by analyzing behaviour of passing and failing tests. f1x aims to be efficient, robust and easy-to-use.
 
-## Why f1x? ##
-
-* ***User/hacker-friendly***. f1x requires virtually no configuration, has a simple interface and a compact implementation.
-* ***Experimentation***. f1x comes with environments for executing main program repair benchmarks.
-* ***Efficiency***. f1x generates fixes up to 10 times faster than previous program repair systems.
-* ***Effectiveness***. f1x can repair more defects since it explores larger spaces of candidate patches than previous systems.
-* ***Quality***. f1x searches for patches that optimize a given cost function to prioritize high quality repairs.
-
 ## How does it work? ##
 
 f1x generates bug fixes by enumerating and testing a large number of source code changes. Suppose we have a buggy program `p` and a set of tests `[t1, t2, t3, t4, ...]`. f1x generates a space of modifications `[p1, p2, p3, p4, ...]` and validates each of these programs until it finds one that passes all the tests. In the other words, it fills the following table:
@@ -35,6 +27,10 @@ To address overfitting, f1x allows to ***prioritize*** patches. It assigns a cos
 
 To install f1x, you can either use [our docker image](doc/Docker.md) or [build it from source](doc/BuildFromSource.md).
 To get started, please go though [Tutorial](doc/Tutorial.md). More detailed information about the tool is given in [Manual](doc/Manual.md). If you encounter a problem while using f1x, please consult [Troubleshooting guide](doc/Troubleshooting.md) or ask us by email (contact: Sergey Mechtaev, `mechtaev@comp.nus.edu.sg`). If you plan to modify f1x, please refer to [Developer guide](doc/Development.md).
+
+## Related projects ##
+
+f1x is a lightweight (enumerative) counterpart of our constraint-based program repair system [Angelix](https://github.com/mechtaev/angelix). Compared with Angelix, f1x cannot synthesize multi-line patches and cannot use a reference implementation, however it is significantly more efficient and easy-to-use. f1x relies on test-equivalence analysis similarly to mutation testing tools such as [AccMut](https://github.com/wangbo15/accmut).
 
 ## Evaluation ##
 
