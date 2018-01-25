@@ -44,6 +44,7 @@ StatementMatcher RepairableOperator =
                              hasOperatorName("<<"),
                              hasOperatorName(">>"))).bind(BOUND),
         unaryOperator(hasOperatorName("~")).bind(BOUND));
+//        unaryOperator(hasOperatorName("*"), hasUnaryOperand(ignoringImpCasts(declRefExpr()))).bind(BOUND));
 
 // FIXME: currently support only integer arrays:
 StatementMatcher RepairableArraySubscript =
@@ -65,7 +66,8 @@ StatementMatcher RepairableAtom =
                        hasSourceExpression(implicitCastExpr(hasSourceExpression(anyOf(integerLiteral(),
                                                                                       declRefExpr(),
                                                                                       memberExpr()))))).bind(BOUND),
-        castExpr(hasType(asString("void *")), hasDescendant(integerLiteral(equals(0)))).bind(BOUND)); // NULL, redundant?
+        castExpr(hasType(asString("void *")), hasDescendant(integerLiteral(equals(0)))).bind(BOUND) // NULL, redundant?
+        );
                
 StatementMatcher RepairableNode =
   anyOf(RepairableOperator,

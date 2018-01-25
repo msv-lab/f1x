@@ -380,7 +380,11 @@ RepairStatus repair(Project &project,
       if (! fs::exists(patchOutput)) {
         fs::create_directory(patchOutput);
       }
+      unordered_set<unsigned long> patchLocations;
       for (int i=0; i<plausiblePatches.size(); i++) {
+        if (cfg.outputOnePerLocation && patchLocations.count(plausiblePatches[i].app->id))
+          continue;
+        patchLocations.insert(plausiblePatches[i].app->id);
         fs::path patchFile = patchOutput / (std::to_string(i) + ".patch");
         project.applyPatch(plausiblePatches[i]);
         unsigned fileId = plausiblePatches[i].app->location.fileId;

@@ -101,6 +101,9 @@ get-cmd () {
         localization)
             echo "f1x --localize 1 --driver test.sh --tests n1 n2 n3 --test-timeout 1000"
             ;;
+        array-element-update)
+            echo "f1x --files program.c:9 --driver test.sh --tests n1 n2 p1 --test-timeout 1000"
+            ;;
         *)
             exit 1
             ;;

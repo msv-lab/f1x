@@ -43,6 +43,7 @@ struct Config {
   PatchPrioritization patchPrioritization;
   unsigned filesToLocalize;
   bool useLLVMCov;
+  bool outputOnePerLocation;
 };
 
 
