@@ -104,6 +104,9 @@ get-cmd () {
         array-element-update)
             echo "f1x --files program.c:9 --driver test.sh --tests n1 n2 p1 --test-timeout 1000"
             ;;
+        signed-int-overflow)
+            echo "f1x --files program.c:9 --driver test.sh --tests n1 --test-timeout 1000 --disable-vteq"
+            ;;
         *)
             exit 1
             ;;
@@ -129,11 +132,25 @@ for test in $TESTS; do
         exit 1
     fi
 
-    (cd $work_dir; $repair_cmd  --output "$work_dir/output.patch" --enable-cleanup &> "$work_dir/log.txt")
+    case "$test" in
+        signed-int-overflow)
+            (cd $work_dir; F1X_CC_LIBS='-lstdc++' F1X_RUNTIME_CXX='clang -fsanitize=undefined' F1X_PROJECT_CC='clang' $repair_cmd  --output "$work_dir/output.patch" --enable-cleanup &> "$work_dir/log.txt")
+            ;;
+        *)
+            (cd $work_dir; $repair_cmd  --output "$work_dir/output.patch" --enable-cleanup &> "$work_dir/log.txt")
+            ;;
+    esac
     if [[ ($? != 0) || (! -f "$work_dir/output.patch") || (! -s "$work_dir/output.patch") ]]; then
         echo 'FAIL'
         echo "----------------------------------------"
-        echo "cmd: (cd $work_dir; $repair_cmd)"
+        case "$test" in
+            signed-int-overflow)
+                echo "cmd: (cd $work_dir; F1X_CC_LIBS='-lstdc++' F1X_RUNTIME_CXX='clang -fsanitize=undefined' F1X_PROJECT_CC='clang' $repair_cmd)"
+                ;;
+            *)
+                echo "cmd: (cd $work_dir; $repair_cmd)"
+                ;;
+        esac
         echo "log: $work_dir/log.txt"
         echo "----------------------------------------"
         exit 1

@@ -90,7 +90,13 @@ bool Runtime::compile() {
   BOOST_LOG_TRIVIAL(info) << "compiling analysis runtime";
   FromDirectory dir(fs::path(cfg.dataDir));
   std::stringstream cmd;
-  cmd << RUNTIME_COMPILER
+  std::string runtimeCompiler;
+  if (getenv("F1X_RUNTIME_CXX")) {
+    runtimeCompiler = std::string(getenv("F1X_RUNTIME_CXX"));
+  } else {
+    runtimeCompiler = RUNTIME_COMPILER;
+  }
+  cmd << runtimeCompiler
       << " " << RUNTIME_OPTIMIZATION
       << " -fPIC"
       << " " << RUNTIME_SOURCE_FILE_NAME

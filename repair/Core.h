@@ -96,12 +96,13 @@ enum class Operator {
   BV_AND, BV_XOR, BV_OR, BV_SHL, BV_SHR, BV_NOT,
   PTR_ADD, PTR_SUB, // pointer arithmetic
   IMPLICIT_BV_CAST, IMPLICIT_INT_CAST, // auxiliary operators to satisfy our type system
-  EXPLICIT_BV_CAST, EXPLICIT_INT_CAST, EXPLICIT_PTR_CAST // auxiliary operators for (1) INT2 substitutions, (2) pointer arithmetics
+    EXPLICIT_BV_CAST, EXPLICIT_INT_CAST, EXPLICIT_PTR_CAST, EXPLICIT_UNSIGNED_CAST // auxiliary operators for (1) INT2 substitutions, (2) pointer arithmetics
 };
 
 
 const std::string DEFAULT_BOOLEAN_TYPE = "int"; // any type is OK
 const std::string EXPLICIT_INT_CAST_TYPE = "long";
+const std::string EXPLICIT_UNSIGNED_CAST_TYPE = "unsigned";
 const std::string EXPLICIT_BV_CAST_TYPE = "unsigned long";
 const std::string EXPLICIT_PTR_CAST_TYPE = "void";
 
@@ -175,7 +176,8 @@ enum class SynthesisRule {
   TIGHTENING,     // adding "&& something"
   NEGATION,       // (logically) negate or remove negation
   NULL_CHECK,     // adding null check
-  SUBSTITUTION    // (generic) substution of subnode
+  SUBSTITUTION,   // (generic) substution of subnode
+  UNSIGNED_CAST   // adding unsigned cast
 };
 
 

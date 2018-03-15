@@ -71,6 +71,8 @@ Expression wrapWithExplicitBVCast(const Expression &expression);
 
 Expression wrapWithExplicitPtrCast(const Expression &expression);
 
+Expression wrapWithExplicitUnsignedCast(const Expression &expression);
+
 Expression applyBoolOperator(const Operator &op, 
                              const Expression &left,
                              const Expression &right);

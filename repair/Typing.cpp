@@ -76,6 +76,8 @@ Type operatorOutputType(const Operator &op) {
     return Type::BITVECTOR;
   case Operator::EXPLICIT_INT_CAST:
     return Type::INTEGER;
+  case Operator::EXPLICIT_UNSIGNED_CAST:
+    return Type::INTEGER;
   case Operator::EXPLICIT_PTR_CAST:
     return Type::POINTER;
   }
@@ -135,6 +137,7 @@ Type operatorFirstArgType(const Operator &op) {
   case Operator::IMPLICIT_INT_CAST:
   case Operator::EXPLICIT_BV_CAST:
   case Operator::EXPLICIT_INT_CAST:
+  case Operator::EXPLICIT_UNSIGNED_CAST:
   case Operator::EXPLICIT_PTR_CAST:
     return Type::ANY;
   }

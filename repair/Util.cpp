@@ -227,6 +227,8 @@ string operatorToString(const Operator &op) {
     return "(" + EXPLICIT_INT_CAST_TYPE + ")";
   case Operator::EXPLICIT_PTR_CAST:
     return "(" + EXPLICIT_PTR_CAST_TYPE + "*)";
+  case Operator::EXPLICIT_UNSIGNED_CAST:
+    return "(" + EXPLICIT_UNSIGNED_CAST_TYPE + ")";
   }
   throw std::invalid_argument("unsupported operator");
 }
@@ -296,6 +298,15 @@ Expression wrapWithExplicitPtrCast(const Expression &expression) {
                      Operator::EXPLICIT_PTR_CAST,
                      EXPLICIT_PTR_CAST_TYPE,
                      operatorToString(Operator::EXPLICIT_PTR_CAST),
+                     {expression} };
+}
+
+Expression wrapWithExplicitUnsignedCast(const Expression &expression) {
+  return Expression{ NodeKind::OPERATOR,
+                     Type::INTEGER,
+                     Operator::EXPLICIT_UNSIGNED_CAST,
+                     EXPLICIT_UNSIGNED_CAST_TYPE,
+                     operatorToString(Operator::EXPLICIT_UNSIGNED_CAST),
                      {expression} };
 }
 

@@ -131,6 +131,7 @@ namespace synthesis {
     case Operator::IMPLICIT_INT_CAST:
     case Operator::EXPLICIT_BV_CAST:
     case Operator::EXPLICIT_INT_CAST:
+    case Operator::EXPLICIT_UNSIGNED_CAST:
     case Operator::EXPLICIT_PTR_CAST:
       return {};
     }
@@ -159,6 +160,7 @@ namespace synthesis {
     case Operator::IMPLICIT_INT_CAST:
     case Operator::EXPLICIT_BV_CAST:
     case Operator::EXPLICIT_INT_CAST:
+    case Operator::EXPLICIT_UNSIGNED_CAST:
     case Operator::EXPLICIT_PTR_CAST:
       return 0;
     default:
@@ -348,6 +350,14 @@ namespace synthesis {
         vector<pair<Expression, PatchMetadata>> rightMods = baseSubstitutions(expr.args[1], components);
         for (auto &m : rightMods) {
           result.push_back(make_pair(substituteRightArg(expr, m.first), m.second));
+        }
+        if (expr.args[0].type == Type::INTEGER) {
+          auto meta = PatchMetadata{SynthesisRule::UNSIGNED_CAST, ATOMIC_EDIT};
+          result.push_back(make_pair(substituteLeftArg(expr, wrapWithExplicitUnsignedCast(expr.args[0])), meta));
+        }
+        if (expr.args[1].type == Type::INTEGER) {
+          auto meta = PatchMetadata{SynthesisRule::UNSIGNED_CAST, ATOMIC_EDIT};
+          result.push_back(make_pair(substituteRightArg(expr, wrapWithExplicitUnsignedCast(expr.args[1])), meta));
         }
         if (isSimplifiable(expr)) {
           Expression leftCopy = expr.args[0];
