@@ -41,5 +41,6 @@ struct Config cfg = {
   /* patchPrioritization    = */ PatchPrioritization::SYNTACTIC_DIFF,
   /* filesToLocalize        = */ 10,
   /* useLLVMCov             = */ false,
-  /* outputOnePerLocation   = */ false
+  /* outputOnePerLocation   = */ false,
+  /* outputTop              = */ 0
 };

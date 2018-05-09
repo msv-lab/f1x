@@ -44,6 +44,7 @@ struct Config {
   unsigned filesToLocalize;
   bool useLLVMCov;
   bool outputOnePerLocation;
+  signed outputTop;
 };
 
 

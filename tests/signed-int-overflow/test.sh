@@ -5,7 +5,7 @@ assert-equal-with-sanitizer () {
     errfile=$(mktemp /tmp/f1x-sio-err.XXXXXX)
     $1 >$outfile 2>$errfile
     if diff -q $outfile <(echo -ne "$2") > /dev/null; then
-        if $1 |& grep -q "runtime error"; then
+        if grep -q "runtime error" $errfile; then
             exit 1 # correct output, runtime error
         else
             exit 0 # correct output, no runtime error

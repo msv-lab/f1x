@@ -124,6 +124,7 @@ int main (int argc, char *argv[]) {
     ("output-stat", po::value<string>()->value_name("PATH"), "output execution statistics")
     ("output-space", po::value<string>()->value_name("PATH"), "[DEBUG] output search space")
     ("output-one-per-loc", "output single optimal patch per location")
+    ("output-top", po::value<unsigned>()->value_name("N"), "find top N patches")
     ("enable-cleanup", "remove intermediate data")
     ("enable-metadata", "output patch metadata")
     ("enable-validation", "validate found patches")
@@ -185,6 +186,10 @@ int main (int argc, char *argv[]) {
 
   if (vm.count("output-one-per-loc")) {
     cfg.outputOnePerLocation = true;
+  }
+
+  if (vm.count("output-top")) {
+    cfg.outputTop = vm["output-top"].as<unsigned>();
   }
 
   if (vm.count("enable-metadata")) {

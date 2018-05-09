@@ -303,6 +303,11 @@ RepairStatus repair(Project &project,
     if (last == searchSpace.size())
       break;
 
+    if (cfg.outputTop && plausiblePatches.size() >= cfg.outputTop) {
+      BOOST_LOG_TRIVIAL(info) << "found enough patches";
+      break;
+    }
+
     Patch patch = searchSpace[last];
 
     if (!moreThanOneFound.count(patch.app->id) || cfg.verbose) {
