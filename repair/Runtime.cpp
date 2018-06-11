@@ -16,10 +16,12 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string>
-#include <sstream>
 #include <cstdlib>
+#include <sstream>
+#include <string>
+#include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 // for shared memory:
 #include <fcntl.h>
@@ -39,10 +41,10 @@ using std::unordered_set;
 
 
 Runtime::Runtime() {
-
+  std::stringstream realPartitionFileName;
   size_t size = sizeof(PatchID) * MAX_PARTITION_SIZE;
-  int fd = shm_open(PARTITION_FILE_NAME.c_str(),
-                    O_CREAT | O_RDWR,
+  realPartitionFileName << PARTITION_FILE_NAME << "_" << geteuid();
+  int fd = shm_open(realPartitionFileName.str().c_str(), O_CREAT | O_RDWR,
                     S_IRUSR | S_IWUSR);
   ftruncate(fd, size);
   partition = (PatchID*) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);

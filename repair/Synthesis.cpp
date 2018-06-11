@@ -16,10 +16,12 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string>
 #include <algorithm>
 #include <sstream>
 #include <stack>
+#include <string>
+#include <sys/types.h>
+#include <unistd.h>
 #include <unordered_map>
 
 #include "Synthesis.h"
@@ -465,11 +467,18 @@ namespace generator {
 
     OUT << "void __f1x_init_runtime() {" << "\n";
     if (cfg.valueTEQ) {
-      OUT << "int fd = shm_open(\"" << PARTITION_FILE_NAME << "\", O_RDWR, 0);" << "\n"
-          << "struct stat sb;" << "\n"
-          << "fstat(fd, &sb);" << "\n"
-          << "__f1xids = (__f1xid_t*) mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);" << "\n"
-          << "close(fd);" << "\n";
+      OUT << "int fd = shm_open(\"" << PARTITION_FILE_NAME << "_" << geteuid()
+          << "\", O_RDWR, 0);"
+          << "\n"
+          << "struct stat sb;"
+          << "\n"
+          << "fstat(fd, &sb);"
+          << "\n"
+          << "__f1xids = (__f1xid_t*) mmap(NULL, sb.st_size, PROT_READ | "
+             "PROT_WRITE, MAP_SHARED, fd, 0);"
+          << "\n"
+          << "close(fd);"
+          << "\n";
     }
     OUT << "}" << "\n";
   }
