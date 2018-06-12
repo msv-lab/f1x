@@ -134,9 +134,16 @@ for test in $TESTS; do
 
     case "$test" in
         signed-int-overflow)
+            # The following is safer since we are using clang for F1X_PROJECT_CC
+            repair_cmd="$repair_cmd --enable-llvm-cov"
             (cd $work_dir; F1X_CC_LIBS='-lstdc++' F1X_RUNTIME_CXX='clang -fsanitize=undefined' F1X_PROJECT_CC='clang' $repair_cmd  --output "$work_dir/output.patch" --enable-cleanup &> "$work_dir/log.txt")
             ;;
         *)
+            # When F1X_PROJECT_CC is clang, we need to use --enable-llvm-cov
+            project_compiler=$(basename $F1X_PROJECT_CC)
+            if [[ $project_compiler = *"clang"* ]] ; then
+                repair_cmd="$repair_cmd --enable-llvm-cov"
+            fi
             (cd $work_dir; $repair_cmd  --output "$work_dir/output.patch" --enable-cleanup &> "$work_dir/log.txt")
             ;;
     esac
