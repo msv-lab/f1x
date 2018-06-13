@@ -112,6 +112,22 @@ bool validatePatch(Project &project,
     return true;
 }
 
+//TODO: call AFLGo to generate a test case that can reach target location loc
+std::basic_string<char> chooseTest(Location loc, ExecutionStat executionStat){
+  return "random"; //fake test
+}
+
+bool validateByFuzzing(SearchEngine engine, Patch patch, int patchIndex){
+  Location loc = patch.app->location;
+  ExecutionStat executionStat = {0, 0}; //init partitionSize=0, coverage=0
+  bool isPassing = true;
+  //while (true) {
+    auto test = chooseTest(loc, executionStat);
+  
+    isPassing &= engine.evaluatePatchWithNewTest(patch, test, patchIndex, &executionStat);
+  //}
+  return isPassing;
+}
 
 RepairStatus repair(Project &project,
                     TestingFramework &tester,
@@ -326,7 +342,9 @@ RepairStatus repair(Project &project,
     if (! cfg.generateAll) {
       bool valid = true;
       if (cfg.validatePatches)
-        validatePatch(project, tester, tests, patch);
+        valid = validatePatch(project, tester, tests, patch);
+      if (cfg.validatePatchesByFuzzing)
+        valid &= validateByFuzzing(engine, patch, last);
       if (valid) {
         fixLocations.insert(patch.app->id);
         plausiblePatches.push_back(patch);
@@ -336,10 +354,15 @@ RepairStatus repair(Project &project,
         project.buildWithRuntime(runtime.getHeader());
       }
     } else {
-      if (fixLocations.count(patch.app->id))
-        moreThanOneFound.insert(patch.app->id);
-      fixLocations.insert(patch.app->id);
-      plausiblePatches.push_back(patch);
+      bool valid = true;
+      if (cfg.validatePatchesByFuzzing)
+        valid &= validateByFuzzing(engine, patch, last);
+      if(valid){
+        if (fixLocations.count(patch.app->id))
+          moreThanOneFound.insert(patch.app->id);
+        fixLocations.insert(patch.app->id);
+        plausiblePatches.push_back(patch);
+      }
     }
 
     last++;
@@ -359,15 +382,15 @@ RepairStatus repair(Project &project,
   if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
     auto coverageSet = engine.getCoverageSet();
     for (auto &testCoverage : coverageSet) {
-      BOOST_LOG_TRIVIAL(info) << "test: " << testCoverage.first;
+      BOOST_LOG_TRIVIAL(debug) << "test: " << testCoverage.first;
       std::unordered_map<PatchID, std::shared_ptr<Coverage>> patchCoverage = testCoverage.second;
       for (auto &patch : plausiblePatches) {
-        BOOST_LOG_TRIVIAL(info) << "patch: " << visualizePatchID(patch.id);
+        BOOST_LOG_TRIVIAL(debug) << "patch: " << visualizePatchID(patch.id);
         Coverage coverage = *patchCoverage[patch.id];
         for (auto &entry : coverage) {
-          BOOST_LOG_TRIVIAL(info) << "file: " << entry.first;
+          BOOST_LOG_TRIVIAL(debug) << "file: " << entry.first;
           for (auto &line : entry.second) {
-            BOOST_LOG_TRIVIAL(info) << "line: " << line;
+            BOOST_LOG_TRIVIAL(debug) << "line: " << line;
           }
         }
       }

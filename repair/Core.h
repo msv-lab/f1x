@@ -210,3 +210,8 @@ struct Patch {
   Expression modified;
   PatchMetadata meta;
 };
+
+struct ExecutionStat {
+  unsigned long partitionSize;
+  float coverage;
+};

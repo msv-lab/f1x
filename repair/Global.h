@@ -45,6 +45,7 @@ struct Config {
   bool useLLVMCov;
   bool outputOnePerLocation;
   signed outputTop;
+  bool validatePatchesByFuzzing;
 };
 
 

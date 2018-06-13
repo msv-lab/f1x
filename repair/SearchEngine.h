@@ -37,7 +37,6 @@ struct SearchStatistics {
   unsigned long nonTimeoutTestTime;
 };
 
-
 class SearchEngine {
  public:
   SearchEngine(const std::vector<std::string> &tests,
@@ -50,9 +49,10 @@ class SearchEngine {
   std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> getCoverageSet();
   SearchStatistics getStatistics();
   void showProgress(unsigned long current, unsigned long total);
+  bool evaluatePatchWithNewTest(const Patch elem, std::basic_string<char> &test, int index, ExecutionStat *executionStat);
 
  private:
- 
+  bool executeCandidate(const Patch elem, std::basic_string<char> &test, int index, ExecutionStat *executionStat);
   void prioritizeTest(std::vector<unsigned> &testOrder, unsigned index);
   std::vector<std::string> tests;
   TestingFramework tester;

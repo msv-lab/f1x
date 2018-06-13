@@ -122,6 +122,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
 
     bool passAll = true;
 
+    //TODO: build the relationship for the newly generated tests
     std::vector<unsigned> testOrder = relatedTestIndexes[elem.app->location];
 
     for (unsigned orderIndex = 0; orderIndex < testOrder.size(); orderIndex++) {
@@ -135,68 +136,8 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
         runtime.setPartition((*partitionable)[elem.app->id]);
       }
 
-      BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizePatchID(elem.id) 
-                               << " with test " << test;
-
-      std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-      TestStatus status = tester.execute(test);
-
-      std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-      stat.executionCounter++;
-      if (status != TestStatus::TIMEOUT) {
-        stat.nonTimeoutCounter++;
-        stat.nonTimeoutTestTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-      } else {
-        stat.timeoutCounter++;
-      }
-
-      switch (status) {
-      case TestStatus::PASS:
-        BOOST_LOG_TRIVIAL(debug) << "PASS";
-        break;
-      case TestStatus::FAIL:
-        BOOST_LOG_TRIVIAL(debug) << "FAIL";
-        break;
-      case TestStatus::TIMEOUT:
-        BOOST_LOG_TRIVIAL(debug) << "TIMEOUT";
-        break;
-      }
-
-      passAll = (status == TestStatus::PASS);
-
-      if (cfg.valueTEQ) {
-        unordered_set<PatchID> partition = runtime.getPartition();
-        if (partition.empty()) {
-          //NOTE: it should contain at least the current element
-          BOOST_LOG_TRIVIAL(warning) << "partitioning failed for "
-                                     << visualizePatchID(elem.id)
-                                     << " with test " << test;
-        }
-
-        if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
-          fs::path coverageFile = coverageDir / (test + "_" + std::to_string(index) + ".xml");
-          std::shared_ptr<Coverage> curCoverage(new Coverage(extractAndSaveCoverage(coverageFile)));
-
-          if (!coverageSet.count(test))
-            coverageSet[test] = std::unordered_map<PatchID, std::shared_ptr<Coverage>>();
-
-          coverageSet[test][elem.id] = curCoverage;
-          for (auto &id : partition)
-            coverageSet[test][id] = curCoverage;
-        }
-
-        if (passAll) {
-          passing[test].insert(elem.id);
-          passing[test].insert(partition.begin(), partition.end());
-
-        } else {
-          failing.insert(elem.id);
-          failing.insert(partition.begin(), partition.end());
-        }
-      }
-
+      passAll = executeCandidate(elem, test, index, NULL);
+      
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
           prioritizeTest(relatedTestIndexes[elem.app->location], orderIndex);
@@ -211,4 +152,105 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
   }
 
   return index;
+}
+
+bool SearchEngine::executeCandidate(const Patch elem,
+                                     std::basic_string<char> &test, int index, ExecutionStat *executionStat){
+  BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizePatchID(elem.id) 
+                           << " with test " << test;
+
+  bool passAll = true;
+  
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+  TestStatus status = tester.execute(test);
+
+  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+  stat.executionCounter++;
+  if (status != TestStatus::TIMEOUT) {
+    stat.nonTimeoutCounter++;
+    stat.nonTimeoutTestTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+  } else {
+    stat.timeoutCounter++;
+  }
+
+  switch (status) {
+  case TestStatus::PASS:
+    BOOST_LOG_TRIVIAL(debug) << "PASS";
+    break;
+  case TestStatus::FAIL:
+    BOOST_LOG_TRIVIAL(debug) << "FAIL";
+    break;
+  case TestStatus::TIMEOUT:
+    BOOST_LOG_TRIVIAL(debug) << "TIMEOUT";
+    break;
+  }
+
+  passAll = (status == TestStatus::PASS);
+
+  if (cfg.valueTEQ) {
+    unordered_set<PatchID> partition = runtime.getPartition();
+    if (partition.empty()) {
+      //NOTE: it should contain at least the current element
+      BOOST_LOG_TRIVIAL(warning) << "partitioning failed for "
+                                 << visualizePatchID(elem.id)
+                                 << " with test " << test;
+    }
+    
+//    if(executionStat != NULL)
+//        executionStat->partitionSize = partition.size();
+
+    if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
+      fs::path coverageFile = coverageDir / (test + "_" + std::to_string(index) + ".xml");
+      std::shared_ptr<Coverage> curCoverage(new Coverage(extractAndSaveCoverage(coverageFile)));
+
+      if (!coverageSet.count(test))
+        coverageSet[test] = std::unordered_map<PatchID, std::shared_ptr<Coverage>>();
+
+      coverageSet[test][elem.id] = curCoverage;
+      for (auto &id : partition)
+        coverageSet[test][id] = curCoverage;
+    }
+
+    if (passAll) {
+      passing[test].insert(elem.id);
+      passing[test].insert(partition.begin(), partition.end());
+
+    } else {
+      failing.insert(elem.id);
+      failing.insert(partition.begin(), partition.end());
+    }
+  }
+  return passAll;
+}
+
+
+bool SearchEngine::evaluatePatchWithNewTest(const Patch elem,
+                                     std::basic_string<char> &test, int index, ExecutionStat *executionStat) {
+  if (cfg.valueTEQ) {
+    if (failing.count(elem.id))
+      return false;
+  }
+  
+  if(passing.count(test)<=0){
+    passing[test] = {};
+    tests.push_back(test);
+  }
+
+  InEnvironment env({ { "F1X_APP", to_string(elem.app->id) },
+                      { "F1X_ID_BASE", to_string(elem.id.base) },
+                      { "F1X_ID_INT2", to_string(elem.id.int2) },
+                      { "F1X_ID_BOOL2", to_string(elem.id.bool2) },
+                      { "F1X_ID_COND3", to_string(elem.id.cond3) },
+                      { "F1X_ID_PARAM", to_string(elem.id.param) } });
+
+  if (cfg.valueTEQ) {
+    //FIXME: select only unexplored candidates
+    runtime.setPartition((*partitionable)[elem.app->id]);
+  }
+  
+  bool passAll = executeCandidate(elem, test, index, executionStat);
+
+  return passAll;
 }
