@@ -11,7 +11,7 @@ int Partition(int a[], int p, int r) {
   
   int i = p-1;
   int temp=0;
-  
+
   for(int j=p; j<r-1; j++) {
     if(a[j]<=x) {
       i++;

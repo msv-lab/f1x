@@ -135,7 +135,6 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
         //FIXME: select only unexplored candidates
         runtime.setPartition((*partitionable)[elem.app->id]);
       }
-
       passAll = executeCandidate(elem, test, index, NULL);
       
       if (!passAll) {
@@ -197,9 +196,9 @@ bool SearchEngine::executeCandidate(const Patch elem,
                                  << visualizePatchID(elem.id)
                                  << " with test " << test;
     }
-    
-//    if(executionStat != NULL)
-//        executionStat->partitionSize = partition.size();
+
+    if(executionStat != NULL)
+        executionStat->partitionSize = partition.size();
 
     if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
       fs::path coverageFile = coverageDir / (test + "_" + std::to_string(index) + ".xml");
@@ -249,7 +248,7 @@ bool SearchEngine::evaluatePatchWithNewTest(const Patch elem,
     //FIXME: select only unexplored candidates
     runtime.setPartition((*partitionable)[elem.app->id]);
   }
-  
+
   bool passAll = executeCandidate(elem, test, index, executionStat);
 
   return passAll;

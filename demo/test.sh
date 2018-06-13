@@ -11,6 +11,9 @@ case "$1" in
     short)
         assert-equal '3 2 1' '1 2 3 '
         ;;
+    random)
+        assert-equal '1 2 3' '4 5 6'
+        ;;
     *)
         exit 1
         ;;

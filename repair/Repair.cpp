@@ -119,12 +119,16 @@ std::basic_string<char> chooseTest(Location loc, ExecutionStat executionStat){
 
 bool validateByFuzzing(SearchEngine engine, Patch patch, int patchIndex){
   Location loc = patch.app->location;
+  BOOST_LOG_TRIVIAL(info) << "patch location " << loc.beginLine << "," << loc.endLine;
   ExecutionStat executionStat = {0, 0}; //init partitionSize=0, coverage=0
   bool isPassing = true;
   //while (true) {
     auto test = chooseTest(loc, executionStat);
   
     isPassing &= engine.evaluatePatchWithNewTest(patch, test, patchIndex, &executionStat);
+    BOOST_LOG_TRIVIAL(info) << "partition Size " << executionStat.partitionSize;
+    //if(isPassing == false)
+    //  break;
   //}
   return isPassing;
 }
