@@ -21,9 +21,8 @@
 #include <memory>
 #include <stdexcept>
 #include <map>
-
 #include <boost/filesystem.hpp>
-
+#include <string>
 
 enum class RepairStatus {
   SUCCESS,
@@ -212,6 +211,7 @@ struct Patch {
 };
 
 struct ExecutionStat {
+  std::vector<PatchID> partition;
   unsigned long partitionSize;
   float coverage;
 };

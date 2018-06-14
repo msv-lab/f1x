@@ -197,8 +197,10 @@ bool SearchEngine::executeCandidate(const Patch elem,
                                  << " with test " << test;
     }
 
-    if(executionStat != NULL)
-        executionStat->partitionSize = partition.size();
+    if(executionStat != NULL) {
+      std::copy(partition.begin(), partition.end(), std::back_inserter(executionStat->partition));
+      executionStat->partitionSize = partition.size();
+    }
 
     if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
       fs::path coverageFile = coverageDir / (test + "_" + std::to_string(index) + ".xml");

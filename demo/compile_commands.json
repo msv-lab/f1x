@@ -1,0 +1,1 @@
+[{"command":"cc -D__f1xapp=0ul  -I/home/gaoxiang/project/f1x-oss-fuzz/f1x/llvm//lib/clang/3.8.1/include/  -c --coverage -std=c99 -o sort sort.c","directory":"/home/gaoxiang/project/f1x-oss-fuzz/f1x/demo","file":"/home/gaoxiang/project/f1x-oss-fuzz/f1x/demo/sort.c"}]
