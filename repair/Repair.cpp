@@ -113,24 +113,34 @@ bool validatePatch(Project &project,
 }
 
 //TODO: call AFLGo to generate a test case that can reach target location loc
-std::basic_string<char> chooseTest(Location loc, unordered_map<__string, unordered_set<PatchID>> *executionStat){
+/**
+ * @param loc: the location of corresponding patch
+ * @param originalPartiion: the partition of existing tests, a mapping from test to equivalent patch set
+ * @param isPassing: the execution result of last test (Pass: true, Fail: false)
+ * @param partition: equivalent patch set of the last test (NULL: for the first query)
+ */
+std::basic_string<char> generateTest(Location loc, unordered_map<__string, unordered_set<PatchID>> * originalPartition,
+                                     bool isPassing, unordered_set<PatchID> *partition){
   return "random"; //fake test
 }
 
 bool validateByFuzzing(SearchEngine engine, Patch patch, int patchIndex, unordered_set<PatchID> allPatch,
                       unordered_map<__string, unordered_set<PatchID>> * originalPartition){
   Location loc = patch.app->location;
-  BOOST_LOG_TRIVIAL(info) << "patch location " << loc.beginLine << "," << loc.endLine;
+  BOOST_LOG_TRIVIAL(info) << "patch location " << loc.beginLine;
   unordered_map<__string, unordered_set<PatchID>> executionStat;
   bool isPassing = true;
+  //geneate first test case by fuzzing
+  auto test = generateTest(loc, originalPartition, isPassing, NULL); 
   //while (true) {
-    auto test = chooseTest(loc, &executionStat);
-  
     isPassing &= engine.evaluatePatchWithNewTest(patch, test, patchIndex, &executionStat);
     BOOST_LOG_TRIVIAL(info) << "partition Size " << executionStat[test].size();
     //if(isPassing == false)
     //  break;
-  //}
+
+    //generate new test case
+    test = generateTest(loc, originalPartition, isPassing, &executionStat[test]);
+ //}
   return isPassing;
 }
 

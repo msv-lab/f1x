@@ -210,10 +210,4 @@ struct Patch {
   PatchMetadata meta;
 };
 
-struct ExecutionStat {
-  std::vector<PatchID> partition;
-  unsigned long partitionSize;
-  float coverage;
-};
-
 typedef std::__cxx11::basic_string<char> __string;

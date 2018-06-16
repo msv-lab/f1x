@@ -121,7 +121,8 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
                         { "F1X_ID_PARAM", to_string(elem.id.param) } });
 
     bool passAll = true;
-    executionStat->clear();
+    if(cfg.validatePatchesByFuzzing)
+      executionStat->clear();
 
     //TODO: build the relationship for the newly generated tests
     std::vector<unsigned> testOrder = relatedTestIndexes[elem.app->location];
@@ -197,7 +198,7 @@ bool SearchEngine::executeCandidate(const Patch elem,
                                  << " with test " << test;
     }
 
-    if(executionStat != NULL) {
+    if(cfg.validatePatchesByFuzzing) {
       (*executionStat)[test]=partition;
       //std::copy(partition.begin(), partition.end(), std::back_inserter(executionStat->partition));
     }
