@@ -99,7 +99,7 @@ void SearchEngine::prioritizeTest(std::vector<unsigned> &testOrder, unsigned ind
 
 
 unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
-                                     unsigned long from) {
+                                     unsigned long from, unordered_map<__string, unordered_set<PatchID>> *executionStat) {
 
   unsigned long index = from;
   for (; index < searchSpace.size(); index++) {
@@ -121,6 +121,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
                         { "F1X_ID_PARAM", to_string(elem.id.param) } });
 
     bool passAll = true;
+    executionStat->clear();
 
     //TODO: build the relationship for the newly generated tests
     std::vector<unsigned> testOrder = relatedTestIndexes[elem.app->location];
@@ -135,7 +136,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
         //FIXME: select only unexplored candidates
         runtime.setPartition((*partitionable)[elem.app->id]);
       }
-      passAll = executeCandidate(elem, test, index, NULL);
+      passAll = executeCandidate(elem, test, index, executionStat);
       
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
@@ -154,7 +155,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
 }
 
 bool SearchEngine::executeCandidate(const Patch elem,
-                                     std::basic_string<char> &test, int index, ExecutionStat *executionStat){
+                                     std::basic_string<char> &test, int index, unordered_map<__string, unordered_set<PatchID>> *executionStat){
   BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizePatchID(elem.id) 
                            << " with test " << test;
 
@@ -183,7 +184,6 @@ bool SearchEngine::executeCandidate(const Patch elem,
     break;
   case TestStatus::TIMEOUT:
     BOOST_LOG_TRIVIAL(debug) << "TIMEOUT";
-    break;
   }
 
   passAll = (status == TestStatus::PASS);
@@ -198,8 +198,8 @@ bool SearchEngine::executeCandidate(const Patch elem,
     }
 
     if(executionStat != NULL) {
-      std::copy(partition.begin(), partition.end(), std::back_inserter(executionStat->partition));
-      executionStat->partitionSize = partition.size();
+      (*executionStat)[test]=partition;
+      //std::copy(partition.begin(), partition.end(), std::back_inserter(executionStat->partition));
     }
 
     if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
@@ -227,13 +227,13 @@ bool SearchEngine::executeCandidate(const Patch elem,
 }
 
 
-bool SearchEngine::evaluatePatchWithNewTest(const Patch elem,
-                                     std::basic_string<char> &test, int index, ExecutionStat *executionStat) {
+bool SearchEngine::evaluatePatchWithNewTest(const Patch elem,__string &test, int index, 
+                                            unordered_map<__string, unordered_set<PatchID>> *executionStat) {
   if (cfg.valueTEQ) {
     if (failing.count(elem.id))
       return false;
   }
-  
+  //TODO: need to return directly
   if(passing.count(test)<=0){
     passing[test] = {};
     tests.push_back(test);

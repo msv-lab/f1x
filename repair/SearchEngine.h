@@ -45,14 +45,14 @@ class SearchEngine {
                std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<PatchID>>> partitionable,
                std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes);
 
-  unsigned long findNext(const std::vector<Patch> &searchSpace, unsigned long fromIdx);
+  unsigned long findNext(const std::vector<Patch> &searchSpace, unsigned long fromIdx, std::unordered_map<__string, std::unordered_set<PatchID>> *executionStat);
   std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> getCoverageSet();
   SearchStatistics getStatistics();
   void showProgress(unsigned long current, unsigned long total);
-  bool evaluatePatchWithNewTest(const Patch elem, std::basic_string<char> &test, int index, ExecutionStat *executionStat);
+  bool evaluatePatchWithNewTest(const Patch elem, __string &test, int index, std::unordered_map<__string, std::unordered_set<PatchID>> *executionStat);
 
  private:
-  bool executeCandidate(const Patch elem, std::basic_string<char> &test, int index, ExecutionStat *executionStat);
+  bool executeCandidate(const Patch elem, __string &test, int index, std::unordered_map<__string, std::unordered_set<PatchID>> *executionStat);
   void prioritizeTest(std::vector<unsigned> &testOrder, unsigned index);
   std::vector<std::string> tests;
   TestingFramework tester;

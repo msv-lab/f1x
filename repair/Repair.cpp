@@ -113,21 +113,21 @@ bool validatePatch(Project &project,
 }
 
 //TODO: call AFLGo to generate a test case that can reach target location loc
-std::basic_string<char> chooseTest(Location loc, ExecutionStat executionStat){
+std::basic_string<char> chooseTest(Location loc, unordered_map<__string, unordered_set<PatchID>> *executionStat){
   return "random"; //fake test
 }
 
-bool validateByFuzzing(SearchEngine engine, Patch patch, int patchIndex){
+bool validateByFuzzing(SearchEngine engine, Patch patch, int patchIndex, unordered_set<PatchID> allPatch,
+                      unordered_map<__string, unordered_set<PatchID>> * originalPartition){
   Location loc = patch.app->location;
   BOOST_LOG_TRIVIAL(info) << "patch location " << loc.beginLine << "," << loc.endLine;
-  vector<PatchID> partition;
-  ExecutionStat executionStat = {partition, 0, 0}; //init partitionSize=0, coverage=0
+  unordered_map<__string, unordered_set<PatchID>> executionStat;
   bool isPassing = true;
   //while (true) {
-    auto test = chooseTest(loc, executionStat);
+    auto test = chooseTest(loc, &executionStat);
   
     isPassing &= engine.evaluatePatchWithNewTest(patch, test, patchIndex, &executionStat);
-    BOOST_LOG_TRIVIAL(info) << "partition Size " << executionStat.partitionSize;
+    BOOST_LOG_TRIVIAL(info) << "partition Size " << executionStat[test].size();
     //if(isPassing == false)
     //  break;
   //}
@@ -310,7 +310,8 @@ RepairStatus repair(Project &project,
     dumpSearchSpace(searchSpace, path, filePaths, cost);
   }
 
-  SearchEngine engine(tests, tester, runtime, getPartitionable(searchSpace), relatedTestIndexes);
+  shared_ptr<unordered_map<unsigned long, unordered_set<PatchID>>> partitionable = getPartitionable(searchSpace);
+  SearchEngine engine(tests, tester, runtime, partitionable, relatedTestIndexes);
 
   unsigned long last = 0;
   unordered_set<AppID> fixLocations;
@@ -320,7 +321,8 @@ RepairStatus repair(Project &project,
 
   // generate plausible patches
   while (last < searchSpace.size()) {
-    last = engine.findNext(searchSpace, last);
+    unordered_map<__string, unordered_set<PatchID>> executionStat;
+    last = engine.findNext(searchSpace, last, &executionStat);
     if (last == searchSpace.size())
       break;
 
@@ -349,7 +351,7 @@ RepairStatus repair(Project &project,
       if (cfg.validatePatches)
         valid = validatePatch(project, tester, tests, patch);
       if (cfg.validatePatchesByFuzzing)
-        valid &= validateByFuzzing(engine, patch, last);
+        valid &= validateByFuzzing(engine, patch, last, (*partitionable)[patch.app->id], &executionStat);
       if (valid) {
         fixLocations.insert(patch.app->id);
         plausiblePatches.push_back(patch);
@@ -361,7 +363,7 @@ RepairStatus repair(Project &project,
     } else {
       bool valid = true;
       if (cfg.validatePatchesByFuzzing)
-        valid &= validateByFuzzing(engine, patch, last);
+        valid &= validateByFuzzing(engine, patch, last, (*partitionable)[patch.app->id], &executionStat);
       if(valid){
         if (fixLocations.count(patch.app->id))
           moreThanOneFound.insert(patch.app->id);

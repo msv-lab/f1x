@@ -215,3 +215,5 @@ struct ExecutionStat {
   unsigned long partitionSize;
   float coverage;
 };
+
+typedef std::__cxx11::basic_string<char> __string;
