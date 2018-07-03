@@ -140,7 +140,7 @@ for test in $TESTS; do
             ;;
         *)
             # When F1X_PROJECT_CC is clang, we need to use --enable-llvm-cov
-            project_compiler=$(basename $F1X_PROJECT_CC)
+            project_compiler=$(basename $F1X_PROJECT_CC 2> /dev/null)
             if [[ $project_compiler = *"clang"* ]] ; then
                 repair_cmd="$repair_cmd --enable-llvm-cov"
             fi
