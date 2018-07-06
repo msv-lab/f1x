@@ -32,11 +32,11 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 
+#include "F1X.h"
 #include "Core.h"
 #include "Global.h"
 #include "Repair.h"
 #include "Util.h"
-
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -89,6 +89,7 @@ std::vector<ProjectFile> parseFilesArg(const std::vector<std::string> &args) {
         }
       }
     }
+
     file = relativeTo(fs::current_path(), fs::canonical(file));
     if (! boost::filesystem::exists(file)) {
       throw parse_error("source file does not exist: " + file.string());
@@ -98,8 +99,7 @@ std::vector<ProjectFile> parseFilesArg(const std::vector<std::string> &args) {
   return files;
 }
 
-
-int main (int argc, char *argv[]) {
+int repair_main(int argc, char *argv[], SearchEngine * &engine) {
   string buildCmd = "make -e";
   vector<ProjectFile> files;
   fs::path output;
@@ -143,12 +143,12 @@ int main (int argc, char *argv[]) {
     po::notify(vm);
   } catch(po::error& e) {
     BOOST_LOG_TRIVIAL(error) << e.what() << " (use --help)";
-    return ERROR_EXIT_CODE;    
+    return ERROR_EXIT_CODE;
   }
 
   if (vm.count("help")) {
     std::cout << general << std::endl;
-    return ERROR_EXIT_CODE;    
+    return ERROR_EXIT_CODE;
   }
 
   if (vm.count("cost")) {
@@ -284,27 +284,29 @@ int main (int argc, char *argv[]) {
   fs::path dataDir = fs::temp_directory_path() / fs::unique_path();
   fs::create_directory(dataDir);
   BOOST_LOG_TRIVIAL(info) << "intermediate data directory: " << dataDir;
+  BOOST_LOG_TRIVIAL(info) << "output data directory: " << output;
   cfg.dataDir = dataDir.string();
 
-  RepairStatus status;
+  //SearchEngine *engine = NULL;
+  RepairStatus repairStatus;
   {
     Project project(files, buildCmd);
     TestingFramework tester(project, driver, testTimeout);
     
-    status = repair(project, tester, tests, output);
+    repairStatus = repair(project, tester, tests, output, engine);
   }
 
   // NOTE: project is already destroyed here
-  if (cfg.removeIntermediateData) {
+  if (cfg.validatePatchesByFuzzing && cfg.removeIntermediateData) {
     fs::remove_all(dataDir);
   }
 
-  switch (status) {
+  switch (repairStatus) {
   case RepairStatus::SUCCESS:
     if (cfg.generateAll) {
-      BOOST_LOG_TRIVIAL(info) << "patches successfully generated: " << output;
+      BOOST_LOG_TRIVIAL(info) << "patches successfully generated : " << output;
     } else {
-      BOOST_LOG_TRIVIAL(info) << "patch successfully generated: " << output;
+      BOOST_LOG_TRIVIAL(info) << "patch successfully generated : " << output;
     }
     return SUCCESS_EXIT_CODE;
   case RepairStatus::FAILURE:
@@ -318,4 +320,18 @@ int main (int argc, char *argv[]) {
   }
 
   return ERROR_EXIT_CODE;
+}
+
+int c_repair_main(int argc, char *argv[], C_SearchEngine ** c_engine){
+  SearchEngine *engine = NULL;
+  int status = repair_main(argc, argv, engine);
+  *c_engine = SearchEngine_TO_C(engine);
+  return status;
+}
+
+int main(int argc, char *argv[]){
+  SearchEngine *engine = NULL;
+  int status = repair_main(argc, argv, engine);
+  BOOST_LOG_TRIVIAL(info) << "progress after execution is : " << engine->temp_getProgress();
+  return status;
 }

@@ -799,6 +799,9 @@ namespace generator {
        << "#include <fcntl.h>" << "\n"
        << "#include <sys/stat.h>" << "\n"
        << "#include <sys/mman.h>" << "\n";
+//added by gaoxiang, to show the modified location is executed
+    OS << "#include \"SharedMemorySetter.h\"" << "\n";
+//end
 
 
     generator::runtimeLoader(OS);
@@ -874,7 +877,9 @@ namespace generator {
       OS << "if (output_panic) {" << "\n"
          << "abort();" << "\n"
          << "}" << "\n";
-
+//added by gaoxiang, to show the modified location is executed
+      OS << "setSharedMemory(32);" << "\n";
+//end
       OS << "return output_value;" << "\n";
 
       OS << "}" << "\n";

@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-add_library (f1xRepair
+add_library (f1xRepair SHARED
   Process.cpp
   Global.cpp
   Typing.cpp
@@ -26,7 +26,12 @@ add_library (f1xRepair
   Synthesis.cpp
   SearchEngine.cpp
   Repair.cpp
-	FaultLocalization.cpp
-  )
+  FaultLocalization.cpp
+)
 
 target_include_directories (f1xRepair PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+set_target_properties(f1xRepair PROPERTIES PUBLIC_HEADER "SearchEngine.h")
+INSTALL(TARGETS f1xRepair
+        DESTINATION lib
+)

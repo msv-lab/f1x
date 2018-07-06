@@ -18,6 +18,7 @@
 
 #pragma once
 
+#ifdef __cplusplus
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
@@ -27,7 +28,6 @@
 #include "Project.h"
 #include "Runtime.h"
 #include "FaultLocalization.h"
-
 
 struct SearchStatistics {
   unsigned long explorationCounter;
@@ -50,6 +50,7 @@ class SearchEngine {
   SearchStatistics getStatistics();
   void showProgress(unsigned long current, unsigned long total);
   bool evaluatePatchWithNewTest(const Patch elem, __string &test, int index, std::unordered_map<__string, std::unordered_set<PatchID>> *executionStat);
+  unsigned long temp_getProgress();
 
  private:
   bool executeCandidate(const Patch elem, __string &test, int index, std::unordered_map<__string, std::unordered_set<PatchID>> *executionStat);
@@ -66,3 +67,15 @@ class SearchEngine {
   std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes;
   boost::filesystem::path coverageDir;
 };
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+struct C_SearchEngine;
+unsigned long c_temp_getProgress(struct C_SearchEngine*);
+#ifdef __cplusplus
+}
+#endif
+#define SearchEngine_TO_CPP(o) (reinterpret_cast<SearchEngine*>(o))
+#define SearchEngine_TO_C(o)   (reinterpret_cast<struct C_SearchEngine*>(o))

@@ -23,7 +23,7 @@
 #include "Config.h"
 #include "Core.h"
 #include "Project.h"
-
+#include "SearchEngine.h"
 
 /*
   Initializes repair process, performs search, saves patch(es) if found.
@@ -31,4 +31,5 @@
 RepairStatus repair(Project &project,
                     TestingFramework &tester,
                     const std::vector<std::string> &tests,
-                    const boost::filesystem::path &patchOutput);
+                    const boost::filesystem::path &patchOutput,
+                    SearchEngine* &engine);

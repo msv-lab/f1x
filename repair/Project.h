@@ -58,6 +58,7 @@ class Project {
   std::vector<ProjectFile> getFiles() const;
   void setFiles(const std::vector<ProjectFile> &files);
   std::vector<boost::filesystem::path> filesFromCompilationDB();
+  bool buildInEnvironment(const std::map<std::string, std::string> &env, const std::string &baseCmd);
 
  private:
   std::vector<ProjectFile> files;
@@ -66,7 +67,7 @@ class Project {
 
   void saveFilesWithPrefix(const std::string &prefix);
   void restoreFilesWithPrefix(const std::string &prefix);
-  bool buildInEnvironment(const std::map<std::string, std::string> &env, const std::string &baseCmd);
+  //bool buildInEnvironment(const std::map<std::string, std::string> &env, const std::string &baseCmd);
   unsigned getFileId(const ProjectFile &file);
 };
 

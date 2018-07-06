@@ -227,6 +227,14 @@ bool SearchEngine::executeCandidate(const Patch elem,
   return passAll;
 }
 
+unsigned long SearchEngine::temp_getProgress(){
+  return progress;
+}
+
+unsigned long c_temp_getProgress(struct C_SearchEngine* engine){
+  SearchEngine* a = SearchEngine_TO_CPP(engine);
+  return a->temp_getProgress();
+}
 
 bool SearchEngine::evaluatePatchWithNewTest(const Patch elem,__string &test, int index, 
                                             unordered_map<__string, unordered_set<PatchID>> *executionStat) {

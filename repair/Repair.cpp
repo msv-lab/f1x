@@ -37,7 +37,7 @@
 #include "Runtime.h"
 #include "Profiler.h"
 #include "Synthesis.h"
-#include "SearchEngine.h"
+//#include "SearchEngine.h"
 #include "FaultLocalization.h"
 #include "Prioritization.h"
 
@@ -48,7 +48,8 @@ using std::pair;
 using std::shared_ptr;
 using std::unordered_map;
 using std::unordered_set;
-
+using std::string;
+using std::to_string;
 
 const string APPLICATIONS_FILE_PREFIX = "applications";
 
@@ -119,27 +120,47 @@ bool validatePatch(Project &project,
  * @param isPassing: the execution result of last test (Pass: true, Fail: false)
  * @param partition: equivalent patch set of the last test (NULL: for the first query)
  */
-std::basic_string<char> generateTest(Location loc, unordered_map<__string, unordered_set<PatchID>> * originalPartition,
+std::basic_string<char> generateTest(Project project, const Patch patch, unordered_map<__string, unordered_set<PatchID>> * originalPartition,
                                      bool isPassing, unordered_set<PatchID> *partition){
+  Location loc = patch.app->location;
+  BOOST_LOG_TRIVIAL(info) << "patch location " << loc.beginLine;
+  string F1X_APP = to_string(patch.app->id);
+  string F1X_ID_BASE = to_string(patch.id.base);
+  string F1X_ID_INT2 = to_string(patch.id.int2);
+  string F1X_ID_BOOL2 = to_string(patch.id.bool2);
+  string F1X_ID_COND2 = to_string(patch.id.cond3);
+  string F1X_ID_PARAM = to_string(patch.id.param);
+  BOOST_LOG_TRIVIAL(info) << "Environment Variables: " << F1X_APP << " " << F1X_ID_BASE << " " << F1X_ID_INT2 << " " << F1X_ID_BOOL2 << " " << F1X_ID_COND2 << " " << F1X_ID_PARAM;
+  BOOST_LOG_TRIVIAL(info) << "working directory: " << cfg.dataDir;
+  
+  std::stringstream callAFLGOfromF1X;
+  callAFLGOfromF1X << "callAFLGOfromF1X";
+  bool findNewTest = project.buildInEnvironment({ {"F1X_APP", to_string(patch.app->id)}, 
+                                          {"F1X_ID_BASE", to_string(patch.id.base)}, 
+                                          {"F1X_ID_INT2", to_string(patch.id.int2)},
+                                          {"F1X_ID_BOOL2", to_string(patch.id.bool2)},
+                                          {"F1X_ID_COND2", to_string(patch.id.cond3)},
+                                          {"F1X_ID_PARAM", to_string(patch.id.param)},
+                                          {"LD_LIBRARY_PATH", cfg.dataDir}}, 
+                                        callAFLGOfromF1X.str());
+  BOOST_LOG_TRIVIAL(info) << "find Next test: " << findNewTest;
   return "random"; //fake test
 }
 
-bool validateByFuzzing(SearchEngine engine, Patch patch, int patchIndex, unordered_set<PatchID> allPatch,
+bool validateByFuzzing(Project project, SearchEngine *engine, Patch patch, int patchIndex, unordered_set<PatchID> allPatch,
                       unordered_map<__string, unordered_set<PatchID>> * originalPartition){
-  Location loc = patch.app->location;
-  BOOST_LOG_TRIVIAL(info) << "patch location " << loc.beginLine;
   unordered_map<__string, unordered_set<PatchID>> executionStat;
   bool isPassing = true;
   //geneate first test case by fuzzing
-  auto test = generateTest(loc, originalPartition, isPassing, NULL); 
+  auto test = generateTest(project, patch, originalPartition, isPassing, NULL); 
   //while (true) {
-    isPassing &= engine.evaluatePatchWithNewTest(patch, test, patchIndex, &executionStat);
-    BOOST_LOG_TRIVIAL(info) << "partition Size " << executionStat[test].size();
+    //isPassing &= engine->evaluatePatchWithNewTest(patch, test, patchIndex, &executionStat);
+    //BOOST_LOG_TRIVIAL(info) << "partition Size " << executionStat[test].size();
     //if(isPassing == false)
     //  break;
 
     //generate new test case
-    test = generateTest(loc, originalPartition, isPassing, &executionStat[test]);
+    //test = generateTest(loc, originalPartition, isPassing, &executionStat[test]);
  //}
   return isPassing;
 }
@@ -147,7 +168,8 @@ bool validateByFuzzing(SearchEngine engine, Patch patch, int patchIndex, unorder
 RepairStatus repair(Project &project,
                     TestingFramework &tester,
                     const std::vector<std::string> &tests,
-                    const boost::filesystem::path &patchOutput) {
+                    const boost::filesystem::path &patchOutput,
+                    SearchEngine * &engine) {
 
   pair<bool, bool> initialBuildStatus = project.initialBuild();
   if (! initialBuildStatus.first) {
@@ -321,8 +343,10 @@ RepairStatus repair(Project &project,
   }
 
   shared_ptr<unordered_map<unsigned long, unordered_set<PatchID>>> partitionable = getPartitionable(searchSpace);
-  SearchEngine engine(tests, tester, runtime, partitionable, relatedTestIndexes);
-
+  //SearchEngine engine(tests, tester, runtime, partitionable, relatedTestIndexes);
+  
+  engine = new SearchEngine(tests, tester, runtime, partitionable, relatedTestIndexes);
+  BOOST_LOG_TRIVIAL(info) <<"progress before execution is : " << engine->temp_getProgress();
   unsigned long last = 0;
   unordered_set<AppID> fixLocations;
   unordered_set<AppID> moreThanOneFound;
@@ -332,7 +356,7 @@ RepairStatus repair(Project &project,
   // generate plausible patches
   while (last < searchSpace.size()) {
     unordered_map<__string, unordered_set<PatchID>> executionStat;
-    last = engine.findNext(searchSpace, last, &executionStat);
+    last = engine->findNext(searchSpace, last, &executionStat);
     if (last == searchSpace.size())
       break;
 
@@ -361,7 +385,7 @@ RepairStatus repair(Project &project,
       if (cfg.validatePatches)
         valid = validatePatch(project, tester, tests, patch);
       if (cfg.validatePatchesByFuzzing)
-        valid &= validateByFuzzing(engine, patch, last, (*partitionable)[patch.app->id], &executionStat);
+        valid &= validateByFuzzing(project, engine, patch, last, (*partitionable)[patch.app->id], &executionStat);
       if (valid) {
         fixLocations.insert(patch.app->id);
         plausiblePatches.push_back(patch);
@@ -373,7 +397,7 @@ RepairStatus repair(Project &project,
     } else {
       bool valid = true;
       if (cfg.validatePatchesByFuzzing)
-        valid &= validateByFuzzing(engine, patch, last, (*partitionable)[patch.app->id], &executionStat);
+        valid &= validateByFuzzing(project, engine, patch, last, (*partitionable)[patch.app->id], &executionStat);
       if(valid){
         if (fixLocations.count(patch.app->id))
           moreThanOneFound.insert(patch.app->id);
@@ -397,7 +421,7 @@ RepairStatus repair(Project &project,
   }
 
   if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
-    auto coverageSet = engine.getCoverageSet();
+    auto coverageSet = engine->getCoverageSet();
     for (auto &testCoverage : coverageSet) {
       BOOST_LOG_TRIVIAL(debug) << "test: " << testCoverage.first;
       std::unordered_map<PatchID, std::shared_ptr<Coverage>> patchCoverage = testCoverage.second;
@@ -439,7 +463,7 @@ RepairStatus repair(Project &project,
     }
   }
 
-  SearchStatistics stat = engine.getStatistics();
+  SearchStatistics stat = engine->getStatistics();
 
   BOOST_LOG_TRIVIAL(info) << "candidates evaluated: " << stat.explorationCounter;
   BOOST_LOG_TRIVIAL(info) << "tests executed: " << stat.executionCounter;
