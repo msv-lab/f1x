@@ -344,8 +344,8 @@ RepairStatus repair(Project &project,
 
   shared_ptr<unordered_map<unsigned long, unordered_set<PatchID>>> partitionable = getPartitionable(searchSpace);
   //SearchEngine engine(tests, tester, runtime, partitionable, relatedTestIndexes);
-  
-  engine = new SearchEngine(tests, tester, runtime, partitionable, relatedTestIndexes);
+  engine = new SearchEngine(searchSpace, tests, tester, runtime, partitionable, relatedTestIndexes);
+
   BOOST_LOG_TRIVIAL(info) <<"progress before execution is : " << engine->temp_getProgress();
   unsigned long last = 0;
   unordered_set<AppID> fixLocations;
@@ -384,8 +384,8 @@ RepairStatus repair(Project &project,
       bool valid = true;
       if (cfg.validatePatches)
         valid = validatePatch(project, tester, tests, patch);
-      if (cfg.validatePatchesByFuzzing)
-        valid &= validateByFuzzing(project, engine, patch, last, (*partitionable)[patch.app->id], &executionStat);
+//      if (cfg.validatePatchesByFuzzing)
+//        valid &= validateByFuzzing(project, engine, patch, last, (*partitionable)[patch.app->id], &executionStat);
       if (valid) {
         fixLocations.insert(patch.app->id);
         plausiblePatches.push_back(patch);
@@ -396,8 +396,8 @@ RepairStatus repair(Project &project,
       }
     } else {
       bool valid = true;
-      if (cfg.validatePatchesByFuzzing)
-        valid &= validateByFuzzing(project, engine, patch, last, (*partitionable)[patch.app->id], &executionStat);
+//      if (cfg.validatePatchesByFuzzing)
+//        valid &= validateByFuzzing(project, engine, patch, last, (*partitionable)[patch.app->id], &executionStat);
       if(valid){
         if (fixLocations.count(patch.app->id))
           moreThanOneFound.insert(patch.app->id);

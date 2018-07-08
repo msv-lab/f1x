@@ -800,7 +800,7 @@ namespace generator {
        << "#include <sys/stat.h>" << "\n"
        << "#include <sys/mman.h>" << "\n";
 //added by gaoxiang, to show the modified location is executed
-    OS << "#include \"SharedMemorySetter.h\"" << "\n";
+//    OS << "#include \"SharedMemorySetter.h\"" << "\n";
 //end
 
 
@@ -878,7 +878,7 @@ namespace generator {
          << "abort();" << "\n"
          << "}" << "\n";
 //added by gaoxiang, to show the modified location is executed
-      OS << "setSharedMemory(32);" << "\n";
+//      OS << "setSharedMemory(32);" << "\n";
 //end
       OS << "return output_value;" << "\n";
 

@@ -19,7 +19,11 @@ add_library (F1X SHARED
   F1X.cpp
   F1X.h
 )
-
+set_target_properties(F1X PROPERTIES PUBLIC_HEADER "F1X.h")
+INSTALL(TARGETS F1X
+        DESTINATION lib
+        PUBLIC_HEADER DESTINATION include
+)
 
 ## f1x target:
 

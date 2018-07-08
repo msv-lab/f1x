@@ -34,16 +34,19 @@ using std::unordered_map;
 using std::shared_ptr;
 using std::string;
 using std::to_string;
+using std::vector;
 
 namespace fs = boost::filesystem;
 
 const unsigned SHOW_PROGRESS_STEP = 10;
 
-SearchEngine::SearchEngine(const std::vector<std::string> &tests,
+SearchEngine::SearchEngine(const std::vector<Patch> &searchSpace,
+                           const std::vector<std::string> &tests,
                            TestingFramework &tester,
                            Runtime &runtime,
                            shared_ptr<unordered_map<unsigned long, unordered_set<PatchID>>> partitionable,
                            std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes):
+  searchSpace(searchSpace),
   tests(tests),
   tester(tester),
   runtime(runtime),
@@ -67,12 +70,12 @@ SearchEngine::SearchEngine(const std::vector<std::string> &tests,
 
   coverageDir = fs::path(cfg.dataDir) / "patch-coverage";
   fs::create_directory(coverageDir);
-
+  vLocs.reserve(relatedTestIndexes.size());
 }
 
 
 void SearchEngine::showProgress(unsigned long current, unsigned long total) {
-      if ((100 * current) / total >= progress) {
+    if ((100 * current) / total >= progress) {
       BOOST_LOG_TRIVIAL(info) << "exploration progress: " << progress << "%";
       progress += SHOW_PROGRESS_STEP;
     }
@@ -148,6 +151,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
     }
 
     if (passAll) {
+      vLocs.insert(elem.app->location);
       return index;
     }
   }
@@ -236,7 +240,67 @@ unsigned long c_temp_getProgress(struct C_SearchEngine* engine){
   return a->temp_getProgress();
 }
 
-bool SearchEngine::evaluatePatchWithNewTest(const Patch elem,__string &test, int index, 
+void SearchEngine::getPatchLoc(int &length, int *& array){
+  int *locs = (int*) malloc(vLocs.size() * sizeof(int));;
+  length = vLocs.size();
+  int index = 0;
+  for (unordered_set<Location>::iterator it = vLocs.begin() ; it != vLocs.end(); ++it){
+    locs[index++] = it->beginLine;
+  }
+  array = locs;
+}
+
+void c_getPatchLoc(struct C_SearchEngine* engine, int *length, int ** array){
+  SearchEngine* a = SearchEngine_TO_CPP(engine);
+  a->getPatchLoc(*length, *array);
+}
+
+unsigned long c_fuzzPatch(struct C_SearchEngine* engine, char* test){
+  SearchEngine* a = SearchEngine_TO_CPP(engine);
+  std::string str_test(test);
+  BOOST_LOG_TRIVIAL(info) << "execute with test : " << str_test;
+  unsigned long partitionSize = a->evaluatePatchWithNewTest(str_test);
+
+  return partitionSize;
+}
+
+unsigned long SearchEngine::evaluatePatchWithNewTest(__string &test) {
+  unsigned long index = 0;
+  for (; index < searchSpace.size(); index++) {
+    const Patch &elem = searchSpace[index];
+
+    if (cfg.valueTEQ) {
+      if (failing.count(elem.id))
+        continue;
+    }
+
+    InEnvironment env({ { "F1X_APP", to_string(elem.app->id) },
+                        { "F1X_ID_BASE", to_string(elem.id.base) },
+                        { "F1X_ID_INT2", to_string(elem.id.int2) },
+                        { "F1X_ID_BOOL2", to_string(elem.id.bool2) },
+                        { "F1X_ID_COND3", to_string(elem.id.cond3) },
+                        { "F1X_ID_PARAM", to_string(elem.id.param) } });
+
+    bool passAll = true;
+
+    if (cfg.valueTEQ) {
+      if (passing[test].count(elem.id))
+        continue;
+
+      //FIXME: select only unexplored candidates
+      runtime.setPartition((*partitionable)[elem.app->id]);
+    }
+    unordered_map<__string, unordered_set<PatchID>> executionStat;
+    passAll = executeCandidate(elem, test, index, &executionStat);
+
+  }
+  BOOST_LOG_TRIVIAL(info) << "Search Space size : " << searchSpace.size();
+  BOOST_LOG_TRIVIAL(info) << "failing size : " << failing.size();
+  return searchSpace.size() - failing.size();
+}
+
+
+/*bool SearchEngine::evaluatePatchWithNewTest(const Patch elem,__string &test, int index, 
                                             unordered_map<__string, unordered_set<PatchID>> *executionStat) {
   if (cfg.valueTEQ) {
     if (failing.count(elem.id))
@@ -263,4 +327,4 @@ bool SearchEngine::evaluatePatchWithNewTest(const Patch elem,__string &test, int
   bool passAll = executeCandidate(elem, test, index, executionStat);
 
   return passAll;
-}
+}*/

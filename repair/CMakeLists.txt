@@ -27,6 +27,7 @@ add_library (f1xRepair SHARED
   SearchEngine.cpp
   Repair.cpp
   FaultLocalization.cpp
+  Partitions.cpp
 )
 
 target_include_directories (f1xRepair PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -34,4 +35,5 @@ target_include_directories (f1xRepair PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(f1xRepair PROPERTIES PUBLIC_HEADER "SearchEngine.h")
 INSTALL(TARGETS f1xRepair
         DESTINATION lib
+        PUBLIC_HEADER DESTINATION include
 )

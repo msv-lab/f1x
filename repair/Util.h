@@ -49,6 +49,19 @@ namespace std {
   };
 }
 
+namespace std {
+  template<>
+    struct hash<Partition> {
+    inline size_t operator()(const Partition& par) const {
+      size_t value = 0;
+      hash_combine(value, par.id);
+      hash_combine(value, par.patches);
+      return value;
+    }
+  };
+}
+
+
 bool isAbstractNode(NodeKind kind);
 
 Operator binaryOperatorByString(const std::string &repr);

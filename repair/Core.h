@@ -210,4 +210,15 @@ struct Patch {
   PatchMetadata meta;
 };
 
+struct Partition {
+  std::shared_ptr<std::vector<PatchID>> patches;
+  AppID id;
+
+  bool operator==(const Partition &other) const {
+    return (id == other.id
+         && patches == other.patches);
+  }
+
+};
+
 typedef std::__cxx11::basic_string<char> __string;

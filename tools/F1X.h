@@ -1,4 +1,4 @@
-#include "../repair/SearchEngine.h"
+#include "SearchEngine.h"
 #ifdef __cplusplus
 extern "C"{
 #endif

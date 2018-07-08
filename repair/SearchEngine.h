@@ -39,7 +39,8 @@ struct SearchStatistics {
 
 class SearchEngine {
  public:
-  SearchEngine(const std::vector<std::string> &tests,
+  SearchEngine(const std::vector<Patch> &searchSpace,
+               const std::vector<std::string> &tests,
                TestingFramework &tester,
                Runtime &runtime,
                std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<PatchID>>> partitionable,
@@ -49,8 +50,9 @@ class SearchEngine {
   std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> getCoverageSet();
   SearchStatistics getStatistics();
   void showProgress(unsigned long current, unsigned long total);
-  bool evaluatePatchWithNewTest(const Patch elem, __string &test, int index, std::unordered_map<__string, std::unordered_set<PatchID>> *executionStat);
+  unsigned long evaluatePatchWithNewTest(__string &test);
   unsigned long temp_getProgress();
+  void getPatchLoc(int &length, int *& array);
 
  private:
   bool executeCandidate(const Patch elem, __string &test, int index, std::unordered_map<__string, std::unordered_set<PatchID>> *executionStat);
@@ -59,6 +61,7 @@ class SearchEngine {
   TestingFramework tester;
   Runtime runtime;
   SearchStatistics stat;
+  const std::vector<Patch> searchSpace;
   unsigned long progress;
   std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<PatchID>>> partitionable;
   std::unordered_set<PatchID> failing;
@@ -66,6 +69,7 @@ class SearchEngine {
   std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> coverageSet;
   std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes;
   boost::filesystem::path coverageDir;
+  std::unordered_set<Location> vLocs;
 };
 #endif
 
@@ -74,6 +78,8 @@ extern "C" {
 #endif
 struct C_SearchEngine;
 unsigned long c_temp_getProgress(struct C_SearchEngine*);
+unsigned long c_fuzzPatch(struct C_SearchEngine*, char*);
+void c_getPatchLoc(struct C_SearchEngine* engine, int* length, int ** array);
 #ifdef __cplusplus
 }
 #endif
