@@ -46,6 +46,8 @@ struct Config {
   bool outputOnePerLocation;
   signed outputTop;
   bool validatePatchesByFuzzing;
+  std::string binaryPath;
+  std::string binaryName;
 };
 
 

@@ -44,5 +44,7 @@ struct Config cfg = {
   /* useLLVMCov               = */ false,
   /* outputOnePerLocation     = */ false,
   /* outputTop                = */ 0,
-  /* validatePatchesByFuzzing = */ true
+  /* validatePatchesByFuzzing = */ true,
+  /* binaryPath               = */ "", //TODO: need better design
+  /* ninaryName               = */ ""
 };

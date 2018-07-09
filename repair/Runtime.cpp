@@ -113,5 +113,6 @@ bool Runtime::compile() {
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   unsigned long status = std::system(cmd.str().c_str());
+
   return WEXITSTATUS(status) == 0;
 }

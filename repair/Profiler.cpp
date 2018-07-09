@@ -136,6 +136,14 @@ bool Profiler::compile() {
   }
   BOOST_LOG_TRIVIAL(debug) << "cmd: " << cmd.str();
   unsigned long status = std::system(cmd.str().c_str());
+  if(!cfg.binaryPath.empty()){
+    std::stringstream cmdCopyLib;
+    cmdCopyLib << "cp"
+               << " " << "libf1xrt.so"
+               << " " << cfg.binaryPath;
+    std::system(cmdCopyLib.str().c_str());
+  }
+
   return WEXITSTATUS(status) == 0;
 }
 

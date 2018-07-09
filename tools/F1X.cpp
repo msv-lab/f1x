@@ -109,6 +109,8 @@ int repair_main(int argc, char *argv[], SearchEngine * &engine) {
 
   po::options_description general("Usage: f1x OPTIONS\n\nSupported options");
   general.add_options()
+    ("binary-path,P", po::value<string>()->value_name("PATH"), "the path of the project binary")
+    ("binary-name,N", po::value<string>()->value_name("PATH"), "the name of the project binary")
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("tests,t", po::value<vector<string>>()->multitoken()->value_name("ID..."), "list of test IDs")
     ("test-timeout,T", po::value<unsigned>()->value_name("MS"), "test execution timeout")
@@ -235,6 +237,14 @@ int repair_main(int argc, char *argv[], SearchEngine * &engine) {
     return ERROR_EXIT_CODE;
   }
   driver = fs::absolute(vm["driver"].as<string>());
+
+  if (vm.count("binary-path")) {
+    cfg.binaryPath = fs::absolute(vm["binary-path"].as<string>()).string();
+  }
+
+  if (vm.count("binary-name")) {
+    cfg.binaryName = vm["binary-name"].as<string>();
+  }
 
   if (!vm.count("test-timeout")) {
     BOOST_LOG_TRIVIAL(error) << "test execution timeout is not specified (use --help)";

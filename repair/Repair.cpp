@@ -256,6 +256,17 @@ RepairStatus repair(Project &project,
   BOOST_LOG_TRIVIAL(info) << "number of negative tests: " << numNegative;
   BOOST_LOG_TRIVIAL(info) << "negative tests: " << prettyPrintTests(negativeTests);
 
+  if(!cfg.binaryPath.empty() && !cfg.binaryName.empty()){
+    BOOST_LOG_TRIVIAL(info) << "binary path " << cfg.binaryPath;
+    BOOST_LOG_TRIVIAL(info) << "binary name " << cfg.binaryName;
+    std::stringstream cmdCopyBinary;
+    cmdCopyBinary << "cp"
+                  << " " << cfg.binaryPath << "/" << cfg.binaryName
+                  << " " << cfg.binaryPath << "/" << cfg.binaryName << "_profile";
+    unsigned long status = std::system(cmdCopyBinary.str().c_str());
+    BOOST_LOG_TRIVIAL(info) << "copy profile executable: " << WEXITSTATUS(status);
+  }
+
   if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF)
     project.deleteCoverageFiles();
  
