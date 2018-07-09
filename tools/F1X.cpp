@@ -342,6 +342,5 @@ int c_repair_main(int argc, char *argv[], C_SearchEngine ** c_engine){
 int main(int argc, char *argv[]){
   SearchEngine *engine = NULL;
   int status = repair_main(argc, argv, engine);
-  BOOST_LOG_TRIVIAL(info) << "progress after execution is : " << engine->temp_getProgress();
   return status;
 }

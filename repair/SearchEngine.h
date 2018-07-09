@@ -51,7 +51,7 @@ class SearchEngine {
   SearchStatistics getStatistics();
   void showProgress(unsigned long current, unsigned long total);
   unsigned long evaluatePatchWithNewTest(__string &test);
-  unsigned long temp_getProgress();
+  const char* getWorkingDir();
   void getPatchLoc(int &length, int *& array);
 
  private:
@@ -77,7 +77,7 @@ class SearchEngine {
 extern "C" {
 #endif
 struct C_SearchEngine;
-unsigned long c_temp_getProgress(struct C_SearchEngine*);
+const char* c_getWorkingDir(struct C_SearchEngine*);
 unsigned long c_fuzzPatch(struct C_SearchEngine*, char*);
 void c_getPatchLoc(struct C_SearchEngine* engine, int* length, int ** array);
 #ifdef __cplusplus

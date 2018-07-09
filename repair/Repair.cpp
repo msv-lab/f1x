@@ -357,7 +357,6 @@ RepairStatus repair(Project &project,
   //SearchEngine engine(tests, tester, runtime, partitionable, relatedTestIndexes);
   engine = new SearchEngine(searchSpace, tests, tester, runtime, partitionable, relatedTestIndexes);
 
-  BOOST_LOG_TRIVIAL(info) <<"progress before execution is : " << engine->temp_getProgress();
   unsigned long last = 0;
   unordered_set<AppID> fixLocations;
   unordered_set<AppID> moreThanOneFound;

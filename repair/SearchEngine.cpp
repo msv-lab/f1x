@@ -231,13 +231,13 @@ bool SearchEngine::executeCandidate(const Patch elem,
   return passAll;
 }
 
-unsigned long SearchEngine::temp_getProgress(){
-  return progress;
+const char* SearchEngine::getWorkingDir(){
+  return cfg.dataDir.c_str();
 }
 
-unsigned long c_temp_getProgress(struct C_SearchEngine* engine){
+const char* c_getWorkingDir(struct C_SearchEngine* engine){
   SearchEngine* a = SearchEngine_TO_CPP(engine);
-  return a->temp_getProgress();
+  return a->getWorkingDir();
 }
 
 void SearchEngine::getPatchLoc(int &length, int *& array){
