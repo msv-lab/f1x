@@ -102,7 +102,7 @@ void SearchEngine::prioritizeTest(std::vector<unsigned> &testOrder, unsigned ind
 
 
 unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
-                                     unsigned long from, unordered_map<__string, unordered_set<PatchID>> *executionStat) {
+                                     unsigned long from) {
 
   unsigned long index = from;
   for (; index < searchSpace.size(); index++) {
@@ -124,8 +124,6 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
                         { "F1X_ID_PARAM", to_string(elem.id.param) } });
 
     bool passAll = true;
-    if(cfg.validatePatchesByFuzzing)
-      executionStat->clear();
 
     //TODO: build the relationship for the newly generated tests
     std::vector<unsigned> testOrder = relatedTestIndexes[elem.app->location];
@@ -140,7 +138,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
         //FIXME: select only unexplored candidates
         runtime.setPartition((*partitionable)[elem.app->id]);
       }
-      passAll = executeCandidate(elem, test, index, executionStat);
+      passAll = executeCandidate(elem, test, index);
       
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
@@ -160,7 +158,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
 }
 
 bool SearchEngine::executeCandidate(const Patch elem,
-                                     std::basic_string<char> &test, int index, unordered_map<__string, unordered_set<PatchID>> *executionStat){
+                                     std::basic_string<char> &test, int index){
   BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizePatchID(elem.id) 
                            << " with test " << test;
 
@@ -200,12 +198,13 @@ bool SearchEngine::executeCandidate(const Patch elem,
       BOOST_LOG_TRIVIAL(warning) << "partitioning failed for "
                                  << visualizePatchID(elem.id)
                                  << " with test " << test;
+      //FIXME: should not directly return true (for testing)
+      return true;
     }
 
-    if(cfg.validatePatchesByFuzzing) {
-      (*executionStat)[test]=partition;
+    //if(cfg.validatePatchesByFuzzing) {
       //std::copy(partition.begin(), partition.end(), std::back_inserter(executionStat->partition));
-    }
+    //}
 
     if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
       fs::path coverageFile = coverageDir / (test + "_" + std::to_string(index) + ".xml");
@@ -258,7 +257,7 @@ void c_getPatchLoc(struct C_SearchEngine* engine, int *length, int ** array){
 unsigned long c_fuzzPatch(struct C_SearchEngine* engine, char* test){
   SearchEngine* a = SearchEngine_TO_CPP(engine);
   std::string str_test(test);
-  BOOST_LOG_TRIVIAL(info) << "execute with test : " << str_test;
+  BOOST_LOG_TRIVIAL(debug) << "execute with test : " << str_test;
   unsigned long partitionSize = a->evaluatePatchWithNewTest(str_test);
 
   return partitionSize;
@@ -266,6 +265,7 @@ unsigned long c_fuzzPatch(struct C_SearchEngine* engine, char* test){
 
 unsigned long SearchEngine::evaluatePatchWithNewTest(__string &test) {
   unsigned long index = 0;
+  unordered_set<PatchID> unreachablePath;
   for (; index < searchSpace.size(); index++) {
     const Patch &elem = searchSpace[index];
 
@@ -290,12 +290,11 @@ unsigned long SearchEngine::evaluatePatchWithNewTest(__string &test) {
       //FIXME: select only unexplored candidates
       runtime.setPartition((*partitionable)[elem.app->id]);
     }
-    unordered_map<__string, unordered_set<PatchID>> executionStat;
-    passAll = executeCandidate(elem, test, index, &executionStat);
-
+    passAll = executeCandidate(elem, test, index);
   }
-  BOOST_LOG_TRIVIAL(info) << "Search Space size : " << searchSpace.size();
-  BOOST_LOG_TRIVIAL(info) << "failing size : " << failing.size();
+
+  BOOST_LOG_TRIVIAL(debug) << "Search Space size : " << searchSpace.size();
+  BOOST_LOG_TRIVIAL(debug) << "failing size : " << failing.size();
   return searchSpace.size() - failing.size();
 }
 

@@ -365,8 +365,7 @@ RepairStatus repair(Project &project,
 
   // generate plausible patches
   while (last < searchSpace.size()) {
-    unordered_map<__string, unordered_set<PatchID>> executionStat;
-    last = engine->findNext(searchSpace, last, &executionStat);
+    last = engine->findNext(searchSpace, last);
     if (last == searchSpace.size())
       break;
 
