@@ -50,15 +50,18 @@ class SearchEngine {
   std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> getCoverageSet();
   SearchStatistics getStatistics();
   void showProgress(unsigned long current, unsigned long total);
-  unsigned long evaluatePatchWithNewTest(__string &test);
+  int evaluatePatchWithNewTest(__string &test, char* reachedLocs, struct C_ExecutionStat*);
   const char* getWorkingDir();
-  void getPatchLoc(int &length, int *& array);
+  void getPatchLoc(int &length, char *& array);
 
  private:
-  bool executeCandidate(const Patch elem, __string &test, int index);
+  bool executeCandidate(const Patch elem, std::unordered_set<PatchID> &partition, __string &test, int index);
   void prioritizeTest(std::vector<unsigned> &testOrder, unsigned index);
+  void mergePartition(std::unordered_map<PatchID, int>);
   std::vector<std::string> tests;
   TestingFramework tester;
+  unsigned long partitionIndex;
+  int totalBrokenPartition;
   Runtime runtime;
   SearchStatistics stat;
   const std::vector<Patch> searchSpace;
@@ -66,20 +69,28 @@ class SearchEngine {
   std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<PatchID>>> partitionable;
   std::unordered_set<PatchID> failing;
   std::unordered_map<std::string, std::unordered_set<PatchID>> passing;
+  std::unordered_map<unsigned long, std::unordered_set<PatchID>> currentPartition;
   std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> coverageSet;
   std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes;
   boost::filesystem::path coverageDir;
   std::unordered_set<Location> vLocs;
+  std::unordered_map<std::string, AppID> locToId;
 };
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+struct C_ExecutionStat{
+  int numPlausiblePatch;
+  int numPartition;
+  int numBrokenPartition;
+  int totalNumBrokenPartition;
+};
 struct C_SearchEngine;
 const char* c_getWorkingDir(struct C_SearchEngine*);
-unsigned long c_fuzzPatch(struct C_SearchEngine*, char*);
-void c_getPatchLoc(struct C_SearchEngine* engine, int* length, int ** array);
+int c_fuzzPatch(struct C_SearchEngine*, char*, char*, struct C_ExecutionStat*);
+void c_getPatchLoc(struct C_SearchEngine* engine, int* length, char ** array);
 #ifdef __cplusplus
 }
 #endif

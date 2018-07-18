@@ -19,7 +19,7 @@ int main(int argc, char* argv[]){
 
   if(engine != NULL){
     //get all the locations of plausible patches
-    int * locs; int length;
+    char * locs; int length;
     c_getPatchLoc(engine, &length, &locs);
 
     FILE * fp;
@@ -27,10 +27,17 @@ int main(int argc, char* argv[]){
     if (fp == NULL){
       exit(1);
     }
-    for(int i=0; i< length; i++){
-      //encode location to one string("loc1", "loc2", "loc3"), which will be used in aflgo
-      fprintf(fp, "%d ", locs[i]);
+ 
+    char* end_locs;
+    char* end_loc;
+    char *loc = strtok_r (locs, "#", &end_locs);
+    while(loc != NULL){
+      char *bl = strtok_r (loc, " ", &end_loc);
+      bl = strtok_r(NULL," ", &end_loc); //the second value is the line number
+      fprintf(fp, "%s ", bl);
+      loc = strtok_r(NULL,"#", &end_locs); //the second value is the line number
     }
+
     fprintf(fp, "\n");
     fclose(fp);
   }

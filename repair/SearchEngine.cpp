@@ -60,6 +60,7 @@ SearchEngine::SearchEngine(const std::vector<Patch> &searchSpace,
   stat.nonTimeoutTestTime = 0;
 
   progress = 0;
+  partitionIndex = 0;
 
   //FIXME: I should use evaluation table instead
   failing = {};
@@ -73,6 +74,15 @@ SearchEngine::SearchEngine(const std::vector<Patch> &searchSpace,
   vLocs.reserve(relatedTestIndexes.size());
 }
 
+string locToString2(const Location &loc) {
+  std::ostringstream out;
+  out << loc.fileId << " "
+      << loc.beginLine << " "
+      << loc.beginColumn << " "
+      << loc.endLine << " "
+      << loc.endColumn;
+  return out.str();
+}
 
 void SearchEngine::showProgress(unsigned long current, unsigned long total) {
     if ((100 * current) / total >= progress) {
@@ -138,8 +148,13 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
         //FIXME: select only unexplored candidates
         runtime.setPartition((*partitionable)[elem.app->id]);
       }
-      passAll = executeCandidate(elem, test, index);
+      unordered_set<PatchID> partition;
+      passAll = executeCandidate(elem, partition, test, index);
       
+      //update current partition(FIXME: assume there is only one test case)
+      if(partition.size() > 0)
+        currentPartition[partitionIndex++] = partition;
+     
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
           prioritizeTest(relatedTestIndexes[elem.app->location], orderIndex);
@@ -150,6 +165,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
 
     if (passAll) {
       vLocs.insert(elem.app->location);
+      locToId[locToString2(elem.app->location)] = elem.app->id;
       return index;
     }
   }
@@ -157,7 +173,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
   return index;
 }
 
-bool SearchEngine::executeCandidate(const Patch elem,
+bool SearchEngine::executeCandidate(const Patch elem, unordered_set<PatchID> &newPartition,
                                      std::basic_string<char> &test, int index){
   BOOST_LOG_TRIVIAL(debug) << "executing candidate " << visualizePatchID(elem.id) 
                            << " with test " << test;
@@ -195,16 +211,12 @@ bool SearchEngine::executeCandidate(const Patch elem,
     unordered_set<PatchID> partition = runtime.getPartition();
     if (partition.empty()) {
       //NOTE: it should contain at least the current element
-      BOOST_LOG_TRIVIAL(warning) << "partitioning failed for "
-                                 << visualizePatchID(elem.id)
-                                 << " with test " << test;
+      //BOOST_LOG_TRIVIAL(warning) << "partitioning failed for "
+      //                           << visualizePatchID(elem.id)
+      //                           << " with test " << test;
       //FIXME: should not directly return true (for testing)
-      return true;
+      passAll = true;
     }
-
-    //if(cfg.validatePatchesByFuzzing) {
-      //std::copy(partition.begin(), partition.end(), std::back_inserter(executionStat->partition));
-    //}
 
     if (cfg.patchPrioritization == PatchPrioritization::SEMANTIC_DIFF) {
       fs::path coverageFile = coverageDir / (test + "_" + std::to_string(index) + ".xml");
@@ -217,6 +229,8 @@ bool SearchEngine::executeCandidate(const Patch elem,
       for (auto &id : partition)
         coverageSet[test][id] = curCoverage;
     }
+
+    newPartition.insert(partition.begin(), partition.end());
 
     if (passAll) {
       passing[test].insert(elem.id);
@@ -239,41 +253,60 @@ const char* c_getWorkingDir(struct C_SearchEngine* engine){
   return a->getWorkingDir();
 }
 
-void SearchEngine::getPatchLoc(int &length, int *& array){
-  int *locs = (int*) malloc(vLocs.size() * sizeof(int));;
+void SearchEngine::getPatchLoc(int &length, char *& array){
+  //int *locs = (int*) malloc(vLocs.size() * sizeof(int));
   length = vLocs.size();
-  int index = 0;
+  //int index = 0;
+  string out = "";
   for (unordered_set<Location>::iterator it = vLocs.begin() ; it != vLocs.end(); ++it){
-    locs[index++] = it->beginLine;
+    //locs[index++] = it->beginLine;
+    out = out + locToString2(*it) + "#";
   }
+  const char * temp = out.c_str();
+  char *locs = (char*) malloc(strlen(temp) * sizeof(char) + 1);
+  BOOST_LOG_TRIVIAL(info) << "locations : " << temp;
+  strcpy(locs, temp);
   array = locs;
 }
 
-void c_getPatchLoc(struct C_SearchEngine* engine, int *length, int ** array){
+void c_getPatchLoc(struct C_SearchEngine* engine, int *length, char** array){
   SearchEngine* a = SearchEngine_TO_CPP(engine);
   a->getPatchLoc(*length, *array);
 }
 
-unsigned long c_fuzzPatch(struct C_SearchEngine* engine, char* test){
+int c_fuzzPatch(struct C_SearchEngine* engine, char* test, char* reachedLocs, struct C_ExecutionStat* executionStat){
   SearchEngine* a = SearchEngine_TO_CPP(engine);
   std::string str_test(test);
   BOOST_LOG_TRIVIAL(debug) << "execute with test : " << str_test;
-  unsigned long partitionSize = a->evaluatePatchWithNewTest(str_test);
+  int executionState = a->evaluatePatchWithNewTest(str_test, reachedLocs, executionStat);
 
-  return partitionSize;
+  return executionState;
 }
 
-unsigned long SearchEngine::evaluatePatchWithNewTest(__string &test) {
+int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, struct C_ExecutionStat* executionStat) {
   unsigned long index = 0;
-  unordered_set<PatchID> unreachablePath;
+  unordered_set<AppID> reachablePatches;
+  unordered_set<PatchID> unReachablePatches;
+
+  int tempPatchIndex = 1;
+  unordered_map<PatchID, int> tempPatchPar; 
+
+  //extract the reached locations by executing this test
+  char *loc = strtok(reachedLocs, "#");
+  while(loc != NULL){
+    reachablePatches.insert(locToId[loc]);
+    loc = strtok(NULL,"#");
+  }
+
   for (; index < searchSpace.size(); index++) {
     const Patch &elem = searchSpace[index];
 
     if (cfg.valueTEQ) {
-      if (failing.count(elem.id))
+      if (failing.count(elem.id) || unReachablePatches.count(elem.id))
+        continue;
+      if (!reachablePatches.count(elem.app->id))
         continue;
     }
-
     InEnvironment env({ { "F1X_APP", to_string(elem.app->id) },
                         { "F1X_ID_BASE", to_string(elem.id.base) },
                         { "F1X_ID_INT2", to_string(elem.id.int2) },
@@ -290,40 +323,62 @@ unsigned long SearchEngine::evaluatePatchWithNewTest(__string &test) {
       //FIXME: select only unexplored candidates
       runtime.setPartition((*partitionable)[elem.app->id]);
     }
-    passAll = executeCandidate(elem, test, index);
+    unordered_set<PatchID> partition;
+    passAll = executeCandidate(elem, partition, test, index);
+    if(partition.size() == 0)
+      unReachablePatches.insert((*partitionable)[elem.app->id].begin(), (*partitionable)[elem.app->id].end());
+    else{
+      //set partition info
+      for(PatchID patchId: partition){
+        tempPatchPar[patchId] = tempPatchIndex;
+      }
+      tempPatchIndex++;
+    }
   }
-
+  int numOriginalParition = partitionIndex;
+  mergePartition(tempPatchPar);
+  
+  totalBrokenPartition += partitionIndex - numOriginalParition;
+  BOOST_LOG_TRIVIAL(debug) << "Number of broken partition is : " << partitionIndex - numOriginalParition;
   BOOST_LOG_TRIVIAL(debug) << "Search Space size : " << searchSpace.size();
   BOOST_LOG_TRIVIAL(debug) << "failing size : " << failing.size();
-  return searchSpace.size() - failing.size();
+
+  executionStat->numPlausiblePatch = searchSpace.size() - failing.size();
+  executionStat->numPartition = partitionIndex;
+  executionStat->numBrokenPartition = partitionIndex - numOriginalParition;
+  executionStat->totalNumBrokenPartition = totalBrokenPartition;
+  return 0;
 }
 
+void SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
+  unordered_map<unsigned long, unordered_set<PatchID>> newPartition;
+  unsigned long newPartitionIndex = 0;
+  for (auto it=currentPartition.begin(); it!=currentPartition.end(); ++it){
+    unordered_set<PatchID> par = it->second;
+    unordered_set<PatchID> par_temp = par;
+    while(par.size()>0){
+      unordered_set<PatchID> newPar;
+      auto it = par.begin();
+      newPar.insert(*it);
+      int tempPatchParIndex;
+      if(!tempPatchPar.count(*it))
+        tempPatchParIndex = -1;
+      else
+        tempPatchParIndex = tempPatchPar[*it];
+      par_temp.erase(*it);
 
-/*bool SearchEngine::evaluatePatchWithNewTest(const Patch elem,__string &test, int index, 
-                                            unordered_map<__string, unordered_set<PatchID>> *executionStat) {
-  if (cfg.valueTEQ) {
-    if (failing.count(elem.id))
-      return false;
+      it++;
+      for(; it!=par.end(); it++){
+        if( (!tempPatchPar.count(*it) && tempPatchParIndex == -1) 
+            || tempPatchParIndex == tempPatchPar[*it]){
+          par_temp.erase(*it);
+          newPar.insert(*it);
+        }
+      }
+      newPartition[newPartitionIndex++] = newPar;
+      par = par_temp;
+    }
   }
-  //TODO: need to return directly
-  if(passing.count(test)<=0){
-    passing[test] = {};
-    tests.push_back(test);
-  }
-
-  InEnvironment env({ { "F1X_APP", to_string(elem.app->id) },
-                      { "F1X_ID_BASE", to_string(elem.id.base) },
-                      { "F1X_ID_INT2", to_string(elem.id.int2) },
-                      { "F1X_ID_BOOL2", to_string(elem.id.bool2) },
-                      { "F1X_ID_COND3", to_string(elem.id.cond3) },
-                      { "F1X_ID_PARAM", to_string(elem.id.param) } });
-
-  if (cfg.valueTEQ) {
-    //FIXME: select only unexplored candidates
-    runtime.setPartition((*partitionable)[elem.app->id]);
-  }
-
-  bool passAll = executeCandidate(elem, test, index, executionStat);
-
-  return passAll;
-}*/
+  partitionIndex = newPartitionIndex;
+  currentPartition = newPartition;
+}

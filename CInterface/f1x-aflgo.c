@@ -48,30 +48,32 @@ int main(int argc, char* argv[]){
 
   if(engine != NULL){
     //get all the locations of plausible patches
-    int * locs; int length;
+    char * locs; int length;
     c_getPatchLoc(engine, &length, &locs);
-    char location[4096]="";
-    for(int i=0; i< length; i++){
+    //char location[4096]="";
+    //for(int i=0; i< length; i++){
       //encode location to one string("loc1", "loc2", "loc3"), which will be used in aflgo
-      sprintf(location, "%s\"%d\",", location, locs[i]);
-    }
-    printf("locations of plausible patches are : %s\n", location);
+      //sprintf(location, "%s\"%d\",", location, locs[i]);
+    //}
+    printf("locations of plausible patches are : %s\n", locs);
     printf("the working directory is : %s\n", c_getWorkingDir(engine));
 
     //invoke aflgo to generate new test
-    pid_t id = fork();
+/*    pid_t id = fork();
     if(id == 0)
     {
       char *argv[] = { "executeAFLGO", location, c_getWorkingDir(engine), NULL };
-//      execvp("executeAFLGO", argv);
+      execvp("executeAFLGO", argv);
       printf("Children Done!!!\n");
       exit(0);
     } else {
       waitpid(id, NULL, 0);
       executeMetaProgram(engine, "/out2/ef709ce2/crashes/");
-      //executeMetaProgram(engine, "/out2/ef709ce2/interestedTest/");
+      executeMetaProgram(engine, "/out2/ef709ce2/interestedTest/");
       printf("DONE\n");
     }
+*/ 
   }
+
   return 0;
 }
