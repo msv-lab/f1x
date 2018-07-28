@@ -23,6 +23,7 @@
 #include <chrono>
 
 #include <boost/log/trivial.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 #include "Config.h"
 #include "Global.h"
@@ -45,13 +46,14 @@ SearchEngine::SearchEngine(const std::vector<Patch> &searchSpace,
                            TestingFramework &tester,
                            Runtime &runtime,
                            shared_ptr<unordered_map<unsigned long, unordered_set<PatchID>>> partitionable,
-                           std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes):
+                           std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes, const boost::filesystem::path &patchOutput):
   searchSpace(searchSpace),
   tests(tests),
   tester(tester),
   runtime(runtime),
   partitionable(partitionable),
-  relatedTestIndexes(relatedTestIndexes) {
+  relatedTestIndexes(relatedTestIndexes),
+  patchOutput(patchOutput) {
   
   stat.explorationCounter = 0;
   stat.executionCounter = 0;
@@ -61,6 +63,7 @@ SearchEngine::SearchEngine(const std::vector<Patch> &searchSpace,
 
   progress = 0;
   partitionIndex = 0;
+  totalBrokenPartition = 0;
 
   //FIXME: I should use evaluation table instead
   failing = {};
@@ -297,7 +300,8 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
     reachablePatches.insert(locToId[loc]);
     loc = strtok(NULL,"#");
   }
-
+  
+  passing[test] = {};
   for (; index < searchSpace.size(); index++) {
     const Patch &elem = searchSpace[index];
 
@@ -328,6 +332,9 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
     if(partition.size() == 0)
       unReachablePatches.insert((*partitionable)[elem.app->id].begin(), (*partitionable)[elem.app->id].end());
     else{
+      if(!passAll)
+        removeFailedPatches(partition);
+
       //set partition info
       for(PatchID patchId: partition){
         tempPatchPar[patchId] = tempPatchIndex;
@@ -335,6 +342,9 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
       tempPatchIndex++;
     }
   }
+
+  passing.erase(test);
+
   int numOriginalParition = partitionIndex;
   mergePartition(tempPatchPar);
   
@@ -382,3 +392,13 @@ void SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
   partitionIndex = newPartitionIndex;
   currentPartition = newPartition;
 }
+
+void SearchEngine::removeFailedPatches(unordered_set<PatchID> partition){
+  for(PatchID patchId: partition){
+    fs::path patchFile = patchOutput / (visualizePatchID(patchId) + ".patch");
+    string cmd = "rm " + patchFile.string();
+    BOOST_LOG_TRIVIAL(debug) << "removing Failed patches --- cmd: " << cmd;
+    std::system(cmd.c_str());
+  }
+}
+

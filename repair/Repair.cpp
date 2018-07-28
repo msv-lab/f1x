@@ -355,7 +355,7 @@ RepairStatus repair(Project &project,
 
   shared_ptr<unordered_map<unsigned long, unordered_set<PatchID>>> partitionable = getPartitionable(searchSpace);
   //SearchEngine engine(tests, tester, runtime, partitionable, relatedTestIndexes);
-  engine = new SearchEngine(searchSpace, tests, tester, runtime, partitionable, relatedTestIndexes);
+  engine = new SearchEngine(searchSpace, tests, tester, runtime, partitionable, relatedTestIndexes, patchOutput);
 
   unsigned long last = 0;
   unordered_set<AppID> fixLocations;
@@ -463,7 +463,8 @@ RepairStatus repair(Project &project,
         if (cfg.outputOnePerLocation && patchLocations.count(plausiblePatches[i].app->id))
           continue;
         patchLocations.insert(plausiblePatches[i].app->id);
-        fs::path patchFile = patchOutput / (std::to_string(i) + ".patch");
+        //fs::path patchFile = patchOutput / (std::to_string(i) + ".patch");
+        fs::path patchFile = patchOutput / (visualizePatchID(plausiblePatches[i].id) + ".patch");
         project.applyPatch(plausiblePatches[i]);
         unsigned fileId = plausiblePatches[i].app->location.fileId;
         project.computeDiff(project.getFiles()[fileId], patchFile);
@@ -481,6 +482,7 @@ RepairStatus repair(Project &project,
     double executionsPerSec = (stat.nonTimeoutCounter * 1000.0) / stat.nonTimeoutTestTime;
     BOOST_LOG_TRIVIAL(info) << "execution speed: " << std::setprecision(3) << executionsPerSec << " exe/sec";
   }
+  BOOST_LOG_TRIVIAL(info) << "number of equivalent partition: " << engine->partitionIndex;
   BOOST_LOG_TRIVIAL(info) << "plausible patches: " << plausiblePatches.size();
   BOOST_LOG_TRIVIAL(info) << "fix locations: " << fixLocations.size();
 

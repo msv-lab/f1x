@@ -29,6 +29,8 @@
 #include "Runtime.h"
 #include "FaultLocalization.h"
 
+#include <boost/filesystem.hpp>
+
 struct SearchStatistics {
   unsigned long explorationCounter;
   unsigned long executionCounter;
@@ -44,7 +46,7 @@ class SearchEngine {
                TestingFramework &tester,
                Runtime &runtime,
                std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<PatchID>>> partitionable,
-               std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes);
+               std::unordered_map<Location, std::vector<unsigned>> relatedTestIndexes, const boost::filesystem::path &patchOutput);
 
   unsigned long findNext(const std::vector<Patch> &searchSpace, unsigned long fromIdx);
   std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> getCoverageSet();
@@ -53,19 +55,21 @@ class SearchEngine {
   int evaluatePatchWithNewTest(__string &test, char* reachedLocs, struct C_ExecutionStat*);
   const char* getWorkingDir();
   void getPatchLoc(int &length, char *& array);
+  unsigned long partitionIndex;
 
  private:
   bool executeCandidate(const Patch elem, std::unordered_set<PatchID> &partition, __string &test, int index);
   void prioritizeTest(std::vector<unsigned> &testOrder, unsigned index);
   void mergePartition(std::unordered_map<PatchID, int>);
+  void removeFailedPatches(std::unordered_set<PatchID>);
   std::vector<std::string> tests;
   TestingFramework tester;
-  unsigned long partitionIndex;
   int totalBrokenPartition;
   Runtime runtime;
   SearchStatistics stat;
   const std::vector<Patch> searchSpace;
   unsigned long progress;
+  boost::filesystem::path patchOutput;
   std::shared_ptr<std::unordered_map<unsigned long, std::unordered_set<PatchID>>> partitionable;
   std::unordered_set<PatchID> failing;
   std::unordered_map<std::string, std::unordered_set<PatchID>> passing;
