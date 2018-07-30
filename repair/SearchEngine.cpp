@@ -141,6 +141,8 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
     //TODO: build the relationship for the newly generated tests
     std::vector<unsigned> testOrder = relatedTestIndexes[elem.app->location];
 
+    unordered_set<PatchID> equivPartitionWithElem;
+
     for (unsigned orderIndex = 0; orderIndex < testOrder.size(); orderIndex++) {
       auto test = tests[testOrder[orderIndex]];
 
@@ -154,19 +156,26 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
       unordered_set<PatchID> partition;
       passAll = executeCandidate(elem, partition, test, index);
       
-      //update current partition(FIXME: assume there is only one test case)
-      if(partition.size() > 0)
-        currentPartition[partitionIndex++] = partition;
-     
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
           prioritizeTest(relatedTestIndexes[elem.app->location], orderIndex);
         }
         break;
+      }else{
+        //update current partition
+        if(partition.size() > 0){
+          if(orderIndex == 0)
+            equivPartitionWithElem = partition;//init equiv. partition with patch elem
+          else
+            //if two patches reside in the equiv. partition of all test, they are equiv.
+            equivPartitionWithElem = mergePartition2(equivPartitionWithElem, partition);
+        }
       }
     }
 
     if (passAll) {
+      if(equivPartitionWithElem.size() > 0)//record passed equiv. partition
+        currentPartition[partitionIndex++] = equivPartitionWithElem;
       vLocs.insert(elem.app->location);
       locToId[locToString2(elem.app->location)] = elem.app->id;
       return index;
@@ -393,12 +402,23 @@ void SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
   currentPartition = newPartition;
 }
 
+unordered_set<PatchID> SearchEngine::mergePartition2(unordered_set<PatchID> partition1, unordered_set<PatchID> partition2){
+  unordered_set<PatchID> mergedPartition;
+  for(auto i = partition1.begin(); i != partition1.end(); i++){
+    if(partition2.find(*i) != partition2.end()) 
+      mergedPartition.insert(*i);
+  }
+  return mergedPartition;
+}
+
 void SearchEngine::removeFailedPatches(unordered_set<PatchID> partition){
   for(PatchID patchId: partition){
-    fs::path patchFile = patchOutput / (visualizePatchID(patchId) + ".patch");
-    string cmd = "rm " + patchFile.string();
-    BOOST_LOG_TRIVIAL(debug) << "removing Failed patches --- cmd: " << cmd;
-    std::system(cmd.c_str());
+    if(!failing.count(patchId)){
+      fs::path patchFile = patchOutput / (visualizePatchID(patchId) + ".patch");
+      string cmd = "rm " + patchFile.string();
+      BOOST_LOG_TRIVIAL(debug) << "removing Failed patches --- cmd: " << cmd;
+      std::system(cmd.c_str());
+    }
   }
 }
 

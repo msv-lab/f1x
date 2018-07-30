@@ -61,6 +61,7 @@ class SearchEngine {
   bool executeCandidate(const Patch elem, std::unordered_set<PatchID> &partition, __string &test, int index);
   void prioritizeTest(std::vector<unsigned> &testOrder, unsigned index);
   void mergePartition(std::unordered_map<PatchID, int>);
+  std::unordered_set<PatchID> mergePartition2(std::unordered_set<PatchID>, std::unordered_set<PatchID>);
   void removeFailedPatches(std::unordered_set<PatchID>);
   std::vector<std::string> tests;
   TestingFramework tester;
