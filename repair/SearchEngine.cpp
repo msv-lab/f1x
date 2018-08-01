@@ -65,6 +65,7 @@ SearchEngine::SearchEngine(const std::vector<Patch> &searchSpace,
   partitionIndex = 0;
   totalBrokenPartition = 0;
   numTestReducePlausiblePatches = 0;
+  numTestBreakPartition = 0;
   savedPartitionIndex = 0;
 
   //FIXME: I should use evaluation table instead
@@ -366,8 +367,10 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
   if(!notFindCrash)
     numTestReducePlausiblePatches ++;
   int numBrokenParition = mergePartition(tempPatchPar);
-  
   totalBrokenPartition += numBrokenParition;
+  if(numBrokenParition > 0)
+    numTestBreakPartition++;
+
   BOOST_LOG_TRIVIAL(debug) << "Number of broken partition is : " << numBrokenParition;
   BOOST_LOG_TRIVIAL(debug) << "Search Space size : " << searchSpace.size();
   BOOST_LOG_TRIVIAL(debug) << "failing size : " << failing.size();
@@ -375,6 +378,7 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
   executionStat->numPlausiblePatch = searchSpace.size() - failing.size();
   executionStat->numPartition = partitionIndex;
   executionStat->numTestReducePlausiblePatches = numTestReducePlausiblePatches;
+  executionStat->numBrokenParition = numBrokenParition;
   executionStat->numBrokenPartition = numBrokenParition;
   executionStat->totalNumBrokenPartition = totalBrokenPartition;
   return 0;
