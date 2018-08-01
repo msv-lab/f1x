@@ -64,6 +64,8 @@ SearchEngine::SearchEngine(const std::vector<Patch> &searchSpace,
   progress = 0;
   partitionIndex = 0;
   totalBrokenPartition = 0;
+  numTestReducePlausiblePatches = 0;
+  savedPartitionIndex = 0;
 
   //FIXME: I should use evaluation table instead
   failing = {};
@@ -141,6 +143,8 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
     //TODO: build the relationship for the newly generated tests
     std::vector<unsigned> testOrder = relatedTestIndexes[elem.app->location];
 
+    unordered_set<PatchID> equivPartitionWithElem;
+
     for (unsigned orderIndex = 0; orderIndex < testOrder.size(); orderIndex++) {
       auto test = tests[testOrder[orderIndex]];
 
@@ -154,19 +158,29 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
       unordered_set<PatchID> partition;
       passAll = executeCandidate(elem, partition, test, index);
       
-      //update current partition(FIXME: assume there is only one test case)
-      if(partition.size() > 0)
-        currentPartition[partitionIndex++] = partition;
-     
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
           prioritizeTest(relatedTestIndexes[elem.app->location], orderIndex);
         }
         break;
+      }else{
+        //update current partition
+        if(partition.size() > 0){
+          if(orderIndex == 0)
+            equivPartitionWithElem = partition;//init equiv. partition with patch elem
+          else
+            //if two patches reside in the equiv. partition of all test, they are equiv.
+            equivPartitionWithElem = mergePartition2(equivPartitionWithElem, partition);
+        }
       }
     }
 
     if (passAll) {
+      if(equivPartitionWithElem.size() > 0){ //record passed equiv. partition
+        correctProbabilityPartition[partitionIndex] = 1;
+        currentPartition[partitionIndex++] = equivPartitionWithElem;
+        BOOST_LOG_TRIVIAL(info) << "partition size : " << equivPartitionWithElem.size();
+      }
       vLocs.insert(elem.app->location);
       locToId[locToString2(elem.app->location)] = elem.app->id;
       return index;
@@ -301,6 +315,7 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
     loc = strtok(NULL,"#");
   }
   
+  bool notFindCrash = true;
   passing[test] = {};
   for (; index < searchSpace.size(); index++) {
     const Patch &elem = searchSpace[index];
@@ -329,6 +344,7 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
     }
     unordered_set<PatchID> partition;
     passAll = executeCandidate(elem, partition, test, index);
+    notFindCrash &= passAll;
     if(partition.size() == 0)
       unReachablePatches.insert((*partitionable)[elem.app->id].begin(), (*partitionable)[elem.app->id].end());
     else{
@@ -337,68 +353,133 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
 
       //set partition info
       for(PatchID patchId: partition){
-        tempPatchPar[patchId] = tempPatchIndex;
+        if(passAll)
+          tempPatchPar[patchId] = tempPatchIndex;
+        else
+          tempPatchPar[patchId] = tempPatchIndex * -1;
       }
       tempPatchIndex++;
     }
   }
-
   passing.erase(test);
 
-  int numOriginalParition = partitionIndex;
-  mergePartition(tempPatchPar);
+  if(!notFindCrash)
+    numTestReducePlausiblePatches ++;
+  int numBrokenParition = mergePartition(tempPatchPar);
   
-  totalBrokenPartition += partitionIndex - numOriginalParition;
-  BOOST_LOG_TRIVIAL(debug) << "Number of broken partition is : " << partitionIndex - numOriginalParition;
+  totalBrokenPartition += numBrokenParition;
+  BOOST_LOG_TRIVIAL(debug) << "Number of broken partition is : " << numBrokenParition;
   BOOST_LOG_TRIVIAL(debug) << "Search Space size : " << searchSpace.size();
   BOOST_LOG_TRIVIAL(debug) << "failing size : " << failing.size();
 
   executionStat->numPlausiblePatch = searchSpace.size() - failing.size();
   executionStat->numPartition = partitionIndex;
-  executionStat->numBrokenPartition = partitionIndex - numOriginalParition;
+  executionStat->numTestReducePlausiblePatches = numTestReducePlausiblePatches;
+  executionStat->numBrokenPartition = numBrokenParition;
   executionStat->totalNumBrokenPartition = totalBrokenPartition;
   return 0;
 }
 
-void SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
+int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
+  int numberBrokenPartition = 0;
+  unordered_map<unsigned long, double> tempCorrectProbabilityPartition;
   unordered_map<unsigned long, unordered_set<PatchID>> newPartition;
   unsigned long newPartitionIndex = 0;
-  for (auto it=currentPartition.begin(); it!=currentPartition.end(); ++it){
+  for (auto it = currentPartition.begin(); it!=currentPartition.end(); ++it){
     unordered_set<PatchID> par = it->second;
     unordered_set<PatchID> par_temp = par;
+    int index = 0;
+    int tempPartitionIndex = newPartitionIndex;
+    int savedPatchSize = 0;
     while(par.size()>0){
+      index ++;
       unordered_set<PatchID> newPar;
       auto it = par.begin();
       newPar.insert(*it);
       int tempPatchParIndex;
       if(!tempPatchPar.count(*it))
-        tempPatchParIndex = -1;
+        tempPatchParIndex = 0;
       else
         tempPatchParIndex = tempPatchPar[*it];
       par_temp.erase(*it);
 
       it++;
       for(; it!=par.end(); it++){
-        if( (!tempPatchPar.count(*it) && tempPatchParIndex == -1) 
+        if( (!tempPatchPar.count(*it) && tempPatchParIndex == 0) 
             || tempPatchParIndex == tempPatchPar[*it]){
           par_temp.erase(*it);
           newPar.insert(*it);
         }
       }
-      newPartition[newPartitionIndex++] = newPar;
+      if(tempPatchParIndex >= 0) {//failing partition will not be added to partition
+        newPartition[newPartitionIndex++] = newPar;
+        savedPatchSize += newPar.size();
+      }
       par = par_temp;
     }
+
+    int numNewPar = newPartitionIndex - tempPartitionIndex;
+    if(numNewPar > 0){
+      for(int i=tempPartitionIndex; i<newPartitionIndex; i++){
+        tempCorrectProbabilityPartition[i] = 1/(double)numNewPar * correctProbabilityPartition[it->first];
+      }
+      if(numNewPar > 1) //successfully break one partition into several plausible patch partition
+        saveExpectedFilteredParitionSize(correctProbabilityPartition[it->first]*(numNewPar-1)/(double)numNewPar, it->second);
+    }
+    numberBrokenPartition += index - 1;
   }
+
   partitionIndex = newPartitionIndex;
   currentPartition = newPartition;
+  correctProbabilityPartition = tempCorrectProbabilityPartition;
+//  if(numberBrokenPartition>0)
+//    for (auto it=currentPartition.begin(); it!=currentPartition.end(); ++it){
+//      BOOST_LOG_TRIVIAL(info) << "partition size : " << (it->second).size();
+  return numberBrokenPartition;
+}
+
+unordered_set<PatchID> SearchEngine::mergePartition2(unordered_set<PatchID> partition1, unordered_set<PatchID> partition2){
+  unordered_set<PatchID> mergedPartition;
+  for(auto i = partition1.begin(); i != partition1.end(); i++){
+    if(partition2.find(*i) != partition2.end()) 
+      mergedPartition.insert(*i);
+  }
+  return mergedPartition;
 }
 
 void SearchEngine::removeFailedPatches(unordered_set<PatchID> partition){
   for(PatchID patchId: partition){
-    fs::path patchFile = patchOutput / (visualizePatchID(patchId) + ".patch");
-    string cmd = "rm " + patchFile.string();
-    BOOST_LOG_TRIVIAL(debug) << "removing Failed patches --- cmd: " << cmd;
-    std::system(cmd.c_str());
+    if(!failing.count(patchId)){
+      fs::path patchFile = patchOutput / (visualizePatchID(patchId) + ".patch");
+      string cmd = "rm " + patchFile.string();
+      BOOST_LOG_TRIVIAL(debug) << "removing Failed patches --- cmd: " << cmd;
+      std::system(cmd.c_str());
+    }
   }
 }
 
+void SearchEngine::saveExpectedFilteredParitionSize(double factor, unordered_set<PatchID> partition){
+
+  BOOST_LOG_TRIVIAL(debug) << "save================================ PartitionSize: " << partition.size() << "factor: " << factor;
+  fs::path patchFile = patchOutput / "expectedFilteredParitionSize2";
+  factorOfPartition[savedPartitionIndex] = factor;
+  brokenPartition[savedPartitionIndex++] = partition;
+  for (auto it=brokenPartition.begin(); it!=brokenPartition.end(); ++it){
+    int index = 0;
+    unordered_set<PatchID> tempPartition = it->second;
+    for(PatchID patchId: tempPartition){
+      if(!failing.count(patchId)) //only count plausible patches
+        index++;
+    }
+    int expectedFilteredParitionSize = (int)(index*factorOfPartition[it->first]);
+    if(expectedFilteredParitionSize>0){
+      BOOST_LOG_TRIVIAL(debug) << "savedPatchSize: " << index << "factor: " << factorOfPartition[it->first];
+      string cmd = "echo " + to_string(expectedFilteredParitionSize) + " >> " + patchFile.string();
+      std::system(cmd.c_str());
+    }
+  }
+
+  fs::path patchFile2 = patchOutput / "expectedFilteredParitionSize";
+  string cmd = "mv " + patchFile.string() + " " + patchFile2.string();
+  std::system(cmd.c_str());
+}
