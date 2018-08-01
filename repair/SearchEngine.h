@@ -68,7 +68,6 @@ class SearchEngine {
   TestingFramework tester;
   int totalBrokenPartition;
   int numTestReducePlausiblePatches;
-  int numTestBreakPartition;
   Runtime runtime;
   SearchStatistics stat;
   const std::vector<Patch> searchSpace;
@@ -101,7 +100,6 @@ struct C_ExecutionStat{
   int numBrokenPartition;
   int totalNumBrokenPartition;
   int numTestReducePlausiblePatches;
-  int numTestBreakPartition;
 };
 struct C_SearchEngine;
 const char* c_getWorkingDir(struct C_SearchEngine*);

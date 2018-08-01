@@ -65,7 +65,6 @@ SearchEngine::SearchEngine(const std::vector<Patch> &searchSpace,
   partitionIndex = 0;
   totalBrokenPartition = 0;
   numTestReducePlausiblePatches = 0;
-  numTestBreakPartition = 0;
   savedPartitionIndex = 0;
 
   //FIXME: I should use evaluation table instead
@@ -367,10 +366,8 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
   if(!notFindCrash)
     numTestReducePlausiblePatches ++;
   int numBrokenParition = mergePartition(tempPatchPar);
+  
   totalBrokenPartition += numBrokenParition;
-  if(totalBrokenPartition > 0)
-    numTestBreakPartition ++;
-
   BOOST_LOG_TRIVIAL(debug) << "Number of broken partition is : " << numBrokenParition;
   BOOST_LOG_TRIVIAL(debug) << "Search Space size : " << searchSpace.size();
   BOOST_LOG_TRIVIAL(debug) << "failing size : " << failing.size();
@@ -378,7 +375,6 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
   executionStat->numPlausiblePatch = searchSpace.size() - failing.size();
   executionStat->numPartition = partitionIndex;
   executionStat->numTestReducePlausiblePatches = numTestReducePlausiblePatches;
-  executionStat->numTestBreakPartition = numTestBreakPartition;
   executionStat->numBrokenPartition = numBrokenParition;
   executionStat->totalNumBrokenPartition = totalBrokenPartition;
   return 0;
@@ -464,7 +460,7 @@ void SearchEngine::removeFailedPatches(unordered_set<PatchID> partition){
 
 void SearchEngine::saveExpectedFilteredParitionSize(double factor, unordered_set<PatchID> partition){
 
-  BOOST_LOG_TRIVIAL(debug) << "saved PartitionSize: " << partition.size() << "factor: " << factor;
+  BOOST_LOG_TRIVIAL(debug) << "save================================ PartitionSize: " << partition.size() << "factor: " << factor;
   fs::path patchFile = patchOutput / "expectedFilteredParitionSize2";
   factorOfPartition[savedPartitionIndex] = factor;
   brokenPartition[savedPartitionIndex++] = partition;
@@ -477,6 +473,7 @@ void SearchEngine::saveExpectedFilteredParitionSize(double factor, unordered_set
     }
     int expectedFilteredParitionSize = (int)(index*factorOfPartition[it->first]);
     if(expectedFilteredParitionSize>0){
+      BOOST_LOG_TRIVIAL(debug) << "savedPatchSize: " << index << "factor: " << factorOfPartition[it->first];
       string cmd = "echo " + to_string(expectedFilteredParitionSize) + " >> " + patchFile.string();
       std::system(cmd.c_str());
     }
