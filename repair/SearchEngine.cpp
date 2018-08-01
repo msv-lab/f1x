@@ -447,15 +447,6 @@ unordered_set<PatchID> SearchEngine::mergePartition2(unordered_set<PatchID> part
   return mergedPartition;
 }
 
-unordered_set<PatchID> SearchEngine::mergePartition2(unordered_set<PatchID> partition1, unordered_set<PatchID> partition2){
-  unordered_set<PatchID> mergedPartition;
-  for(auto i = partition1.begin(); i != partition1.end(); i++){
-    if(partition2.find(*i) != partition2.end()) 
-      mergedPartition.insert(*i);
-  }
-  return mergedPartition;
-}
-
 void SearchEngine::removeFailedPatches(unordered_set<PatchID> partition){
   for(PatchID patchId: partition){
     if(!failing.count(patchId)){
