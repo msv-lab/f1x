@@ -378,7 +378,7 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
   executionStat->numPlausiblePatch = searchSpace.size() - failing.size();
   executionStat->numPartition = partitionIndex;
   executionStat->numTestReducePlausiblePatches = numTestReducePlausiblePatches;
-  executionStat->numBrokenParition = numBrokenParition;
+  executionStat->numTestBreakPartition = numTestBreakPartition;
   executionStat->numBrokenPartition = numBrokenParition;
   executionStat->totalNumBrokenPartition = totalBrokenPartition;
   return 0;
