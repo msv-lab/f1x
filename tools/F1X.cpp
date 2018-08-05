@@ -111,6 +111,7 @@ int repair_main(int argc, char *argv[], SearchEngine * &engine) {
   general.add_options()
     ("binary-path,P", po::value<string>()->value_name("PATH"), "the path of the project binary")
     ("binary-name,N", po::value<string>()->value_name("PATH"), "the name of the project binary")
+    ("maxConditionParameter,M", po::value<unsigned>()->value_name("NUM"), "maxConditionParameter")
     ("driver,d", po::value<string>()->value_name("PATH"), "test driver")
     ("tests,t", po::value<vector<string>>()->multitoken()->value_name("ID..."), "list of test IDs")
     ("test-timeout,T", po::value<unsigned>()->value_name("MS"), "test execution timeout")
@@ -244,6 +245,10 @@ int repair_main(int argc, char *argv[], SearchEngine * &engine) {
 
   if (vm.count("binary-name")) {
     cfg.binaryName = vm["binary-name"].as<string>();
+  }
+
+  if (vm.count("maxConditionParameter")) {
+    cfg.maxConditionParameter = vm["maxConditionParameter"].as<unsigned>();
   }
 
   if (!vm.count("test-timeout")) {

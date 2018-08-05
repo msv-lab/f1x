@@ -149,15 +149,25 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
     for (unsigned orderIndex = 0; orderIndex < testOrder.size(); orderIndex++) {
       auto test = tests[testOrder[orderIndex]];
 
-      if (cfg.valueTEQ) {
-        if (passing[test].count(elem.id))
-          continue;
-
-        //FIXME: select only unexplored candidates
-        runtime.setPartition((*partitionable)[elem.app->id]);
-      }
       unordered_set<PatchID> partition;
-      passAll = executeCandidate(elem, partition, test, index);
+      if (cfg.valueTEQ) {
+        if (passing[test].count(elem.id)){
+          bool alreadyIncluded = false;
+          for (auto it=currentPartition.begin(); it!=currentPartition.end(); ++it){
+            if(it->second.count(elem.id)){
+              alreadyIncluded = true;
+              break;
+            }
+          }
+          if(!alreadyIncluded)
+            partition = passing[test];
+        }
+        else{
+          //FIXME: select only unexplored candidates
+          runtime.setPartition((*partitionable)[elem.app->id]);
+          passAll = executeCandidate(elem, partition, test, index);
+        }
+      }
       
       if (!passAll) {
         if (cfg.testPrioritization == TestPrioritization::MAX_FAILING) {
@@ -455,8 +465,8 @@ void SearchEngine::removeFailedPatches(unordered_set<PatchID> partition){
   for(PatchID patchId: partition){
     if(!failing.count(patchId)){
       fs::path patchFile = patchOutput / (visualizePatchID(patchId) + ".patch");
-      string cmd = "rm " + patchFile.string();
-      BOOST_LOG_TRIVIAL(debug) << "removing Failed patches --- cmd: " << cmd;
+      string cmd = "rm -rf " + patchFile.string();
+      BOOST_LOG_TRIVIAL(info) << "removing Failed patches --- cmd: " << cmd;
       std::system(cmd.c_str());
     }
   }
