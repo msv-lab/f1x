@@ -69,6 +69,7 @@ class SearchEngine {
   int totalBrokenPartition;
   int numTestReducePlausiblePatches;
   int numTestBreakPartition;
+  int numCorrectPartition;
   Runtime runtime;
   SearchStatistics stat;
   const std::vector<Patch> searchSpace;

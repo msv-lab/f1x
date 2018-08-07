@@ -67,6 +67,7 @@ SearchEngine::SearchEngine(const std::vector<Patch> &searchSpace,
   numTestReducePlausiblePatches = 0;
   numTestBreakPartition = 0;
   savedPartitionIndex = 0;
+  numCorrectPartition = 0;
 
   //FIXME: I should use evaluation table instead
   failing = {};
@@ -190,6 +191,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
       if(equivPartitionWithElem.size() > 0){ //record passed equiv. partition
         correctProbabilityPartition[partitionIndex] = 1;
         currentPartition[partitionIndex++] = equivPartitionWithElem;
+        numCorrectPartition ++;
         BOOST_LOG_TRIVIAL(info) << "partition size : " << equivPartitionWithElem.size();
       }
       vLocs.insert(elem.app->location);
@@ -386,7 +388,7 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
   BOOST_LOG_TRIVIAL(debug) << "failing size : " << failing.size();
 
   executionStat->numPlausiblePatch = searchSpace.size() - failing.size();
-  executionStat->numPartition = partitionIndex;
+  executionStat->numPartition = numCorrectPartition;
   executionStat->numTestReducePlausiblePatches = numTestReducePlausiblePatches;
   executionStat->numTestBreakPartition = numTestBreakPartition;
   executionStat->numBrokenPartition = numBrokenParition;
@@ -396,17 +398,16 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
 
 int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
   int numberBrokenPartition = 0;
+  int tempNumCorrectPartition = 0;
   unordered_map<unsigned long, double> tempCorrectProbabilityPartition;
   unordered_map<unsigned long, unordered_set<PatchID>> newPartition;
   unsigned long newPartitionIndex = 0;
   for (auto it = currentPartition.begin(); it!=currentPartition.end(); ++it){
     unordered_set<PatchID> par = it->second;
     unordered_set<PatchID> par_temp = par;
-    int index = 0;
     int tempPartitionIndex = newPartitionIndex;
-    int savedPatchSize = 0;
+    //int savedPatchSize = 0;
     while(par.size()>0){
-      index ++;
       unordered_set<PatchID> newPar;
       auto it = par.begin();
       newPar.insert(*it);
@@ -425,10 +426,13 @@ int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
           newPar.insert(*it);
         }
       }
-      if(tempPatchParIndex >= 0) {//failing partition will not be added to partition
-        newPartition[newPartitionIndex++] = newPar;
-        savedPatchSize += newPar.size();
-      }
+      //temp_numPartition ++;
+      //if(tempPatchParIndex >= 0) {//failing partition will not be added to partition
+      newPartition[newPartitionIndex++] = newPar;
+      //savedPatchSize += newPar.size();
+      //}
+      if(tempPatchParIndex >= 0)
+        tempNumCorrectPartition ++;
       par = par_temp;
     }
 
@@ -440,15 +444,15 @@ int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
       if(numNewPar > 1) //successfully break one partition into several plausible patch partition
         saveExpectedFilteredParitionSize(correctProbabilityPartition[it->first]*(numNewPar-1)/(double)numNewPar, it->second);
     }
-    numberBrokenPartition += index - 1;
   }
+
+  numberBrokenPartition = newPartitionIndex - partitionIndex;
 
   partitionIndex = newPartitionIndex;
   currentPartition = newPartition;
   correctProbabilityPartition = tempCorrectProbabilityPartition;
-//  if(numberBrokenPartition>0)
-//    for (auto it=currentPartition.begin(); it!=currentPartition.end(); ++it){
-//      BOOST_LOG_TRIVIAL(info) << "partition size : " << (it->second).size();
+  numCorrectPartition = tempNumCorrectPartition;
+
   return numberBrokenPartition;
 }
 
@@ -474,7 +478,7 @@ void SearchEngine::removeFailedPatches(unordered_set<PatchID> partition){
 
 void SearchEngine::saveExpectedFilteredParitionSize(double factor, unordered_set<PatchID> partition){
 
-  BOOST_LOG_TRIVIAL(debug) << "save================================ PartitionSize: " << partition.size() << "factor: " << factor;
+  BOOST_LOG_TRIVIAL(debug) << "save PartitionSize: " << partition.size() << "factor: " << factor;
   fs::path patchFile = patchOutput / "expectedFilteredParitionSize2";
   factorOfPartition[savedPartitionIndex] = factor;
   brokenPartition[savedPartitionIndex++] = partition;
