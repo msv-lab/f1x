@@ -80,6 +80,7 @@ class SearchEngine {
   std::unordered_map<std::string, std::unordered_set<PatchID>> passing;
 
   std::unordered_map<unsigned long, std::unordered_set<PatchID>> currentPartition;
+  std::unordered_map<unsigned long, int> partitionCorrect;
   std::unordered_map<unsigned long, double> correctProbabilityPartition;
   std::unordered_map<unsigned long, std::unordered_set<PatchID>> brokenPartition;
   std::unordered_map<unsigned long, double> factorOfPartition;

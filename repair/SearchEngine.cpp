@@ -190,6 +190,7 @@ unsigned long SearchEngine::findNext(const std::vector<Patch> &searchSpace,
     if (passAll) {
       if(equivPartitionWithElem.size() > 0){ //record passed equiv. partition
         correctProbabilityPartition[partitionIndex] = 1;
+        partitionCorrect[partitionIndex] = 1;
         currentPartition[partitionIndex++] = equivPartitionWithElem;
         numCorrectPartition ++;
         BOOST_LOG_TRIVIAL(info) << "partition size : " << equivPartitionWithElem.size();
@@ -402,8 +403,8 @@ int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
   unordered_map<unsigned long, double> tempCorrectProbabilityPartition;
   unordered_map<unsigned long, unordered_set<PatchID>> newPartition;
   unsigned long newPartitionIndex = 0;
-  for (auto it = currentPartition.begin(); it!=currentPartition.end(); ++it){
-    unordered_set<PatchID> par = it->second;
+  for (auto it1 = currentPartition.begin(); it1!=currentPartition.end(); ++it1){
+    unordered_set<PatchID> par = it1->second;
     unordered_set<PatchID> par_temp = par;
     int tempPartitionIndex = newPartitionIndex;
     //int savedPatchSize = 0;
@@ -428,21 +429,25 @@ int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
       }
       //temp_numPartition ++;
       //if(tempPatchParIndex >= 0) {//failing partition will not be added to partition
+      if(partitionCorrect[it1->first] && tempPatchParIndex >= 0){
+        partitionCorrect[newPartitionIndex] = 1;
+        tempNumCorrectPartition ++;
+      } else
+        partitionCorrect[newPartitionIndex] = 0;
+
       newPartition[newPartitionIndex++] = newPar;
       //savedPatchSize += newPar.size();
       //}
-      if(tempPatchParIndex >= 0)
-        tempNumCorrectPartition ++;
       par = par_temp;
     }
 
     int numNewPar = newPartitionIndex - tempPartitionIndex;
     if(numNewPar > 0){
       for(int i=tempPartitionIndex; i<newPartitionIndex; i++){
-        tempCorrectProbabilityPartition[i] = 1/(double)numNewPar * correctProbabilityPartition[it->first];
+        tempCorrectProbabilityPartition[i] = 1/(double)numNewPar * correctProbabilityPartition[it1->first];
       }
       if(numNewPar > 1) //successfully break one partition into several plausible patch partition
-        saveExpectedFilteredParitionSize(correctProbabilityPartition[it->first]*(numNewPar-1)/(double)numNewPar, it->second);
+        saveExpectedFilteredParitionSize(correctProbabilityPartition[it1->first]*(numNewPar-1)/(double)numNewPar, it1->second);
     }
   }
 
