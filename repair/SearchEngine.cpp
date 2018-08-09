@@ -401,6 +401,7 @@ int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
   int numberBrokenPartition = 0;
   int tempNumCorrectPartition = 0;
   unordered_map<unsigned long, double> tempCorrectProbabilityPartition;
+  unordered_map<unsigned long, int> tempPartitionCorrect;
   unordered_map<unsigned long, unordered_set<PatchID>> newPartition;
   unsigned long newPartitionIndex = 0;
   for (auto it1 = currentPartition.begin(); it1!=currentPartition.end(); ++it1){
@@ -430,10 +431,10 @@ int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
       //temp_numPartition ++;
       //if(tempPatchParIndex >= 0) {//failing partition will not be added to partition
       if(partitionCorrect[it1->first] && tempPatchParIndex >= 0){
-        partitionCorrect[newPartitionIndex] = 1;
+        tempPartitionCorrect[newPartitionIndex] = 1;
         tempNumCorrectPartition ++;
       } else
-        partitionCorrect[newPartitionIndex] = 0;
+        tempPartitionCorrect[newPartitionIndex] = 0;
 
       newPartition[newPartitionIndex++] = newPar;
       //savedPatchSize += newPar.size();
@@ -457,6 +458,7 @@ int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
   currentPartition = newPartition;
   correctProbabilityPartition = tempCorrectProbabilityPartition;
   numCorrectPartition = tempNumCorrectPartition;
+  partitionCorrect = tempPartitionCorrect;
 
   return numberBrokenPartition;
 }
