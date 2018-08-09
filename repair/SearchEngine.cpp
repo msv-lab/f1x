@@ -474,12 +474,12 @@ unordered_set<PatchID> SearchEngine::mergePartition2(unordered_set<PatchID> part
 
 void SearchEngine::removeFailedPatches(unordered_set<PatchID> partition){
   for(PatchID patchId: partition){
-    if(!failing.count(patchId)){
+    //if(!failing.count(patchId)){
       fs::path patchFile = patchOutput / (visualizePatchID(patchId) + ".patch");
       string cmd = "rm -rf " + patchFile.string();
       BOOST_LOG_TRIVIAL(info) << "removing Failed patches --- cmd: " << cmd;
       std::system(cmd.c_str());
-    }
+    //}
   }
 }
 
