@@ -16,7 +16,7 @@
 
 FROM mechtaev/ubuntu-16.04-llvm-3.8.1
 MAINTAINER mechtaev@gmail.com
-ENV DEBIAN_FRONTEND noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get upgrade -y && apt-get autoremove -y
 
