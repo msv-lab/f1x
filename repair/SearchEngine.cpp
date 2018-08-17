@@ -377,8 +377,11 @@ int SearchEngine::evaluatePatchWithNewTest(__string &test, char* reachedLocs, st
   }
   passing.erase(test);
 
-  if(!notFindCrash)
+  if(!notFindCrash){
     numTestReducePlausiblePatches ++;
+    for(auto it1 = currentPartition.begin(); it1!=currentPartition.end(); ++it1)
+      BOOST_LOG_TRIVIAL(info) << "partition size: " << it1->second.size();
+  }
   int numBrokenParition = mergePartition(tempPatchPar);
   totalBrokenPartition += numBrokenParition;
   if(numBrokenParition > 0)
@@ -409,6 +412,7 @@ int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
     unordered_set<PatchID> par_temp = par;
     int tempPartitionIndex = newPartitionIndex;
     //int savedPatchSize = 0;
+    bool findNewFailPar = false;
     while(par.size()>0){
       unordered_set<PatchID> newPar;
       auto it = par.begin();
@@ -436,6 +440,9 @@ int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
       } else
         tempPartitionCorrect[newPartitionIndex] = 0;
 
+      if(partitionCorrect[it1->first] && tempPatchParIndex < 0)
+        findNewFailPar = true;
+
       newPartition[newPartitionIndex++] = newPar;
       //savedPatchSize += newPar.size();
       //}
@@ -447,7 +454,7 @@ int SearchEngine::mergePartition(unordered_map<PatchID, int> tempPatchPar){
       for(int i=tempPartitionIndex; i<newPartitionIndex; i++){
         tempCorrectProbabilityPartition[i] = 1/(double)numNewPar * correctProbabilityPartition[it1->first];
       }
-      if(numNewPar > 1) //successfully break one partition into several plausible patch partition
+      if(numNewPar > 1 || findNewFailPar) //successfully break one partition into several plausible patch partition
         saveExpectedFilteredParitionSize(correctProbabilityPartition[it1->first]*(numNewPar-1)/(double)numNewPar, it1->second);
     }
   }
@@ -477,7 +484,7 @@ void SearchEngine::removeFailedPatches(unordered_set<PatchID> partition){
     //if(!failing.count(patchId)){
       fs::path patchFile = patchOutput / (visualizePatchID(patchId) + ".patch");
       string cmd = "rm -rf " + patchFile.string();
-      BOOST_LOG_TRIVIAL(info) << "removing Failed patches --- cmd: " << cmd;
+      BOOST_LOG_TRIVIAL(debug) << "removing Failed patches --- cmd: " << cmd;
       std::system(cmd.c_str());
     //}
   }
