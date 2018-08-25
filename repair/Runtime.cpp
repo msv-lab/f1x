@@ -38,7 +38,7 @@
 namespace fs = boost::filesystem;
 using std::vector;
 using std::unordered_set;
-
+int* result_map;
 
 Runtime::Runtime() {
   std::stringstream realPartitionFileName;
@@ -49,7 +49,12 @@ Runtime::Runtime() {
   ftruncate(fd, size);
   partition = (PatchID*) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
   close(fd);
-  };
+  
+  int fd2 = shm_open("/f1x_result", O_CREAT|O_RDWR, (mode_t)0666);
+  ftruncate(fd2, sizeof(int));
+  result_map = (int*) mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd2, 0);
+  close(fd2);
+};
 
 void Runtime::setPartition(std::unordered_set<PatchID> ids) {
   assert(ids.size() < MAX_PARTITION_SIZE);
@@ -77,6 +82,14 @@ unordered_set<PatchID> Runtime::getPartition() {
     index++;
   }
   return result;
+}
+
+void Runtime::setOutputResult(int tag){
+  result_map[0] = tag;
+}
+
+int Runtime::getOutputResult(){
+  return result_map[0];
 }
 
 boost::filesystem::path Runtime::getHeader() {

@@ -29,6 +29,9 @@
 #include "Typing.h"
 #include "Global.h"
 
+#include <boost/log/trivial.hpp>
+#include <boost/filesystem/fstream.hpp>
+
 namespace fs = boost::filesystem;
 
 using std::pair;
@@ -463,7 +466,9 @@ namespace generator {
         << ID_TYPE << " __f1xid_bool2 = strtoul(getenv(\"F1X_ID_BOOL2\"), (char **)NULL, 10);" << "\n"
         << ID_TYPE << " __f1xid_cond3 = strtoul(getenv(\"F1X_ID_COND3\"), (char **)NULL, 10);" << "\n"
         << ID_TYPE << " __f1xid_param = strtoul(getenv(\"F1X_ID_PARAM\"), (char **)NULL, 10);" << "\n"
-        << "__f1xid_t *__f1xids = NULL;" << "\n";
+        << "__f1xid_t *__f1xids = NULL;\n" 
+        << "int * result_map;"
+        << "\n";
 
     OUT << "void __f1x_init_runtime() {" << "\n";
     if (cfg.valueTEQ) {
@@ -478,6 +483,11 @@ namespace generator {
              "PROT_WRITE, MAP_SHARED, fd, 0);"
           << "\n"
           << "close(fd);"
+          << "\n\n"
+          << "int fd2 = shm_open(\"/f1x_result\", O_CREAT|O_RDWR, (mode_t)0666);\n"
+          << "ftruncate(fd2, sizeof(int));\n"
+          << "result_map = (int*) mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd2, 0);\n"
+          << "close(fd2);\n"
           << "\n";
     }
     OUT << "}" << "\n";
@@ -709,8 +719,9 @@ namespace generator {
   void candidateDispatch(shared_ptr<SchemaApplication> sa,
                                 unsigned long &baseId,
                                 std::ostream &OS,
-                                vector<Patch> &ss) {
-    unordered_map<string, string> runtimeReprBySource = runtimeRenaming(sa);
+                                vector<Patch> &ss,
+                                unordered_map<string, string> &runtimeReprBySource) {
+    runtimeReprBySource = runtimeRenaming(sa);
     unordered_map<string, string> sizeByType = typeSizes(sa);
     unordered_map<string, string> nullDerefByName = nullDerefCondition(sa, runtimeReprBySource);
 
@@ -849,8 +860,9 @@ namespace generator {
 
       OS << "current_panic = false;" << "\n";
 
-      generator::candidateDispatch(sa, baseId, OS, searchSpace);
-      
+      unordered_map<string, string> runtimeReprBySource;
+      generator::candidateDispatch(sa, baseId, OS, searchSpace, runtimeReprBySource);
+
       OS << "if (!output_initialized) {" << "\n"
          << "output_panic = current_panic;" << "\n"
          << "output_value = base_value;" << "\n"
@@ -878,7 +890,15 @@ namespace generator {
          << "abort();" << "\n"
          << "}" << "\n";
 //added by gaoxiang, to show the modified location is executed
-//      OS << "setSharedMemory(32);" << "\n";
+      if(schemaApplications.size() > 0){
+        Expression originalExpression = sa->original;
+        BOOST_LOG_TRIVIAL(info) << "original expression is : " << expressionToString(originalExpression);
+        substituteWithRuntimeRepr(originalExpression, runtimeReprBySource);
+        OS << outputType << " origin_value = " << expressionToString(originalExpression) << ";\n"
+           << "if(origin_value!=output_value)\n"
+           << "result_map[0]=0;\n"
+           << "\n";
+      }
 //end
       OS << "return output_value;" << "\n";
 

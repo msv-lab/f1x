@@ -41,6 +41,8 @@ class Runtime {
  public:
   Runtime();
   void setPartition(std::unordered_set<PatchID> ids);
+  void setOutputResult(int);
+  int getOutputResult();
   std::unordered_set<PatchID> getPartition();
   boost::filesystem::path getSource();
   boost::filesystem::path getHeader();

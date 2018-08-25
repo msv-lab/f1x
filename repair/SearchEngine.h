@@ -60,10 +60,11 @@ class SearchEngine {
  private:
   bool executeCandidate(const Patch elem, std::unordered_set<PatchID> &partition, __string &test, int index);
   void prioritizeTest(std::vector<unsigned> &testOrder, unsigned index);
-  int mergePartition(std::unordered_map<PatchID, int>);
+  int mergePartition(std::unordered_map<PatchID, int>, std::unordered_map<PatchID, int>, int&);
   std::unordered_set<PatchID> mergePartition2(std::unordered_set<PatchID>, std::unordered_set<PatchID>);
   void removeFailedPatches(std::unordered_set<PatchID>);
   void saveExpectedFilteredParitionSize(double, std::unordered_set<PatchID>);
+  void savePathIdforRanking();
   std::vector<std::string> tests;
   TestingFramework tester;
   int totalBrokenPartition;
@@ -84,6 +85,8 @@ class SearchEngine {
   std::unordered_map<unsigned long, double> correctProbabilityPartition;
   std::unordered_map<unsigned long, std::unordered_set<PatchID>> brokenPartition;
   std::unordered_map<unsigned long, double> factorOfPartition;
+  std::unordered_map<unsigned long, unsigned long> numCorrectTest;
+  std::unordered_map<unsigned long, unsigned long> numIncorrectTest;
   int savedPartitionIndex;
 
   std::unordered_map<std::string, std::unordered_map<PatchID, std::shared_ptr<Coverage>>> coverageSet;
@@ -104,6 +107,7 @@ struct C_ExecutionStat{
   int totalNumBrokenPartition;
   int numTestReducePlausiblePatches;
   int numTestBreakPartition;
+  int sizeofBrokenPartition;
 };
 struct C_SearchEngine;
 const char* c_getWorkingDir(struct C_SearchEngine*);
