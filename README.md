@@ -23,11 +23,6 @@ To improve efficiency, f1x applies ***test-equivalence*** analyses to group patc
 
 To address overfitting, f1x allows to ***prioritize*** patches. It assigns a cost (a rational number) to each patch and searches for a patch with the lowest cost. For example, if both `p3` and `p6` pass all the tests, but `cost(p6) < cost(p3)`, then f1x outputs `p6` as the result.
 
-More information about the algorithm is available in the following publications:
-
-Test-equivalence Analysis for Automatic Patch Generation<br>
-Sergey Mechtaev, Xiang Gao, Shin Hwei Tan, Abhik Roychoudhury<br>
-TOSEM 2018
 
 ## Documentation ##
 
@@ -37,3 +32,12 @@ Detailed information about the tool is given in [Manual](doc/Manual.md). If you 
 ## Related projects ##
 
 f1x is a lightweight (enumerative) counterpart of our constraint-based program repair system [Angelix](https://github.com/mechtaev/angelix). Compared with Angelix, f1x cannot synthesize multi-line patches and cannot use a reference implementation, however it is significantly more efficient and easy-to-use. f1x relies on test-equivalence analysis similarly to mutation testing tools such as [AccMut](https://github.com/wangbo15/accmut).
+
+## Publication ##
+
+More information about the tool is available in the following publications:
+
+[Test-equivalence Analysis for Automatic Patch Generation](https://abhikrc.com/pdf/TOSEM18.pdf
+)<br>
+Sergey Mechtaev, Xiang Gao, Shin Hwei Tan, Abhik Roychoudhury<br>
+TOSEM 2018
