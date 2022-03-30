@@ -23,6 +23,12 @@ To improve efficiency, f1x applies ***test-equivalence*** analyses to group patc
 
 To address overfitting, f1x allows to ***prioritize*** patches. It assigns a cost (a rational number) to each patch and searches for a patch with the lowest cost. For example, if both `p3` and `p6` pass all the tests, but `cost(p6) < cost(p3)`, then f1x outputs `p6` as the result.
 
+More information about the algorithm is available in the following publications:
+
+Test-equivalence Analysis for Automatic Patch Generation
+Sergey Mechtaev, Xiang Gao, Shin Hwei Tan, Abhik Roychoudhury
+TOSEM 2018
+
 ## Documentation ##
 
 To install f1x, you can either use [our docker image](doc/Docker.md) or [build it from source](doc/BuildFromSource.md).
