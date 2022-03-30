@@ -25,8 +25,8 @@ To address overfitting, f1x allows to ***prioritize*** patches. It assigns a cos
 
 More information about the algorithm is available in the following publications:
 
-Test-equivalence Analysis for Automatic Patch Generation
-Sergey Mechtaev, Xiang Gao, Shin Hwei Tan, Abhik Roychoudhury
+Test-equivalence Analysis for Automatic Patch Generation<br>
+Sergey Mechtaev, Xiang Gao, Shin Hwei Tan, Abhik Roychoudhury<br>
 TOSEM 2018
 
 ## Documentation ##
