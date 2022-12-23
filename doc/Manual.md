@@ -22,7 +22,7 @@ Since the search space of f1x includes a huge number of program changes, it is i
 In order to address this, f1x implements several test-equivalence analyses that help to avoid redundant test executions:
 
 1. `vteq`: value-based test-equivalence analysis (for side-effect free program expressions).
-2. `dteq`: dependency-based test-equivalence analysis (for assignment synthesis).
+2. [currently unsupported] `dteq`: dependency-based test-equivalence analysis (for assignment synthesis). 
 
 ## Prioritization ##
 
